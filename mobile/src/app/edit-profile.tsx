@@ -20,13 +20,17 @@ import { uploadImage } from '@/lib/db';
 import { pickImage } from '@/lib/images';
 import { useStore } from '@/lib/store';
 
+const TRADES = ['Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 'Painting', 'Masonry'];
+
 export default function EditProfileScreen() {
-  const { email, userId } = useAuth();
-  const { myProfile, updateMyProfile } = useStore();
+  const { email, userId, role } = useAuth();
+  const { myProfile, updateMyProfile, setupTradesman } = useStore();
+  const isTradesman = role === 'tradesman';
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [area, setArea] = useState('');
   const [bio, setBio] = useState('');
+  const [trade, setTrade] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -58,6 +62,9 @@ export default function EditProfileScreen() {
       area: area.trim(),
       ...(photo && !photo.startsWith('file') && !photo.startsWith('blob') ? { photo_url: photo.split('?')[0] } : {}),
     });
+    if (isTradesman && trade) {
+      await setupTradesman(trade, bio.trim());
+    }
     setBusy(false);
     setSaved(true);
   };
@@ -94,7 +101,22 @@ export default function EditProfileScreen() {
           <Field label="Email" value={email ?? ''} editable={false} placeholder="—" />
           <Field label="Phone" value={phone} onChangeText={setPhone} placeholder="+1 (868) 000-0000" keyboardType="phone-pad" />
           <Field label="Area" value={area} onChangeText={setArea} placeholder="e.g. Port of Spain" />
-          <Field label="About (for tradesmen)" value={bio} onChangeText={setBio} placeholder="Tell customers about your work…" multiline />
+
+          {isTradesman && (
+            <View style={styles.field}>
+              <Text style={styles.label}>Your trade</Text>
+              <View style={styles.tradeGrid}>
+                {TRADES.map((t) => (
+                  <Pressable key={t} onPress={() => setTrade(t)} style={[styles.tradeChip, trade === t && styles.tradeChipActive]}>
+                    <Text style={[styles.tradeChipText, trade === t && styles.tradeChipTextActive]}>{t}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={styles.tradeHint}>Pick your trade so customers can find you when they search.</Text>
+            </View>
+          )}
+
+          <Field label={isTradesman ? 'About your business' : 'About'} value={bio} onChangeText={setBio} placeholder="Tell customers about your work…" multiline />
 
           {saved && (
             <View style={styles.savedRow}>
@@ -140,6 +162,12 @@ const styles = StyleSheet.create({
 
   field: { marginTop: 16 },
   label: { fontSize: 13, fontWeight: '700', color: Brand.ink, marginBottom: 8 },
+  tradeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tradeChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 11, borderWidth: 1, borderColor: Brand.line },
+  tradeChipActive: { backgroundColor: Brand.red, borderColor: Brand.red },
+  tradeChipText: { fontSize: 13, fontWeight: '600', color: Brand.body },
+  tradeChipTextActive: { color: '#fff' },
+  tradeHint: { fontSize: 12, color: Brand.muted, marginTop: 8 },
   input: { borderWidth: 1, borderColor: Brand.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: Brand.ink },
   textarea: { minHeight: 90, textAlignVertical: 'top' },
   disabled: { backgroundColor: Brand.surfaceAlt, color: Brand.muted },

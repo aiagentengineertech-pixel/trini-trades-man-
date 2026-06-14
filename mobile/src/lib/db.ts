@@ -158,6 +158,70 @@ export async function updateProfile(
   return true;
 }
 
+// ---------------- Pros (real tradesmen) ----------------
+
+import type { Pro, Review } from './store-types';
+
+export async function fetchPros(): Promise<Pro[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, area, verified, rating_avg, rating_count, tradesman_info(bio, years_experience), tradesman_trades(trades(name))')
+    .in('role', ['tradesman', 'both']);
+  if (error || !data) return [];
+  return data.map((p: any) => {
+    const info = Array.isArray(p.tradesman_info) ? p.tradesman_info[0] : p.tradesman_info;
+    const tt = Array.isArray(p.tradesman_trades) ? p.tradesman_trades : [];
+    const trade = tt[0]?.trades?.name || 'General';
+    const style = tradeStyle(trade);
+    return {
+      id: p.id,
+      name: p.full_name || 'Tradesman',
+      trade,
+      rating: Number(p.rating_avg) || 0,
+      reviewsCount: p.rating_count || 0,
+      jobsDone: p.rating_count || 0,
+      area: p.area || 'Trinidad',
+      distance: 'Nearby',
+      verified: !!p.verified,
+      bio: info?.bio || 'Trusted local tradesman on Trini Tradesman.',
+      services: tt.map((x: any) => x.trades?.name).filter(Boolean),
+      reviews: [],
+      ...style,
+    } as Pro;
+  });
+}
+
+export async function fetchProReviews(proId: string): Promise<Review[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('stars, comment, created_at, reviewer:profiles!reviewer_id(full_name)')
+    .eq('reviewee_id', proId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map((r: any) => ({
+    author: r.reviewer?.full_name || 'Customer',
+    stars: r.stars,
+    text: r.comment || '',
+    date: relativeTime(r.created_at),
+  }));
+}
+
+export async function saveTradesmanProfile(
+  userId: string,
+  trade: string,
+  bio: string,
+  nameToId: Record<string, string>,
+): Promise<boolean> {
+  const upd = await supabase.from('profiles').update({ role: 'tradesman' }).eq('id', userId);
+  if (upd.error) { console.warn('[db] role update failed:', upd.error.message); }
+  await supabase.from('tradesman_info').upsert({ user_id: userId, bio });
+  const tradeId = nameToId[trade];
+  if (tradeId) {
+    await supabase.from('tradesman_trades').upsert({ user_id: userId, trade_id: tradeId });
+  }
+  return true;
+}
+
 // ---------------- Storage ----------------
 
 export async function uploadImage(bucket: string, path: string, uri: string): Promise<string | null> {

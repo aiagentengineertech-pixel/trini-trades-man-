@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ambient, Badge, Card, Glass, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
+import { fetchProReviews } from '@/lib/db';
 import { useStore } from '@/lib/store';
+import type { Review } from '@/lib/store-types';
 
 interface PortfolioItem { title: string; value: string; date: string; beforeBg: string; afterBg: string; icon: IconName; color: string; }
 interface Cert { name: string; issuer: string; status: 'verified' | 'expiring'; expiry: string; }
@@ -21,6 +23,11 @@ export default function ProProfileScreen() {
   const [readMore, setReadMore] = useState(false);
   const [saved, setSaved] = useState(false);
   const [sort, setSort] = useState('Newest');
+  const [reviews, setReviews] = useState<Review[]>([]);
+
+  useEffect(() => {
+    fetchProReviews(id).then(setReviews);
+  }, [id]);
 
   if (!pro) {
     return (
@@ -257,27 +264,35 @@ export default function ProProfileScreen() {
 
         {/* ===== Reviews ===== */}
         <View style={styles.section}>
-          <SectionTitle title={`Reviews (${pro.reviewsCount})`} />
-          <Segmented options={SORTS} value={sort} onChange={setSort} />
-          <View style={{ gap: 12, marginTop: 12 }}>
-            {pro.reviews.map((r, i) => (
-              <Card key={i}>
-                <View style={styles.revHead}>
-                  <View style={styles.revAvatar}><Ionicons name="person" size={16} color={Brand.muted} /></View>
-                  <View style={styles.flex}>
-                    <Text style={styles.revAuthor}>{r.author}</Text>
-                    <Text style={styles.revDate}>{pro.trade} · {r.date}</Text>
-                  </View>
-                  <View style={styles.revStars}>
-                    {Array.from({ length: 5 }).map((_, s) => (
-                      <Ionicons key={s} name={s < r.stars ? 'star' : 'star-outline'} size={12} color={Brand.star} />
-                    ))}
-                  </View>
-                </View>
-                <Text style={styles.revText}>{r.text}</Text>
-              </Card>
-            ))}
-          </View>
+          <SectionTitle title={`Reviews (${reviews.length})`} />
+          {reviews.length === 0 ? (
+            <Card>
+              <Text style={styles.noReviews}>No reviews yet — be the first to hire and review {pro.name}.</Text>
+            </Card>
+          ) : (
+            <>
+              <Segmented options={SORTS} value={sort} onChange={setSort} />
+              <View style={{ gap: 12, marginTop: 12 }}>
+                {reviews.map((r, i) => (
+                  <Card key={i}>
+                    <View style={styles.revHead}>
+                      <View style={styles.revAvatar}><Ionicons name="person" size={16} color={Brand.muted} /></View>
+                      <View style={styles.flex}>
+                        <Text style={styles.revAuthor}>{r.author}</Text>
+                        <Text style={styles.revDate}>{pro.trade} · {r.date}</Text>
+                      </View>
+                      <View style={styles.revStars}>
+                        {Array.from({ length: 5 }).map((_, s) => (
+                          <Ionicons key={s} name={s < r.stars ? 'star' : 'star-outline'} size={12} color={Brand.star} />
+                        ))}
+                      </View>
+                    </View>
+                    <Text style={styles.revText}>{r.text}</Text>
+                  </Card>
+                ))}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
 
@@ -374,6 +389,7 @@ const styles = StyleSheet.create({
   revDate: { fontSize: 11, color: Brand.muted, marginTop: 1 },
   revStars: { flexDirection: 'row', gap: 1 },
   revText: { fontSize: 13, color: Brand.body, lineHeight: 19 },
+  noReviews: { fontSize: 13, color: Brand.muted, lineHeight: 19 },
 
   actionBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,

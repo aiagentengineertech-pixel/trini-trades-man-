@@ -52,6 +52,16 @@ export default function ExploreScreen() {
 
         <Text style={styles.count}>{list.length} tradesmen near you</Text>
 
+        {list.length === 0 && (
+          <View style={{ alignItems: 'center', paddingHorizontal: 30, paddingVertical: 50 }}>
+            <Ionicons name="people-outline" size={40} color={Brand.muted} />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: Brand.ink, marginTop: 14 }}>No tradesmen yet</Text>
+            <Text style={{ fontSize: 13, color: Brand.muted, textAlign: 'center', marginTop: 6, lineHeight: 19 }}>
+              Tradesmen who sign up and set their trade will appear here. Are you a pro? Switch to tradesman mode in Profile → Settings.
+            </Text>
+          </View>
+        )}
+
         {list.map((p) => (
           <Pressable key={p.id} style={styles.card} onPress={() => router.push({ pathname: '/pro/[id]', params: { id: p.id } })}>
             <View style={[styles.avatar, { backgroundColor: p.bg }]}>

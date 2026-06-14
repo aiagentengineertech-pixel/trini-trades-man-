@@ -10,10 +10,12 @@ import {
   fetchConversations,
   fetchJobs,
   fetchProfile,
+  fetchPros,
   fetchTrades,
   getOrCreateConversation,
   insertBid,
   insertJob,
+  saveTradesmanProfile,
   updateProfile,
 } from './db';
 import {
@@ -32,32 +34,6 @@ import {
 export type { Bid, Conversation, IconName, Job, Message, MyProfile, Notification, Pro, Review } from './store-types';
 export { tradeStyle } from './store-types';
 
-const PROS: Pro[] = [
-  { id: 'p1', name: "John's Electrical", trade: 'Electrician', rating: 4.9, reviewsCount: 132, jobsDone: 132, area: 'Port of Spain', distance: '1.2 km away', verified: true, ...TRADE_STYLE.Electrician,
-    bio: 'Licensed electrician with 12 years of experience. Residential and commercial wiring, panel upgrades, and emergency repairs across Trinidad.',
-    services: ['Wiring & rewiring', 'Panel upgrades', 'Lighting installation', 'Emergency repairs'],
-    reviews: [ { author: 'Marcus R.', stars: 5, text: 'Fast and professional. Fixed my breaker same day.', date: '2 weeks ago' }, { author: 'Aaliyah K.', stars: 5, text: 'Great work installing my ceiling fans. Fair price.', date: '1 month ago' } ] },
-  { id: 'p2', name: 'Flow Right Plumbing', trade: 'Plumbing', rating: 4.8, reviewsCount: 98, jobsDone: 98, area: 'San Juan', distance: '1.5 km away', verified: true, ...TRADE_STYLE.Plumbing,
-    bio: 'Your trusted plumbing team. Leak detection, water heaters, bathroom fittings and full installations. No job too small.',
-    services: ['Leak repair', 'Water heater install', 'Bathroom fittings', 'Drain cleaning'],
-    reviews: [ { author: 'Devon P.', stars: 5, text: 'Sorted a nasty leak under the sink quickly.', date: '5 days ago' }, { author: 'Nadia S.', stars: 4, text: 'Good job, arrived a little late but quality work.', date: '3 weeks ago' } ] },
-  { id: 'p3', name: 'Cool Breeze AC', trade: 'AC Repair', rating: 4.9, reviewsCount: 76, jobsDone: 76, area: 'Chaguanas', distance: '2.1 km away', verified: true, ...TRADE_STYLE['AC Repair'],
-    bio: 'AC specialists — servicing, gas top-up, installation and repairs for split and window units.',
-    services: ['AC servicing', 'Gas refill', 'New install', 'Repairs'],
-    reviews: [ { author: 'Keron J.', stars: 5, text: 'My unit is like new again. Cold cold!', date: '1 week ago' } ] },
-  { id: 'p4', name: 'BuildRight Carpentry', trade: 'Carpentry', rating: 4.7, reviewsCount: 64, jobsDone: 64, area: 'Arima', distance: '2.3 km away', verified: true, ...TRADE_STYLE.Carpentry,
-    bio: 'Custom carpentry, cabinets, doors and furniture repair. Quality craftsmanship guaranteed.',
-    services: ['Custom cabinets', 'Door fitting', 'Furniture repair', 'Decking'],
-    reviews: [ { author: 'Simone L.', stars: 5, text: 'Built me beautiful kitchen cabinets.', date: '2 months ago' } ] },
-  { id: 'p5', name: 'Fresh Coat Painting', trade: 'Painting', rating: 4.6, reviewsCount: 51, jobsDone: 51, area: 'Diego Martin', distance: '3.0 km away', verified: false, ...TRADE_STYLE.Painting,
-    bio: 'Interior and exterior painting done clean and on time. Free colour consultation.',
-    services: ['Interior painting', 'Exterior painting', 'Waterproofing'],
-    reviews: [ { author: 'Hassan M.', stars: 5, text: 'House looks brand new. Tidy workers.', date: '3 weeks ago' } ] },
-  { id: 'p6', name: 'Solid Block Masonry', trade: 'Masonry', rating: 4.8, reviewsCount: 43, jobsDone: 43, area: 'Couva', distance: '4.2 km away', verified: true, ...TRADE_STYLE.Masonry,
-    bio: 'Blockwork, plastering, tiling and concrete. Reliable masons for any build.',
-    services: ['Blockwork', 'Plastering', 'Tiling', 'Concrete'],
-    reviews: [ { author: 'Raj B.', stars: 5, text: 'Built my boundary wall solid and straight.', date: '1 month ago' } ] },
-];
 
 const SEED_NOTIFICATIONS: Notification[] = [
   { id: 'n1', icon: 'pricetag', color: '#2EA84F', bg: '#E9F8EE', title: 'New quote received', body: "John's Electrical sent a quote on your ceiling fan job.", time: '10m ago', unread: true },
@@ -73,6 +49,7 @@ interface StoreState {
   notifications: Notification[];
   myProfile: MyProfile | null;
   updateMyProfile: (fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; role: string }>) => Promise<void>;
+  setupTradesman: (trade: string, bio: string) => Promise<void>;
   getPro: (id: string) => Pro | undefined;
   getJob: (id: string) => Job | undefined;
   bidsForJob: (jobId: string) => Bid[];
@@ -92,7 +69,7 @@ const StoreContext = createContext<StoreState | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { userId } = useAuth();
-  const [pros] = useState<Pro[]>(PROS);
+  const [pros, setPros] = useState<Pro[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [bids, setBids] = useState<Bid[]>([]);
   const [nameToId, setNameToId] = useState<Record<string, string>>({});
@@ -105,14 +82,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setNameToId(nti);
     const idToName: Record<string, string> = {};
     Object.entries(nti).forEach(([name, id]) => (idToName[id] = name));
-    const [j, b, c] = await Promise.all([
+    const [j, b, c, pr] = await Promise.all([
       fetchJobs(userId, idToName),
       fetchBids(userId),
       userId ? fetchConversations(userId) : Promise.resolve([] as Conversation[]),
+      fetchPros(),
     ]);
     setJobs(j);
     setBids(b);
     setConversations(c);
+    setPros(pr);
     if (userId) setMyProfile(await fetchProfile(userId));
   }, [userId]);
 
@@ -144,6 +123,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         photoUrl: fields.photo_url ?? prev.photoUrl,
         role: fields.role ?? prev.role,
       } : prev));
+    },
+    setupTradesman: async (trade, bio) => {
+      if (!userId) return;
+      await saveTradesmanProfile(userId, trade, bio, nameToId);
+      await load();
     },
     getPro: (id) => pros.find((p) => p.id === id),
     getJob: (id) => jobs.find((j) => j.id === id),
