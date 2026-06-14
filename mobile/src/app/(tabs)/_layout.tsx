@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect } from 'expo-router';
-import { Tabs } from 'expo-router/js-tabs';
+import { Redirect, Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
 import { Glass } from '@/components/ui';
