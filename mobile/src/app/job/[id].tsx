@@ -1,0 +1,242 @@
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Brand } from '@/constants/brand';
+import { useAuth } from '@/lib/auth';
+import { useStore } from '@/lib/store';
+
+export default function JobDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { role } = useAuth();
+  const { getJob, bidsForJob, acceptBid, submitBid } = useStore();
+  const job = getJob(id);
+  const bids = bidsForJob(id);
+
+  const [amount, setAmount] = useState('');
+  const [message, setMessage] = useState('');
+  const [bidSent, setBidSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!job) {
+    return (
+      <SafeAreaView style={styles.flex}>
+        <Text style={{ padding: 24 }}>Job not found.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const isTradesman = role === 'tradesman';
+  const budget =
+    job.budgetMin && job.budgetMax ? `TTD $${job.budgetMin} – $${job.budgetMax}` : 'Open to quotes';
+
+  const sendBid = () => {
+    setError(null);
+    const amt = Number(amount);
+    if (!amt || amt <= 0) {
+      setError('Enter a valid quote amount.');
+      return;
+    }
+    submitBid(job.id, amt, message.trim() || 'I can do this job.');
+    setBidSent(true);
+  };
+
+  return (
+    <SafeAreaView style={styles.flex} edges={['top']}>
+      <View style={styles.topbar}>
+        <Pressable onPress={() => router.back()} hitSlop={10}>
+          <Ionicons name="chevron-back" size={26} color={Brand.ink} />
+        </Pressable>
+        <Text style={styles.topbarTitle}>Job Details</Text>
+        <View style={{ width: 26 }} />
+      </View>
+
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
+          {/* Job header */}
+          <View style={styles.jobHead}>
+            <View style={[styles.jobIcon, { backgroundColor: job.bg }]}>
+              <Ionicons name={job.icon} size={28} color={job.color} />
+            </View>
+            <View style={styles.flex}>
+              <Text style={styles.jobTitle}>{job.title}</Text>
+              <Text style={styles.jobMeta}>{job.trade} · {job.area} · {job.createdAt}</Text>
+            </View>
+          </View>
+
+          <View style={styles.budgetCard}>
+            <Text style={styles.budgetLabel}>Budget</Text>
+            <Text style={styles.budgetValue}>{budget}</Text>
+            <View style={[styles.statusPill, job.status !== 'open' && styles.statusPillHired]}>
+              <Text style={[styles.statusText, job.status !== 'open' && { color: '#fff' }]}>
+                {job.status === 'open' ? 'Open' : job.status === 'hired' ? 'Hired' : 'Done'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.body}>{job.description}</Text>
+          </View>
+
+          {/* TRADESMAN: submit a bid */}
+          {isTradesman ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Your quote</Text>
+              {bidSent ? (
+                <View style={styles.sentCard}>
+                  <Ionicons name="checkmark-circle" size={22} color={Brand.green} />
+                  <Text style={styles.sentText}>Quote submitted! The customer will be notified.</Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.amountField}>
+                    <Text style={styles.currency}>TTD $</Text>
+                    <TextInput
+                      style={styles.amountInput}
+                      placeholder="0.00"
+                      placeholderTextColor={Brand.muted}
+                      keyboardType="numeric"
+                      value={amount}
+                      onChangeText={setAmount}
+                    />
+                  </View>
+                  <TextInput
+                    style={styles.msgInput}
+                    placeholder="Add a message (availability, what's included…)"
+                    placeholderTextColor={Brand.muted}
+                    value={message}
+                    onChangeText={setMessage}
+                    multiline
+                  />
+                  {error && <Text style={styles.error}>{error}</Text>}
+                  <Pressable style={styles.primaryBtn} onPress={sendBid}>
+                    <Ionicons name="send" size={18} color="#fff" />
+                    <Text style={styles.primaryBtnText}>Submit Quote</Text>
+                  </Pressable>
+                </>
+              )}
+            </View>
+          ) : (
+            /* CUSTOMER: view & accept bids */
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Quotes received ({bids.length})</Text>
+              {bids.length === 0 ? (
+                <View style={styles.emptyBids}>
+                  <Ionicons name="hourglass-outline" size={26} color={Brand.muted} />
+                  <Text style={styles.emptyText}>Waiting for tradesmen to send quotes…</Text>
+                </View>
+              ) : (
+                bids.map((b) => (
+                  <View
+                    key={b.id}
+                    style={[styles.bidCard, b.status === 'accepted' && styles.bidAccepted, b.status === 'rejected' && styles.bidRejected]}>
+                    <View style={[styles.bidAvatar, { backgroundColor: b.proBg }]}>
+                      <Ionicons name={b.proIcon} size={20} color={b.proColor} />
+                    </View>
+                    <View style={styles.flex}>
+                      <View style={styles.bidTopRow}>
+                        <Text style={styles.bidName}>{b.proName}</Text>
+                        <View style={styles.bidRating}>
+                          <Ionicons name="star" size={12} color={Brand.star} />
+                          <Text style={styles.bidRatingText}>{b.proRating.toFixed(1)}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.bidMsg}>{b.message}</Text>
+                      <View style={styles.bidBottomRow}>
+                        <Text style={styles.bidAmount}>TTD ${b.amount}</Text>
+                        {b.status === 'pending' && job.status === 'open' && (
+                          <Pressable style={styles.acceptBtn} onPress={() => acceptBid(b.id)}>
+                            <Text style={styles.acceptText}>Accept</Text>
+                          </Pressable>
+                        )}
+                        {b.status === 'accepted' && (
+                          <View style={styles.acceptedTag}>
+                            <Ionicons name="checkmark-circle" size={14} color={Brand.green} />
+                            <Text style={styles.acceptedTagText}>Accepted</Text>
+                          </View>
+                        )}
+                        {b.status === 'rejected' && <Text style={styles.declinedText}>Declined</Text>}
+                      </View>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1, backgroundColor: Brand.surface },
+  topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
+  topbarTitle: { fontSize: 16, fontWeight: '700', color: Brand.ink },
+
+  jobHead: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingTop: 8 },
+  jobIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  jobTitle: { fontSize: 20, fontWeight: '800', color: Brand.ink },
+  jobMeta: { fontSize: 13, color: Brand.muted, marginTop: 4 },
+
+  budgetCard: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: Brand.surfaceAlt,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  budgetLabel: { fontSize: 13, color: Brand.muted, marginRight: 10 },
+  budgetValue: { fontSize: 16, fontWeight: '800', color: Brand.ink, flex: 1 },
+  statusPill: { backgroundColor: Brand.surface, borderWidth: 1, borderColor: Brand.line, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
+  statusPillHired: { backgroundColor: Brand.green, borderColor: Brand.green },
+  statusText: { fontSize: 12, fontWeight: '700', color: Brand.body },
+
+  section: { paddingHorizontal: 20, marginTop: 24 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: Brand.ink, marginBottom: 12 },
+  body: { fontSize: 14, color: Brand.body, lineHeight: 21 },
+
+  emptyBids: { alignItems: 'center', gap: 10, paddingVertical: 30 },
+  emptyText: { fontSize: 14, color: Brand.muted },
+
+  bidCard: { flexDirection: 'row', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1, borderColor: Brand.line, marginBottom: 12 },
+  bidAccepted: { borderColor: Brand.green, backgroundColor: '#F1FBF5' },
+  bidRejected: { opacity: 0.55 },
+  bidAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  bidTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bidName: { fontSize: 15, fontWeight: '700', color: Brand.ink },
+  bidRating: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  bidRatingText: { fontSize: 12, fontWeight: '700', color: Brand.ink },
+  bidMsg: { fontSize: 13, color: Brand.body, marginTop: 4, lineHeight: 18 },
+  bidBottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
+  bidAmount: { fontSize: 17, fontWeight: '800', color: Brand.red },
+  acceptBtn: { backgroundColor: Brand.red, paddingHorizontal: 18, paddingVertical: 8, borderRadius: 10 },
+  acceptText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  acceptedTag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  acceptedTagText: { color: Brand.green, fontWeight: '700', fontSize: 13 },
+  declinedText: { color: Brand.muted, fontWeight: '600', fontSize: 13 },
+
+  amountField: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Brand.line, borderRadius: 12, paddingHorizontal: 14 },
+  currency: { fontSize: 16, fontWeight: '700', color: Brand.muted },
+  amountInput: { flex: 1, paddingVertical: 14, fontSize: 16, color: Brand.ink },
+  msgInput: { borderWidth: 1, borderColor: Brand.line, borderRadius: 12, padding: 14, marginTop: 12, minHeight: 80, textAlignVertical: 'top', fontSize: 15, color: Brand.ink },
+  error: { color: Brand.red, fontWeight: '600', marginTop: 12 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.red, borderRadius: 14, paddingVertical: 16, marginTop: 16 },
+  primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  sentCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F1FBF5', borderRadius: 14, padding: 16 },
+  sentText: { flex: 1, fontSize: 14, color: Brand.body, fontWeight: '600' },
+});

@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Expo / build output
+.expo/
+**/.expo/
+dist/
+**/dist/
+web-build/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env*.local
+**/.env
+!**/.env.example
+
+# Native build artifacts
+/ios
+/android
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# OS / editor
+.DS_Store
+*.pem
+Thumbs.db
+
+# Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
