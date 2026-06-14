@@ -24,7 +24,8 @@ const TRUST = [
 ];
 
 export default function HomeScreen() {
-  const { pros } = useStore();
+  const { pros, openJobs } = useStore();
+  const jobs = openJobs();
   return (
     <View style={styles.root}>
       <Ambient />
@@ -129,6 +130,31 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
+        {/* Jobs Near You */}
+        <SectionHeader title="Jobs Near You" onPress={() => router.push('/jobs')} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.prosRow}>
+          {jobs.map((j) => (
+            <Pressable key={j.id} style={styles.proCard} onPress={() => router.push({ pathname: '/job/[id]', params: { id: j.id } })}>
+              <View style={[styles.proImage, { backgroundColor: j.bg }]}>
+                <Ionicons name={j.icon} size={40} color={j.color} />
+                <View style={styles.ratingPill}>
+                  <Text style={styles.ratingText}>{j.createdAt}</Text>
+                </View>
+              </View>
+              <Text style={styles.proName} numberOfLines={1}>{j.title}</Text>
+              <Text style={styles.proTrade}>{j.trade}</Text>
+              <View style={styles.proMetaRow}>
+                <Ionicons name="location" size={12} color={Brand.red} />
+                <Text style={styles.proDistance}>{j.area}</Text>
+              </View>
+              <Text style={styles.jobBudgetLine}>
+                {j.budgetMin && j.budgetMax ? `TTD $${j.budgetMin}–$${j.budgetMax}` : 'Open to quotes'}
+              </Text>
+              <View style={styles.hireBtn}><Text style={styles.hireBtnText}>View Job</Text></View>
+            </Pressable>
+          ))}
+        </ScrollView>
+
         {/* Post a Job banner */}
         <View style={styles.banner}>
           <View style={styles.bannerIcon}><Ionicons name="clipboard" size={24} color="#fff" /></View>
@@ -213,6 +239,7 @@ const styles = StyleSheet.create({
   proTrade: { fontSize: 12, color: Brand.muted, paddingHorizontal: 12, marginTop: 2 },
   proMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, marginTop: 8 },
   proDistance: { fontSize: 11, color: Brand.body },
+  jobBudgetLine: { fontSize: 12, fontWeight: '800', color: Brand.red, paddingHorizontal: 12, marginTop: 6 },
   verifiedPill: { marginLeft: 'auto', borderWidth: 1, borderColor: Brand.red, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 },
   verifiedText: { fontSize: 9, fontWeight: '700', color: Brand.red },
   hireBtn: { backgroundColor: Brand.red, marginHorizontal: 12, marginTop: 12, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
