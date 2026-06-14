@@ -6,18 +6,23 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/brand';
+import { useAuth } from '@/lib/auth';
+import { uploadImage } from '@/lib/db';
 import { pickImage } from '@/lib/images';
 
 type Step = 'id' | 'selfie' | 'skill';
 
 export default function VerificationScreen() {
+  const { userId } = useAuth();
   const [docs, setDocs] = useState<Record<Step, string | null>>({ id: null, selfie: null, skill: null });
   const [submitted, setSubmitted] = useState(false);
 
   const allDone = !!docs.id && !!docs.selfie;
   const mark = async (s: Step) => {
     const uri = await pickImage();
-    if (uri) setDocs((p) => ({ ...p, [s]: uri }));
+    if (!uri) return;
+    setDocs((p) => ({ ...p, [s]: uri }));
+    if (userId) uploadImage('verification', `${userId}/${s}.jpg`, uri); // private bucket
   };
 
   if (submitted) {

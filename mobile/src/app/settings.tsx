@@ -78,7 +78,7 @@ export default function SettingsScreen() {
         <View style={styles.gap} />
         <SectionTitle title="Operator (demo)" />
         <Card style={styles.cardTight}>
-          <ListRow icon="shield-half-outline" label="Admin console" value="Platform ops" onPress={() => router.push('/admin/index')} last />
+          <ListRow icon="shield-half-outline" label="Admin console" value="Platform ops" onPress={() => router.push('/admin')} last />
         </Card>
 
         {/* Account actions */}

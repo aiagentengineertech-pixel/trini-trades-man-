@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -42,10 +43,14 @@ const TXNS = [
 ];
 
 export default function ProfileScreen() {
-  const { email, isDemo } = useAuth();
-  const { pros } = useStore();
+  const { email } = useAuth();
+  const { pros, myProfile } = useStore();
   const [tab, setTab] = useState<JobStatusTab>('Active');
   const [saved, setSaved] = useState(pros.slice(0, 4));
+  const displayName =
+    myProfile?.fullName?.trim() ||
+    (email ? email.split('@')[0].replace(/[._+]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'My Account');
+  const area = myProfile?.area?.trim() || 'Trinidad & Tobago';
 
   return (
     <View style={styles.root}>
@@ -64,15 +69,19 @@ export default function ProfileScreen() {
 
         <View style={styles.header}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={44} color={Brand.muted} />
+            {myProfile?.photoUrl ? (
+              <Image source={{ uri: myProfile.photoUrl }} style={styles.avatarImg} contentFit="cover" />
+            ) : (
+              <Ionicons name="person" size={44} color={Brand.muted} />
+            )}
             <View style={styles.avatarCheck}>
               <Ionicons name="checkmark" size={12} color="#fff" />
             </View>
           </View>
-          <Text style={styles.name}>{isDemo ? 'Ishmael Sandy' : 'My Account'}</Text>
+          <Text style={styles.name}>{displayName}</Text>
           <View style={styles.locationRow}>
             <Ionicons name="location" size={14} color={Brand.muted} />
-            <Text style={styles.location}>Diego Martin, Trinidad</Text>
+            <Text style={styles.location}>{area}</Text>
           </View>
           <Text style={styles.member}>Member since June 2026</Text>
 
@@ -241,7 +250,8 @@ const styles = StyleSheet.create({
   iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
 
   header: { alignItems: 'center', paddingTop: 4 },
-  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 12, overflow: 'hidden' },
+  avatarImg: { width: 100, height: 100 },
   avatarCheck: { position: 'absolute', bottom: 4, right: 4, width: 26, height: 26, borderRadius: 13, backgroundColor: Brand.green, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#fff' },
   name: { fontSize: 24, fontWeight: '800', color: Brand.ink, letterSpacing: -0.4 },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },

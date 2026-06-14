@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,20 +14,37 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/brand';
+import { useAuth } from '@/lib/auth';
+import { fetchMessages, sendChatMessage, subscribeToMessages } from '@/lib/db';
 import { useStore } from '@/lib/store';
+import type { Message } from '@/lib/store-types';
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getConversation, messagesFor, sendMessage } = useStore();
+  const { userId } = useAuth();
+  const { getConversation } = useStore();
   const conv = getConversation(id);
-  const messages = messagesFor(id);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
-  const send = () => {
-    if (!text.trim()) return;
-    sendMessage(id, text.trim());
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    fetchMessages(id, userId).then((m) => { if (active) setMessages(m); });
+    const unsub = subscribeToMessages(id, userId, (newMsg) => {
+      setMessages((prev) => (prev.some((x) => x.id === newMsg.id) ? prev : [...prev, newMsg]));
+    });
+    return () => { active = false; unsub(); };
+  }, [id, userId]);
+
+  const send = async () => {
+    if (!text.trim() || !userId) return;
+    const body = text.trim();
     setText('');
+    await sendChatMessage(id, userId, body);
+    const fresh = await fetchMessages(id, userId);
+    setMessages(fresh);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
   };
 

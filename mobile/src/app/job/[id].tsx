@@ -19,10 +19,22 @@ import { useStore } from '@/lib/store';
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { role } = useAuth();
-  const { getJob, bidsForJob, acceptBid, submitBid } = useStore();
+  const { role, userId } = useAuth();
+  const { getJob, bidsForJob, acceptBid, submitBid, startConversation } = useStore();
   const job = getJob(id);
   const bids = bidsForJob(id);
+
+  const messagePro = async (tradesmanId: string) => {
+    if (!userId) return;
+    const convId = await startConversation(userId, tradesmanId, id);
+    if (convId) router.push({ pathname: '/chat/[id]', params: { id: convId } });
+  };
+
+  const messageCustomer = async () => {
+    if (!userId || !job) return;
+    const convId = await startConversation(job.customerId, userId, id);
+    if (convId) router.push({ pathname: '/chat/[id]', params: { id: convId } });
+  };
 
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
@@ -41,14 +53,14 @@ export default function JobDetailScreen() {
   const budget =
     job.budgetMin && job.budgetMax ? `TTD $${job.budgetMin} – $${job.budgetMax}` : 'Open to quotes';
 
-  const sendBid = () => {
+  const sendBid = async () => {
     setError(null);
     const amt = Number(amount);
     if (!amt || amt <= 0) {
       setError('Enter a valid quote amount.');
       return;
     }
-    submitBid(job.id, amt, message.trim() || 'I can do this job.');
+    await submitBid(job.id, amt, message.trim() || 'I can do this job.');
     setBidSent(true);
   };
 
@@ -95,10 +107,16 @@ export default function JobDetailScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Your quote</Text>
               {bidSent ? (
-                <View style={styles.sentCard}>
-                  <Ionicons name="checkmark-circle" size={22} color={Brand.green} />
-                  <Text style={styles.sentText}>Quote submitted! The customer will be notified.</Text>
-                </View>
+                <>
+                  <View style={styles.sentCard}>
+                    <Ionicons name="checkmark-circle" size={22} color={Brand.green} />
+                    <Text style={styles.sentText}>Quote submitted! The customer will be notified.</Text>
+                  </View>
+                  <Pressable style={styles.msgCustomerBtn} onPress={messageCustomer}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={18} color={Brand.red} />
+                    <Text style={styles.msgCustomerText}>Message the customer</Text>
+                  </Pressable>
+                </>
               ) : (
                 <>
                   <View style={styles.amountField}>
@@ -156,6 +174,10 @@ export default function JobDetailScreen() {
                       <Text style={styles.bidMsg}>{b.message}</Text>
                       <View style={styles.bidBottomRow}>
                         <Text style={styles.bidAmount}>TTD ${b.amount}</Text>
+                        <Pressable style={styles.msgBtn} onPress={() => messagePro(b.proId)}>
+                          <Ionicons name="chatbubble-ellipses-outline" size={15} color={Brand.red} />
+                          <Text style={styles.msgBtnText}>Message</Text>
+                        </Pressable>
                         {b.status === 'pending' && job.status === 'open' && (
                           <Pressable style={styles.acceptBtn} onPress={() => acceptBid(b.id)}>
                             <Text style={styles.acceptText}>Accept</Text>
@@ -226,6 +248,8 @@ const styles = StyleSheet.create({
   bidAmount: { fontSize: 17, fontWeight: '800', color: Brand.red },
   acceptBtn: { backgroundColor: Brand.red, paddingHorizontal: 18, paddingVertical: 8, borderRadius: 10 },
   acceptText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  msgBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: Brand.line, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 },
+  msgBtnText: { color: Brand.red, fontWeight: '700', fontSize: 12 },
   acceptedTag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   acceptedTagText: { color: Brand.green, fontWeight: '700', fontSize: 13 },
   declinedText: { color: Brand.muted, fontWeight: '600', fontSize: 13 },
@@ -239,4 +263,6 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   sentCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F1FBF5', borderRadius: 14, padding: 16 },
   sentText: { flex: 1, fontSize: 14, color: Brand.body, fontWeight: '600' },
+  msgCustomerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: Brand.red, borderRadius: 14, paddingVertical: 14, marginTop: 12 },
+  msgCustomerText: { color: Brand.red, fontWeight: '700', fontSize: 15 },
 });

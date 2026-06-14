@@ -127,19 +127,27 @@ function CustomerPost() {
     setError(null);
   };
 
-  const submit = () => {
+  const [posting, setPosting] = useState(false);
+
+  const submit = async () => {
     setError(null);
     if (!trade || !title.trim()) {
       setError('Pick a trade and add a short title.');
       return;
     }
-    const id = addJob({
+    setPosting(true);
+    const id = await addJob({
       title: title.trim(),
       trade,
       description: description.trim(),
       budgetMin: budgetMin ? Number(budgetMin) : undefined,
       budgetMax: budgetMax ? Number(budgetMax) : undefined,
     });
+    setPosting(false);
+    if (!id) {
+      setError('Could not post the job. Please try again.');
+      return;
+    }
     setPostedId(id);
     notifyLocal('Job posted ✅', `Verified ${trade.toLowerCase()} tradesmen near you are being notified.`);
   };
@@ -237,9 +245,9 @@ function CustomerPost() {
 
           {error && <Text style={styles.error}>{error}</Text>}
 
-          <Pressable style={styles.primaryBtn} onPress={submit}>
+          <Pressable style={styles.primaryBtn} onPress={submit} disabled={posting}>
             <Ionicons name="send" size={18} color="#fff" />
-            <Text style={styles.primaryBtnText}>Post Job & Get Quotes</Text>
+            <Text style={styles.primaryBtnText}>{posting ? 'Posting…' : 'Post Job & Get Quotes'}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

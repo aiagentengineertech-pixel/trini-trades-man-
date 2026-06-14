@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,20 +16,50 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
+import { uploadImage } from '@/lib/db';
 import { pickImage } from '@/lib/images';
+import { useStore } from '@/lib/store';
 
 export default function EditProfileScreen() {
-  const { email } = useAuth();
+  const { email, userId } = useAuth();
+  const { myProfile, updateMyProfile } = useStore();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [area, setArea] = useState('Port of Spain');
+  const [area, setArea] = useState('');
   const [bio, setBio] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (myProfile) {
+      setName(myProfile.fullName);
+      setPhone(myProfile.phone);
+      setArea(myProfile.area || 'Port of Spain');
+      setPhoto(myProfile.photoUrl);
+    }
+  }, [myProfile]);
 
   const choosePhoto = async () => {
     const uri = await pickImage();
-    if (uri) setPhoto(uri);
+    if (!uri || !userId) return;
+    setPhoto(uri); // show immediately
+    setBusy(true);
+    const url = await uploadImage('uploads', `avatars/${userId}.jpg`, uri);
+    setBusy(false);
+    if (url) setPhoto(url + '?t=' + Date.now());
+  };
+
+  const save = async () => {
+    setBusy(true);
+    await updateMyProfile({
+      full_name: name.trim(),
+      phone: phone.trim(),
+      area: area.trim(),
+      ...(photo && !photo.startsWith('file') && !photo.startsWith('blob') ? { photo_url: photo.split('?')[0] } : {}),
+    });
+    setBusy(false);
+    setSaved(true);
   };
 
   return (
@@ -73,8 +103,8 @@ export default function EditProfileScreen() {
             </View>
           )}
 
-          <Pressable style={styles.saveBtn} onPress={() => setSaved(true)}>
-            <Text style={styles.saveBtnText}>Save Changes</Text>
+          <Pressable style={styles.saveBtn} onPress={save} disabled={busy}>
+            <Text style={styles.saveBtnText}>{busy ? 'Saving…' : 'Save Changes'}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

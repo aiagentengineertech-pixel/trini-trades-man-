@@ -16,7 +16,7 @@ const SORTS = ['Newest', 'Highest', 'Relevant'];
 
 export default function ProProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getPro, startConversation } = useStore();
+  const { getPro } = useStore();
   const pro = getPro(id);
   const [readMore, setReadMore] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -28,10 +28,9 @@ export default function ProProfileScreen() {
     );
   }
 
-  const message = (initial?: string) => {
-    const convId = startConversation(pro.id, initial);
-    router.push({ pathname: '/chat/[id]', params: { id: convId } });
-  };
+  // Featured pros are demo listings — to actually engage a pro, post a job and
+  // receive real quotes (real messaging happens in the job/bid flow).
+  const message = (_initial?: string) => router.push('/post');
 
   // Display data for the rich profile (mocked per pro for the prototype).
   const yearsExp = 12;

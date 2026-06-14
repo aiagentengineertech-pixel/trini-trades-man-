@@ -15,10 +15,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/brand';
-import { isSupabaseConfigured, useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth';
 
 export default function LoginScreen() {
-  const { signIn, signUp, continueDemo, signedIn } = useAuth();
+  const { signIn, signUp, signedIn } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -113,23 +113,11 @@ export default function LoginScreen() {
             )}
           </Pressable>
 
-          <View style={styles.dividerRow}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.divider} />
-          </View>
-
-          <Pressable style={styles.ghostBtn} onPress={continueDemo}>
-            <Ionicons name="eye-outline" size={18} color={Brand.body} />
-            <Text style={styles.ghostBtnText}>Continue without an account</Text>
-          </Pressable>
-
-          {!isSupabaseConfigured && (
-            <Text style={styles.hint}>
-              Tip: connect Supabase in mobile/.env to enable real sign-up. Until then,
-              use “Continue without an account” to explore the app.
-            </Text>
-          )}
+          <Text style={styles.hint}>
+            {mode === 'signin'
+              ? 'New here? Tap “Sign Up” above to create an account.'
+              : 'By signing up you agree to our Terms & Privacy Policy.'}
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -315,3 +315,51 @@ insert into trades (name, icon) values
   ('Painting',    'color-fill'),
   ('Masonry',     'cube')
 on conflict (name) do nothing;
+
+-- ============================================================
+-- accept_bid(p_bid_id): a customer accepts a quote on their own job.
+-- security definer so it can update bids/job atomically, with an
+-- ownership check so only the job's customer can call it.
+-- ============================================================
+create or replace function accept_bid(p_bid_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_job uuid;
+  v_customer uuid;
+begin
+  select job_id into v_job from bids where id = p_bid_id;
+  if v_job is null then raise exception 'bid not found'; end if;
+  select customer_id into v_customer from jobs where id = v_job;
+  if v_customer is distinct from auth.uid() then
+    raise exception 'only the job owner can accept a bid';
+  end if;
+  update bids set status = 'accepted' where id = p_bid_id;
+  update bids set status = 'rejected' where job_id = v_job and id <> p_bid_id;
+  update jobs set status = 'hired' where id = v_job;
+end;
+$$;
+
+-- ============================================================
+-- Storage buckets + policies (photos & ID documents)
+-- ============================================================
+insert into storage.buckets (id, name, public) values ('uploads', 'uploads', true) on conflict (id) do nothing;
+insert into storage.buckets (id, name, public) values ('verification', 'verification', false) on conflict (id) do nothing;
+
+-- 'uploads' (public): anyone can read; signed-in users can write
+drop policy if exists "uploads read" on storage.objects;
+create policy "uploads read" on storage.objects for select using (bucket_id = 'uploads');
+drop policy if exists "uploads insert" on storage.objects;
+create policy "uploads insert" on storage.objects for insert to authenticated with check (bucket_id = 'uploads');
+drop policy if exists "uploads update" on storage.objects;
+create policy "uploads update" on storage.objects for update to authenticated using (bucket_id = 'uploads');
+
+-- 'verification' (private): each user can only read/write their own folder
+drop policy if exists "verif insert own" on storage.objects;
+create policy "verif insert own" on storage.objects for insert to authenticated
+  with check (bucket_id = 'verification' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "verif read own" on storage.objects;
+create policy "verif read own" on storage.objects for select to authenticated
+  using (bucket_id = 'verification' and (storage.foldername(name))[1] = auth.uid()::text);
