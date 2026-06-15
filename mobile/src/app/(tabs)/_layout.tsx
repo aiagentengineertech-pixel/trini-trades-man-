@@ -27,7 +27,7 @@ export default function TabsLayout() {
           paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarBackground: () => <Glass intensity={60} style={StyleSheet.absoluteFill} />,
+        tabBarBackground: () => <Glass intensity={60} style={StyleSheet.absoluteFillObject} />,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}>
       <Tabs.Screen
