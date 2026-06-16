@@ -191,7 +191,7 @@ export async function updateProfile(
 
 // ---------------- Pros (real tradesmen) ----------------
 
-import type { PayoutAccount, PortfolioItem, Pro, ProStats, Review } from './store-types';
+import type { PayoutAccount, PortfolioItem, Pro, ProStats, Review, TeamMember, TeamRole } from './store-types';
 
 export async function fetchPayoutAccount(userId: string): Promise<PayoutAccount | null> {
   const { data, error } = await supabase
@@ -351,6 +351,90 @@ export async function saveTradesmanProfile(
     await supabase.from('tradesman_trades').upsert({ user_id: userId, trade_id: tradeId });
   }
   return true;
+}
+
+// ---------------- Team ----------------
+
+export async function fetchTeam(ownerId: string): Promise<TeamMember[]> {
+  const { data, error } = await supabase
+    .from('team_members')
+    .select('id, owner_id, member_id, email, name, role, status, member:profiles!member_id(full_name)')
+    .eq('owner_id', ownerId)
+    .neq('status', 'removed')
+    .order('created_at', { ascending: true });
+  if (error || !data) return [];
+  return data.map((r: any) => ({
+    id: r.id,
+    ownerId: r.owner_id,
+    memberId: r.member_id,
+    email: r.email,
+    name: r.name || r.member?.full_name || r.email,
+    role: r.role as TeamRole,
+    status: r.status,
+  }));
+}
+
+export async function inviteTeamMember(
+  ownerId: string,
+  email: string,
+  name: string,
+  role: TeamRole = 'employee',
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('team_members')
+    .insert({ owner_id: ownerId, email: email.trim().toLowerCase(), name: name.trim() || null, role });
+  if (error) {
+    if (error.code === '23505') return { ok: false, error: 'That email is already on your team.' };
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}
+
+export async function updateTeamRole(id: string, role: TeamRole): Promise<void> {
+  await supabase.from('team_members').update({ role }).eq('id', id);
+}
+
+export async function removeTeamMember(id: string): Promise<void> {
+  await supabase.from('team_members').delete().eq('id', id);
+}
+
+export async function fetchMyInvites(email: string | null): Promise<TeamMember[]> {
+  if (!email) return [];
+  const { data, error } = await supabase
+    .from('team_members')
+    .select('id, owner_id, member_id, email, name, role, status, owner:profiles!owner_id(full_name)')
+    .eq('email', email.trim().toLowerCase())
+    .eq('status', 'invited');
+  if (error || !data) return [];
+  return data.map((r: any) => ({
+    id: r.id, ownerId: r.owner_id, memberId: r.member_id, email: r.email,
+    name: r.name || '', role: r.role as TeamRole, status: r.status,
+    businessName: r.owner?.full_name || 'a business',
+  }));
+}
+
+export async function fetchMyMemberships(userId: string): Promise<TeamMember[]> {
+  const { data, error } = await supabase
+    .from('team_members')
+    .select('id, owner_id, member_id, email, name, role, status, owner:profiles!owner_id(full_name)')
+    .eq('member_id', userId)
+    .eq('status', 'active');
+  if (error || !data) return [];
+  return data.map((r: any) => ({
+    id: r.id, ownerId: r.owner_id, memberId: r.member_id, email: r.email,
+    name: r.name || '', role: r.role as TeamRole, status: r.status,
+    businessName: r.owner?.full_name || 'a business',
+  }));
+}
+
+export async function acceptTeamInvite(id: string): Promise<boolean> {
+  const { error } = await supabase.rpc('accept_team_invite', { p_id: id });
+  if (error) { console.warn('[db] acceptTeamInvite failed:', error.message); return false; }
+  return true;
+}
+
+export async function leaveTeam(id: string): Promise<void> {
+  await supabase.rpc('leave_team', { p_id: id });
 }
 
 // ---------------- Storage ----------------

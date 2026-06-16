@@ -37,7 +37,7 @@ const HUB: { icon: IconName; label: string; desc: string; route: Href; tint: str
   { icon: 'document-text-outline', label: 'Quotes', desc: 'Manage quotes', route: '/quotes', tint: '#2F6FED', bg: '#EAF1FE' },
   { icon: 'briefcase-outline', label: 'Jobs', desc: 'Active & completed', route: '/jobs-manage', tint: '#E8852B', bg: '#FDF1E6' },
   { icon: 'stats-chart-outline', label: 'Analytics', desc: 'Views & conversion', route: '/analytics', tint: '#8B5CF6', bg: '#F1ECFE' },
-  { icon: 'people-outline', label: 'Team', desc: 'Staff & roles', route: '/analytics', tint: '#16B1C9', bg: '#E6F8FB' },
+  { icon: 'people-outline', label: 'Team', desc: 'Staff & roles', route: '/team', tint: '#16B1C9', bg: '#E6F8FB' },
 ];
 
 function BusinessHub() {

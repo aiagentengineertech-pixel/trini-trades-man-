@@ -472,6 +472,72 @@ $$;
 grant execute on function get_pro_stats(uuid) to anon, authenticated;
 
 -- ============================================================
+-- team_members — a tradesman business (the owner) and its employees.
+-- Two roles only: 'owner' (the account holder) and 'employee'.
+-- Employees are invited by email; they accept once logged in with that email.
+-- ============================================================
+do $$ begin
+  create type team_role as enum ('owner', 'employee');
+exception when duplicate_object then null; end $$;
+
+create table if not exists team_members (
+  id         uuid primary key default uuid_generate_v4(),
+  owner_id   uuid not null references profiles(id) on delete cascade, -- the business
+  member_id  uuid references profiles(id) on delete set null,         -- the employee once joined
+  email      text not null,                                           -- invited email
+  name       text,                                                    -- owner-provided display name
+  role       team_role not null default 'employee',
+  status     text not null default 'invited',                         -- 'invited' | 'active' | 'removed'
+  created_at timestamptz not null default now(),
+  unique (owner_id, email)
+);
+create index if not exists team_owner_idx  on team_members(owner_id);
+create index if not exists team_member_idx on team_members(member_id);
+create index if not exists team_email_idx  on team_members(lower(email));
+alter table team_members enable row level security;
+
+-- owner manages their own roster (invite / change / remove)
+drop policy if exists "team owner all" on team_members;
+create policy "team owner all" on team_members for all
+  using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
+-- an employee can read invites addressed to their email, and their memberships
+drop policy if exists "team member read" on team_members;
+create policy "team member read" on team_members for select
+  using (member_id = auth.uid() or lower(email) = lower(auth.jwt() ->> 'email'));
+
+-- accept an invite (employee). security definer so we set only member_id+status.
+create or replace function accept_team_invite(p_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_email text;
+begin
+  select lower(email) into v_email from team_members where id = p_id and status = 'invited';
+  if v_email is null then raise exception 'invite not found'; end if;
+  if v_email is distinct from lower(auth.jwt() ->> 'email') then
+    raise exception 'this invite is not for you';
+  end if;
+  update team_members set member_id = auth.uid(), status = 'active' where id = p_id;
+end;
+$$;
+grant execute on function accept_team_invite(uuid) to authenticated;
+
+-- leave a team (employee removes their own membership)
+create or replace function leave_team(p_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  update team_members set status = 'removed' where id = p_id and member_id = auth.uid();
+end;
+$$;
+grant execute on function leave_team(uuid) to authenticated;
+
+-- ============================================================
 -- Storage buckets + policies (photos & ID documents)
 -- ============================================================
 insert into storage.buckets (id, name, public) values ('uploads', 'uploads', true) on conflict (id) do nothing;

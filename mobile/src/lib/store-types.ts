@@ -53,6 +53,19 @@ export interface PortfolioItem {
   date: string;
 }
 
+export type TeamRole = 'owner' | 'employee';
+
+export interface TeamMember {
+  id: string;
+  ownerId: string;
+  memberId: string | null;
+  email: string;
+  name: string;
+  role: TeamRole;
+  status: 'invited' | 'active' | 'removed';
+  businessName?: string; // populated for invites/memberships
+}
+
 export interface PayoutAccount {
   method: 'bank' | 'wipay';
   bankName: string;
