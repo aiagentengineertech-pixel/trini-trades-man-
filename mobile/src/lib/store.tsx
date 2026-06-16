@@ -9,6 +9,7 @@ import {
   acceptBidRpc,
   completeJobRpc,
   fetchBids,
+  fetchNotifications,
   fetchConversations,
   fetchJobs,
   fetchProfile,
@@ -36,12 +37,6 @@ import {
 export type { Bid, Conversation, IconName, Job, Message, MyProfile, Notification, Pro, Review } from './store-types';
 export { tradeStyle } from './store-types';
 
-
-const SEED_NOTIFICATIONS: Notification[] = [
-  { id: 'n1', icon: 'pricetag', color: '#2EA84F', bg: '#E9F8EE', title: 'New quote received', body: "John's Electrical sent a quote on your ceiling fan job.", time: '10m ago', unread: true },
-  { id: 'n2', icon: 'chatbubble-ellipses', color: '#2F6FED', bg: '#EAF1FE', title: 'New message', body: 'Flow Right Plumbing replied to your enquiry.', time: '1h ago', unread: true },
-  { id: 'n3', icon: 'checkmark-circle', color: '#E11D26', bg: '#FDECEC', title: 'Job confirmed', body: 'Your AC service has been scheduled for Thursday.', time: 'Yesterday', unread: false },
-];
 
 interface StoreState {
   pros: Pro[];
@@ -97,7 +92,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [nameToId, setNameToId] = useState<Record<string, string>>({});
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [myProfile, setMyProfile] = useState<MyProfile | null>(null);
-  const [notifications] = useState<Notification[]>(SEED_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const load = useCallback(async () => {
     const nti = await fetchTrades();
@@ -114,7 +109,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setBids(b);
     setConversations(c);
     setPros(pr);
-    if (userId) setMyProfile(await fetchProfile(userId));
+    if (userId) {
+      setMyProfile(await fetchProfile(userId));
+      setNotifications(await fetchNotifications(userId));
+    }
   }, [userId]);
 
   useEffect(() => {
@@ -124,6 +122,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setBids([]);
       setConversations([]);
       setMyProfile(null);
+      setNotifications([]);
     }
   }, [userId, load]);
 

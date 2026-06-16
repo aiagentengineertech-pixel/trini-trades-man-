@@ -313,6 +313,23 @@ export async function fetchProReviews(proId: string): Promise<Review[]> {
   }));
 }
 
+export interface ReviewGiven { proName: string; stars: number; text: string; date: string; }
+
+export async function fetchReviewsGiven(userId: string): Promise<ReviewGiven[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('stars, comment, created_at, reviewee:profiles!reviewee_id(full_name)')
+    .eq('reviewer_id', userId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map((r: any) => ({
+    proName: r.reviewee?.full_name || 'Tradesman',
+    stars: r.stars,
+    text: r.comment || '',
+    date: relativeTime(r.created_at),
+  }));
+}
+
 export async function fetchProStats(proId: string): Promise<ProStats | null> {
   const { data, error } = await supabase.rpc('get_pro_stats', { p_pro_id: proId });
   if (error || !data) {

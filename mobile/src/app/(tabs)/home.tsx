@@ -24,8 +24,9 @@ const TRUST = [
 ];
 
 export default function HomeScreen() {
-  const { pros, openJobs, distanceKm, distanceLabel } = useStore();
+  const { pros, openJobs, distanceKm, distanceLabel, notifications, myProfile } = useStore();
   const jobs = openJobs();
+  const unread = notifications.filter((n) => n.unread).length;
   const nearbyPros = [...pros].sort((a, b) => {
     const da = distanceKm(a.lat, a.lng);
     const db = distanceKm(b.lat, b.lng);
@@ -56,7 +57,7 @@ export default function HomeScreen() {
           <View style={styles.headerActions}>
             <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
               <Ionicons name="notifications-outline" size={24} color={Brand.ink} />
-              <View style={styles.badge}><Text style={styles.badgeText}>2</Text></View>
+              {unread > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unread}</Text></View>}
             </Pressable>
             <Pressable style={styles.avatar} onPress={() => router.push('/profile')}>
               <Ionicons name="person" size={20} color={Brand.muted} />
@@ -65,9 +66,9 @@ export default function HomeScreen() {
         </View>
 
         {/* Location */}
-        <Pressable style={styles.locationRow}>
+        <Pressable style={styles.locationRow} onPress={() => router.push('/edit-profile')}>
           <Ionicons name="location" size={16} color={Brand.red} />
-          <Text style={styles.locationText}>Port of Spain, Trinidad & Tobago</Text>
+          <Text style={styles.locationText}>{myProfile?.area ? `${myProfile.area}, Trinidad & Tobago` : 'Trinidad & Tobago'}</Text>
           <Ionicons name="chevron-down" size={16} color={Brand.muted} />
         </Pressable>
 
