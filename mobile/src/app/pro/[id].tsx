@@ -9,7 +9,7 @@ import { CoverageMap } from '@/components/CoverageMap';
 import { Ambient, Card, Glass, ProAvatar, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { fetchPortfolio, fetchProReviews, fetchProStats } from '@/lib/db';
+import { fetchPortfolio, fetchProReviews, fetchProStats, logProfileView } from '@/lib/db';
 import { useStore } from '@/lib/store';
 import type { PortfolioItem, ProStats, Review } from '@/lib/store-types';
 
@@ -31,7 +31,8 @@ export default function ProProfileScreen() {
     fetchProReviews(id).then(setReviews);
     fetchPortfolio(id).then(setPortfolio);
     fetchProStats(id).then(setStats);
-  }, [id]);
+    logProfileView(id, userId);
+  }, [id, userId]);
 
   if (!pro) {
     return (

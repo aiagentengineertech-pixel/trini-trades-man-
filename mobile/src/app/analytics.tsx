@@ -1,25 +1,36 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, SectionTitle, StatCard } from '@/components/ui';
 import { Brand } from '@/constants/brand';
-
-const POPULAR = [
-  { name: 'Panel upgrades', pct: 41 },
-  { name: 'Wiring & rewiring', pct: 28 },
-  { name: 'Lighting installation', pct: 19 },
-  { name: 'Emergency repairs', pct: 12 },
-];
-
-const HEAT = [
-  { area: 'Port of Spain', level: 0.95 }, { area: 'San Juan', level: 0.7 }, { area: 'Diego Martin', level: 0.8 },
-  { area: 'Chaguanas', level: 0.6 }, { area: 'Arima', level: 0.45 }, { area: 'San Fernando', level: 0.55 },
-  { area: 'Couva', level: 0.3 }, { area: 'Tunapuna', level: 0.5 }, { area: 'Point Fortin', level: 0.2 },
-];
+import { useAuth } from '@/lib/auth';
+import { countProfileViews } from '@/lib/db';
+import { useStore } from '@/lib/store';
 
 export default function AnalyticsScreen() {
+  const { userId } = useAuth();
+  const { proSummary, conversations, jobs } = useStore();
+  const s = proSummary();
+  const [views, setViews] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (userId) countProfileViews(userId).then(setViews);
+  }, [userId]);
+
+  // Real platform demand from open jobs.
+  const open = jobs.filter((j) => j.status === 'open');
+  const byTrade = tally(open.map((j) => j.trade));
+  const byArea = tally(open.map((j) => j.area));
+  const popular = top(byTrade, open.length, 4);
+  const maxArea = Math.max(1, ...Object.values(byArea));
+  const heat = Object.entries(byArea)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 9)
+    .map(([area, n]) => ({ area, level: n / maxArea }));
+
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
       <View style={styles.topbar}>
@@ -30,23 +41,24 @@ export default function AnalyticsScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         <View style={styles.statsRow}>
-          <StatCard value="1,284" label="Profile Views" icon="eye" tint="#2F6FED" bg="#EAF1FE" />
-          <StatCard value="86" label="Quote Requests" icon="document-text" />
+          <StatCard value={views == null ? '—' : `${views}`} label="Profile Views" icon="eye" tint="#2F6FED" bg="#EAF1FE" />
+          <StatCard value={`${s.quotesSent}`} label="Quotes Sent" icon="document-text" />
         </View>
         <View style={[styles.statsRow, { marginTop: 10 }]}>
-          <StatCard value="142" label="Messages" icon="chatbubble-ellipses" tint="#16B1C9" bg="#E6F8FB" />
-          <StatCard value="58%" label="Conversion" icon="trending-up" tint="#2EA84F" bg="#E9F8EE" />
+          <StatCard value={`${conversations.length}`} label="Conversations" icon="chatbubble-ellipses" tint="#16B1C9" bg="#E6F8FB" />
+          <StatCard value={`${s.conversion}%`} label="Conversion" icon="trending-up" tint="#2EA84F" bg="#E9F8EE" />
         </View>
         <View style={[styles.statsRow, { marginTop: 10 }]}>
-          <StatCard value="50" label="Jobs Won" icon="trophy" tint="#2EA84F" bg="#E9F8EE" />
-          <StatCard value="36" label="Jobs Lost" icon="close-circle" tint="#E11D26" bg="#FDECEC" />
+          <StatCard value={`${s.won}`} label="Jobs Won" icon="trophy" tint="#2EA84F" bg="#E9F8EE" />
+          <StatCard value={`${s.lost}`} label="Not Selected" icon="close-circle" tint="#E11D26" bg="#FDECEC" />
         </View>
 
         <View style={{ marginTop: 24 }}>
-          <SectionTitle title="Most popular services" />
+          <SectionTitle title="Most requested services (open jobs)" />
           <Card>
-            {POPULAR.map((p, i) => (
-              <View key={p.name} style={{ marginBottom: i < POPULAR.length - 1 ? 14 : 0 }}>
+            {popular.length === 0 && <Text style={styles.empty}>No open jobs on the platform right now.</Text>}
+            {popular.map((p, i) => (
+              <View key={p.name} style={{ marginBottom: i < popular.length - 1 ? 14 : 0 }}>
                 <View style={styles.popRow}>
                   <Text style={styles.popName}>{p.name}</Text>
                   <Text style={styles.popPct}>{p.pct}%</Text>
@@ -60,21 +72,27 @@ export default function AnalyticsScreen() {
         </View>
 
         <View style={{ marginTop: 24 }}>
-          <SectionTitle title="Demand across Trinidad" />
+          <SectionTitle title="Demand across Trinidad & Tobago" />
           <Card>
-            <Text style={styles.heatSub}>Where customers are requesting your trade most.</Text>
-            <View style={styles.heatGrid}>
-              {HEAT.map((h) => (
-                <View key={h.area} style={[styles.heatTile, { backgroundColor: `rgba(225,29,38,${0.12 + h.level * 0.8})` }]}>
-                  <Text style={[styles.heatArea, { color: h.level > 0.5 ? '#fff' : Brand.ink }]} numberOfLines={1}>{h.area}</Text>
+            <Text style={styles.heatSub}>Where customers are posting jobs right now.</Text>
+            {heat.length === 0 ? (
+              <Text style={styles.empty}>No open jobs to map yet.</Text>
+            ) : (
+              <>
+                <View style={styles.heatGrid}>
+                  {heat.map((h) => (
+                    <View key={h.area} style={[styles.heatTile, { backgroundColor: `rgba(225,29,38,${0.12 + h.level * 0.8})` }]}>
+                      <Text style={[styles.heatArea, { color: h.level > 0.5 ? '#fff' : Brand.ink }]} numberOfLines={1}>{h.area}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-            <View style={styles.legend}>
-              <Text style={styles.legendText}>Low</Text>
-              <View style={styles.legendBar} />
-              <Text style={styles.legendText}>High</Text>
-            </View>
+                <View style={styles.legend}>
+                  <Text style={styles.legendText}>Low</Text>
+                  <View style={styles.legendBar} />
+                  <Text style={styles.legendText}>High</Text>
+                </View>
+              </>
+            )}
           </Card>
         </View>
       </ScrollView>
@@ -82,11 +100,24 @@ export default function AnalyticsScreen() {
   );
 }
 
+function tally(items: string[]): Record<string, number> {
+  const m: Record<string, number> = {};
+  for (const it of items) m[it] = (m[it] ?? 0) + 1;
+  return m;
+}
+function top(counts: Record<string, number>, total: number, n: number) {
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, n)
+    .map(([name, c]) => ({ name, pct: total > 0 ? Math.round((c / total) * 100) : 0 }));
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: Brand.surface },
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   title: { fontSize: 16, fontWeight: '700', color: Brand.ink },
   statsRow: { flexDirection: 'row', gap: 10 },
+  empty: { color: Brand.muted, fontSize: 13, paddingVertical: 8 },
 
   popRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   popName: { fontSize: 14, color: Brand.ink, fontWeight: '600' },

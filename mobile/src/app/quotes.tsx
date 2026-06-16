@@ -6,20 +6,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, Segmented } from '@/components/ui';
 import { Brand } from '@/constants/brand';
+import { useStore } from '@/lib/store';
 
-interface Quote { customer: string; job: string; amount: string; date: string; status: 'Pending' | 'Accepted' | 'Rejected'; }
-
-const QUOTES: Quote[] = [
-  { customer: 'Aaliyah K.', job: 'Install 3 ceiling fans', amount: 'TT$850', date: 'Jun 13', status: 'Pending' },
-  { customer: 'Marcus R.', job: 'Rewire living room', amount: 'TT$2,200', date: 'Jun 12', status: 'Accepted' },
-  { customer: 'Devon P.', job: 'Outdoor lighting', amount: 'TT$1,400', date: 'Jun 9', status: 'Pending' },
-  { customer: 'Simone L.', job: 'Panel upgrade', amount: 'TT$3,800', date: 'Jun 2', status: 'Accepted' },
-  { customer: 'Keron J.', job: 'Generator install', amount: 'TT$5,500', date: 'May 28', status: 'Rejected' },
-];
+const TABS = ['Pending', 'Accepted', 'Rejected'] as const;
+const STATUS_FOR: Record<string, 'pending' | 'accepted' | 'rejected'> = {
+  Pending: 'pending',
+  Accepted: 'accepted',
+  Rejected: 'rejected',
+};
 
 export default function QuotesScreen() {
-  const [tab, setTab] = useState('Pending');
-  const list = QUOTES.filter((q) => q.status === tab);
+  const { myQuotes } = useStore();
+  const [tab, setTab] = useState<string>('Pending');
+  const all = myQuotes();
+  const list = all.filter((q) => q.bid.status === STATUS_FOR[tab]);
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
@@ -37,35 +37,42 @@ export default function QuotesScreen() {
             <Text style={styles.aiText}>Invoice Generator</Text>
           </Pressable>
           <Pressable style={styles.actionMini} onPress={() => router.push('/ai-quote')}><Ionicons name="add" size={20} color={Brand.red} /></Pressable>
-          <Pressable style={styles.actionMini}><Ionicons name="documents-outline" size={18} color={Brand.red} /></Pressable>
         </View>
-        <Text style={styles.actionHint}>Generate a branded invoice, use a saved template, or export to PDF.</Text>
+        <Text style={styles.actionHint}>Your quotes are the bids you send on jobs. Generate a branded invoice once a quote is accepted.</Text>
 
         <View style={{ marginTop: 18 }}>
-          <Segmented options={['Pending', 'Accepted', 'Rejected']} value={tab} onChange={setTab} />
+          <Segmented options={[...TABS]} value={tab} onChange={setTab} />
         </View>
 
         <View style={{ marginTop: 14, gap: 12 }}>
-          {list.length === 0 && <Text style={styles.empty}>No {tab.toLowerCase()} quotes.</Text>}
-          {list.map((q, i) => (
-            <Card key={i} style={styles.qCard}>
-              <View style={styles.qTop}>
-                <View style={styles.flex}>
-                  <Text style={styles.qJob}>{q.job}</Text>
-                  <Text style={styles.qCust}>{q.customer} · {q.date}</Text>
+          {list.length === 0 && <Text style={styles.empty}>No {tab.toLowerCase()} quotes yet.</Text>}
+          {list.map((q) => (
+            <Pressable
+              key={q.bid.id}
+              onPress={() => q.job && router.push({ pathname: '/job/[id]', params: { id: q.job.id } })}>
+              <Card style={styles.qCard}>
+                <View style={styles.qTop}>
+                  <View style={styles.grow}>
+                    <Text style={styles.qJob}>{q.job?.title ?? 'Job'}</Text>
+                    <Text style={styles.qCust}>{q.job ? `${q.job.trade} · ${q.job.area}` : '—'}{q.job?.createdAt ? ` · ${q.job.createdAt}` : ''}</Text>
+                  </View>
+                  <Text style={styles.qAmount}>TT${q.bid.amount.toLocaleString()}</Text>
                 </View>
-                <Text style={styles.qAmount}>{q.amount}</Text>
-              </View>
-              <View style={styles.qActions}>
-                <View style={[styles.qStatus, q.status === 'Accepted' && styles.qAccepted, q.status === 'Rejected' && styles.qRejected]}>
-                  <Text style={[styles.qStatusText, q.status !== 'Pending' && { color: '#fff' }]}>{q.status}</Text>
+                <View style={styles.qActions}>
+                  <View style={[styles.qStatus, q.bid.status === 'accepted' && styles.qAccepted, q.bid.status === 'rejected' && styles.qRejected]}>
+                    <Text style={[styles.qStatusText, q.bid.status !== 'pending' && { color: '#fff' }]}>
+                      {q.bid.status === 'accepted' ? 'Accepted' : q.bid.status === 'rejected' ? 'Not selected' : 'Pending'}
+                    </Text>
+                  </View>
+                  {q.bid.status === 'accepted' && (
+                    <Pressable style={styles.qPdf} onPress={() => router.push('/ai-quote')}>
+                      <Ionicons name="document-text-outline" size={15} color={Brand.body} />
+                      <Text style={styles.qPdfText}>Invoice</Text>
+                    </Pressable>
+                  )}
                 </View>
-                <Pressable style={styles.qPdf}>
-                  <Ionicons name="download-outline" size={15} color={Brand.body} />
-                  <Text style={styles.qPdfText}>PDF</Text>
-                </Pressable>
-              </View>
-            </Card>
+              </Card>
+            </Pressable>
           ))}
         </View>
       </ScrollView>
@@ -87,6 +94,7 @@ const styles = StyleSheet.create({
 
   qCard: { padding: 16 },
   qTop: { flexDirection: 'row', alignItems: 'flex-start' },
+  grow: { flex: 1 },
   qJob: { fontSize: 15, fontWeight: '700', color: Brand.ink },
   qCust: { fontSize: 12, color: Brand.muted, marginTop: 2 },
   qAmount: { fontSize: 17, fontWeight: '800', color: Brand.red },

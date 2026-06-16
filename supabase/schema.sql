@@ -383,6 +383,45 @@ create policy "payout own" on payout_accounts for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ============================================================
+-- complete_job(p_job_id): the customer confirms the work is done. Moves the
+-- job hired -> done and releases any escrow record. Ownership-checked.
+-- ============================================================
+create or replace function complete_job(p_job_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_customer uuid;
+begin
+  select customer_id into v_customer from jobs where id = p_job_id;
+  if v_customer is distinct from auth.uid() then
+    raise exception 'only the job owner can complete the job';
+  end if;
+  update jobs set status = 'done' where id = p_job_id and status = 'hired';
+  update hires set escrow_state = 'released' where job_id = p_job_id;
+end;
+$$;
+grant execute on function complete_job(uuid) to authenticated;
+
+-- ============================================================
+-- profile_views: lightweight view log so a pro's Analytics can show real
+-- profile-view counts.
+-- ============================================================
+create table if not exists profile_views (
+  id         uuid primary key default uuid_generate_v4(),
+  pro_id     uuid not null references profiles(id) on delete cascade,
+  viewer_id  uuid references profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists profile_views_pro_idx on profile_views(pro_id, created_at desc);
+alter table profile_views enable row level security;
+drop policy if exists "pv insert" on profile_views;
+create policy "pv insert" on profile_views for insert to authenticated with check (true);
+drop policy if exists "pv read own" on profile_views;
+create policy "pv read own" on profile_views for select using (auth.uid() = pro_id);
+
+-- ============================================================
 -- get_pro_stats(p_pro_id): real, aggregate-only stats for a public
 -- tradesman profile. security definer so a viewer (who can't read the
 -- pro's private bids/messages under RLS) still gets the computed numbers,

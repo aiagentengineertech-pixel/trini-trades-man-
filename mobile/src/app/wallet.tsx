@@ -4,21 +4,17 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card, ListRow, SectionTitle, type IconName } from '@/components/ui';
+import { Card, ListRow, SectionTitle } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { fetchPayoutAccount } from '@/lib/db';
+import { useStore } from '@/lib/store';
 import type { PayoutAccount } from '@/lib/store-types';
-
-const TXNS: { label: string; sub: string; amount: string; positive: boolean; icon: IconName }[] = [
-  { label: 'Payout to Republic Bank', sub: 'Jun 12 · Completed', amount: '-TT$3,200', positive: false, icon: 'arrow-up-circle' },
-  { label: 'Job released — Kitchen rewire', sub: 'Jun 10 · From escrow', amount: '+TT$6,500', positive: true, icon: 'arrow-down-circle' },
-  { label: 'Job released — AC service', sub: 'May 28 · From escrow', amount: '+TT$450', positive: true, icon: 'arrow-down-circle' },
-  { label: 'Payout to Republic Bank', sub: 'May 20 · Completed', amount: '-TT$2,100', positive: false, icon: 'arrow-up-circle' },
-];
 
 export default function WalletScreen() {
   const { userId } = useAuth();
+  const { proSummary, myQuotes } = useStore();
+  const s = proSummary();
   const [done, setDone] = useState(false);
   const [payout, setPayout] = useState<PayoutAccount | null>(null);
 
@@ -31,6 +27,12 @@ export default function WalletScreen() {
     : payout.method === 'wipay'
       ? `WiPay · ${payout.wipayNumber}`
       : `${payout.bankName} •••• ${payout.accountNumber.slice(-4)}`;
+
+  // Transactions = money released from escrow on completed jobs.
+  const txns = myQuotes()
+    .filter((q) => q.bid.status === 'accepted' && q.job?.status === 'done')
+    .map((q) => ({ id: q.bid.id, label: `Released — ${q.job?.title}`, sub: `${q.job?.area} · from escrow`, amount: q.bid.amount }));
+
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
       <View style={styles.topbar}>
@@ -42,8 +44,8 @@ export default function WalletScreen() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         <Card style={styles.balCard}>
           <Text style={styles.balLabel}>Available balance</Text>
-          <Text style={styles.balValue}>TT$2,950</Text>
-          <Pressable style={styles.withdrawBtn} onPress={() => setDone(true)}>
+          <Text style={styles.balValue}>TT${s.balance.toLocaleString()}</Text>
+          <Pressable style={styles.withdrawBtn} onPress={() => setDone(true)} disabled={s.balance === 0}>
             <Ionicons name="cash-outline" size={18} color={Brand.red} />
             <Text style={styles.withdrawText}>{done ? 'Withdrawal requested ✓' : 'Withdraw funds'}</Text>
           </Pressable>
@@ -52,27 +54,28 @@ export default function WalletScreen() {
         <View style={styles.row2}>
           <View style={styles.miniCard}>
             <Ionicons name="lock-closed" size={18} color={Brand.star} />
-            <Text style={styles.miniValue}>TT$1,800</Text>
+            <Text style={styles.miniValue}>TT${s.escrowHeld.toLocaleString()}</Text>
             <Text style={styles.miniLabel}>Pending Escrow</Text>
           </View>
           <View style={styles.miniCard}>
             <Ionicons name="checkmark-done" size={18} color={Brand.green} />
-            <Text style={styles.miniValue}>TT$18,400</Text>
-            <Text style={styles.miniLabel}>Released (YTD)</Text>
+            <Text style={styles.miniValue}>TT${s.released.toLocaleString()}</Text>
+            <Text style={styles.miniLabel}>Released</Text>
           </View>
         </View>
 
         <View style={{ marginTop: 22 }}>
           <SectionTitle title="Transaction history" />
           <Card style={{ paddingVertical: 4 }}>
-            {TXNS.map((t, i) => (
-              <View key={i} style={[styles.txn, i < TXNS.length - 1 && styles.divider]}>
-                <Ionicons name={t.icon} size={26} color={t.positive ? Brand.green : Brand.muted} />
-                <View style={styles.flex}>
+            {txns.length === 0 && <Text style={styles.empty}>No transactions yet. Funds appear here when a customer confirms a job is complete.</Text>}
+            {txns.map((t, i) => (
+              <View key={t.id} style={[styles.txn, i < txns.length - 1 && styles.divider]}>
+                <Ionicons name="arrow-down-circle" size={26} color={Brand.green} />
+                <View style={styles.grow}>
                   <Text style={styles.txnLabel}>{t.label}</Text>
                   <Text style={styles.txnSub}>{t.sub}</Text>
                 </View>
-                <Text style={[styles.txnAmount, { color: t.positive ? Brand.green : Brand.ink }]}>{t.amount}</Text>
+                <Text style={[styles.txnAmount, { color: Brand.green }]}>+TT${t.amount.toLocaleString()}</Text>
               </View>
             ))}
           </Card>
@@ -80,7 +83,6 @@ export default function WalletScreen() {
 
         <View style={{ marginTop: 22 }}>
           <Card style={{ paddingVertical: 4 }}>
-            <ListRow icon="document-text-outline" label="Tax reports" value="2026" onPress={() => {}} />
             <ListRow icon="business-outline" label="Payout account" value={payoutLabel} onPress={() => router.push('/payout-account')} last />
           </Card>
         </View>
@@ -107,7 +109,9 @@ const styles = StyleSheet.create({
 
   txn: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   divider: { borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' },
+  grow: { flex: 1 },
   txnLabel: { fontSize: 14, fontWeight: '600', color: Brand.ink },
   txnSub: { fontSize: 12, color: Brand.muted, marginTop: 2 },
   txnAmount: { fontSize: 15, fontWeight: '800' },
+  empty: { color: Brand.muted, paddingVertical: 16, fontSize: 13, lineHeight: 20 },
 });

@@ -136,6 +136,29 @@ export async function acceptBidRpc(bidId: string): Promise<boolean> {
   return true;
 }
 
+export async function completeJobRpc(jobId: string): Promise<boolean> {
+  const { error } = await supabase.rpc('complete_job', { p_job_id: jobId });
+  if (error) {
+    console.warn('[db] completeJob failed:', error.message);
+    return false;
+  }
+  return true;
+}
+
+export async function logProfileView(proId: string, viewerId: string | null): Promise<void> {
+  if (!viewerId || viewerId === proId) return; // don't log self-views
+  await supabase.from('profile_views').insert({ pro_id: proId, viewer_id: viewerId });
+}
+
+export async function countProfileViews(proId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('profile_views')
+    .select('id', { count: 'exact', head: true })
+    .eq('pro_id', proId);
+  if (error) return 0;
+  return count ?? 0;
+}
+
 // ---------------- Profile ----------------
 
 export async function fetchProfile(userId: string): Promise<MyProfile | null> {

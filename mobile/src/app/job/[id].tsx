@@ -20,7 +20,7 @@ import { useStore } from '@/lib/store';
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { role, userId } = useAuth();
-  const { getJob, bidsForJob, acceptBid, submitBid, startConversation } = useStore();
+  const { getJob, bidsForJob, acceptBid, completeJob, submitBid, startConversation } = useStore();
   const job = getJob(id);
   const bids = bidsForJob(id);
 
@@ -40,6 +40,7 @@ export default function JobDetailScreen() {
   const [message, setMessage] = useState('');
   const [bidSent, setBidSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
 
   if (!job) {
     return (
@@ -52,6 +53,12 @@ export default function JobDetailScreen() {
   const isTradesman = role === 'tradesman';
   const budget =
     job.budgetMin && job.budgetMax ? `TTD $${job.budgetMin} – $${job.budgetMax}` : 'Open to quotes';
+
+  const onComplete = async () => {
+    setCompleting(true);
+    await completeJob(job!.id);
+    setCompleting(false);
+  };
 
   const sendBid = async () => {
     setError(null);
@@ -101,6 +108,28 @@ export default function JobDetailScreen() {
             <Text style={styles.sectionTitle}>Description</Text>
             <Text style={styles.body}>{job.description}</Text>
           </View>
+
+          {/* CUSTOMER: confirm completion → release escrow */}
+          {!isTradesman && job.mine && job.status === 'hired' && (
+            <View style={styles.section}>
+              <View style={styles.completeCard}>
+                <Text style={styles.completeTitle}>Work finished?</Text>
+                <Text style={styles.completeSub}>Confirm the job is done to release the escrow payment to your tradesman. Only do this once you're satisfied.</Text>
+                <Pressable style={styles.completeBtn} onPress={onComplete} disabled={completing}>
+                  <Ionicons name="checkmark-done" size={18} color="#fff" />
+                  <Text style={styles.completeBtnText}>{completing ? 'Releasing…' : 'Mark complete & release payment'}</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+          {job.status === 'done' && (
+            <View style={styles.section}>
+              <View style={styles.doneCard}>
+                <Ionicons name="checkmark-circle" size={22} color={Brand.green} />
+                <Text style={styles.doneText}>This job is complete. Payment has been released from escrow.</Text>
+              </View>
+            </View>
+          )}
 
           {/* TRADESMAN: submit a bid */}
           {isTradesman ? (
@@ -261,6 +290,14 @@ const styles = StyleSheet.create({
   error: { color: Brand.red, fontWeight: '600', marginTop: 12 },
   primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.red, borderRadius: 14, paddingVertical: 16, marginTop: 16 },
   primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  completeCard: { backgroundColor: '#F1FBF5', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#CDEBD8' },
+  completeTitle: { fontSize: 16, fontWeight: '800', color: Brand.ink },
+  completeSub: { fontSize: 13, color: Brand.body, lineHeight: 19, marginTop: 6 },
+  completeBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.green, borderRadius: 12, paddingVertical: 14, marginTop: 14 },
+  completeBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  doneCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F1FBF5', borderRadius: 14, padding: 16 },
+  doneText: { flex: 1, fontSize: 14, color: Brand.body, fontWeight: '600' },
+
   sentCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F1FBF5', borderRadius: 14, padding: 16 },
   sentText: { flex: 1, fontSize: 14, color: Brand.body, fontWeight: '600' },
   msgCustomerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: Brand.red, borderRadius: 14, paddingVertical: 14, marginTop: 12 },

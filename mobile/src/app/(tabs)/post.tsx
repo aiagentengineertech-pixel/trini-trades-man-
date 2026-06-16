@@ -41,8 +41,9 @@ const HUB: { icon: IconName; label: string; desc: string; route: Href; tint: str
 ];
 
 function BusinessHub() {
-  const { myBids } = useStore();
-  const wins = myBids().filter((b) => b.status === 'accepted').length;
+  const { proSummary, conversations } = useStore();
+  const s = proSummary();
+  const unread = conversations.reduce((n, c) => n + c.unread, 0);
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
@@ -54,15 +55,15 @@ function BusinessHub() {
         <Pressable onPress={() => router.push('/earnings')}>
           <Card style={styles.snapshot}>
             <View style={styles.snapHeader}>
-              <Text style={styles.snapLabel}>Earnings this month</Text>
+              <Text style={styles.snapLabel}>Earned through Trini Tradesman</Text>
               <View style={styles.snapTrend}>
-                <Ionicons name="trending-up" size={14} color="#fff" />
-                <Text style={styles.snapTrendText}>+18%</Text>
+                <Ionicons name="checkmark-done" size={14} color="#fff" />
+                <Text style={styles.snapTrendText}>{s.completedJobs} done</Text>
               </View>
             </View>
-            <Text style={styles.snapValue}>TT$4,250</Text>
+            <Text style={styles.snapValue}>TT${s.totalEarned.toLocaleString()}</Text>
             <View style={styles.snapRow}>
-              <Text style={styles.snapMeta}>Pending escrow: TT$1,800</Text>
+              <Text style={styles.snapMeta}>In escrow: TT${s.escrowHeld.toLocaleString()} · Available: TT${s.balance.toLocaleString()}</Text>
               <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.8)" />
             </View>
           </Card>
@@ -81,20 +82,20 @@ function BusinessHub() {
           ))}
         </View>
 
-        <SectionTitle title="Today" />
+        <SectionTitle title="At a glance" />
         <Card style={{ paddingVertical: 4 }}>
-          <View style={styles.todayRow}>
+          <Pressable style={styles.todayRow} onPress={() => router.push('/jobs-manage')}>
             <Ionicons name="briefcase" size={18} color={Brand.body} />
-            <Text style={styles.todayText}>2 active jobs in progress</Text>
-          </View>
-          <View style={[styles.todayRow, styles.todayDivider]}>
+            <Text style={styles.todayText}>{s.activeJobs} active job{s.activeJobs === 1 ? '' : 's'} in progress</Text>
+          </Pressable>
+          <Pressable style={[styles.todayRow, styles.todayDivider]} onPress={() => router.push('/quotes')}>
             <Ionicons name="document-text" size={18} color={Brand.body} />
-            <Text style={styles.todayText}>{wins} quote{wins === 1 ? '' : 's'} accepted</Text>
-          </View>
-          <View style={styles.todayRow}>
+            <Text style={styles.todayText}>{s.pending} quote{s.pending === 1 ? '' : 's'} awaiting reply · {s.won} accepted</Text>
+          </Pressable>
+          <Pressable style={styles.todayRow} onPress={() => router.push('/messages')}>
             <Ionicons name="chatbubble-ellipses" size={18} color={Brand.body} />
-            <Text style={styles.todayText}>3 new messages</Text>
-          </View>
+            <Text style={styles.todayText}>{unread} unread message{unread === 1 ? '' : 's'}</Text>
+          </Pressable>
         </Card>
       </ScrollView>
     </SafeAreaView>

@@ -7,6 +7,7 @@ import { useAuth } from './auth';
 import { formatDistance, haversineKm } from './locations';
 import {
   acceptBidRpc,
+  completeJobRpc,
   fetchBids,
   fetchConversations,
   fetchJobs,
@@ -62,10 +63,28 @@ interface StoreState {
   distanceKm: (lat: number | null, lng: number | null) => number | null;
   distanceLabel: (lat: number | null, lng: number | null) => string | null;
   acceptBid: (bidId: string) => Promise<void>;
+  completeJob: (jobId: string) => Promise<void>;
   submitBid: (jobId: string, amount: number, message: string) => Promise<void>;
+  myQuotes: () => { bid: Bid; job: Job | undefined }[];
+  proSummary: () => ProSummary;
   refresh: () => Promise<void>;
   getConversation: (id: string) => Conversation | undefined;
   startConversation: (customerId: string, tradesmanId: string, jobId: string | null) => Promise<string | null>;
+}
+
+export interface ProSummary {
+  quotesSent: number;
+  pending: number;
+  won: number;
+  lost: number;
+  activeJobs: number;
+  completedJobs: number;
+  escrowHeld: number;
+  released: number;
+  balance: number;
+  totalEarned: number;
+  avgJobValue: number;
+  conversion: number; // 0..100
 }
 
 const StoreContext = createContext<StoreState | undefined>(undefined);
@@ -165,6 +184,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     acceptBid: async (bidId) => {
       await acceptBidRpc(bidId);
       await load();
+    },
+    completeJob: async (jobId) => {
+      await completeJobRpc(jobId);
+      await load();
+    },
+    myQuotes: () => bids.filter((b) => b.mine).map((b) => ({ bid: b, job: jobs.find((j) => j.id === b.jobId) })),
+    proSummary: () => {
+      const mine = bids.filter((b) => b.mine).map((b) => ({ b, job: jobs.find((j) => j.id === b.jobId) }));
+      const accepted = mine.filter((x) => x.b.status === 'accepted');
+      const active = accepted.filter((x) => x.job?.status === 'hired');
+      const done = accepted.filter((x) => x.job?.status === 'done');
+      const escrowHeld = active.reduce((s, x) => s + x.b.amount, 0);
+      const released = done.reduce((s, x) => s + x.b.amount, 0);
+      const totalEarned = escrowHeld + released;
+      const wonCount = accepted.length;
+      const quotesSent = mine.length;
+      return {
+        quotesSent,
+        pending: mine.filter((x) => x.b.status === 'pending').length,
+        won: wonCount,
+        lost: mine.filter((x) => x.b.status === 'rejected').length,
+        activeJobs: active.length,
+        completedJobs: done.length,
+        escrowHeld,
+        released,
+        balance: released,
+        totalEarned,
+        avgJobValue: wonCount > 0 ? Math.round(totalEarned / wonCount) : 0,
+        conversion: quotesSent > 0 ? Math.round((wonCount / quotesSent) * 100) : 0,
+      };
     },
     refresh: load,
 
