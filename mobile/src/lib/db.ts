@@ -191,7 +191,7 @@ export async function updateProfile(
 
 // ---------------- Pros (real tradesmen) ----------------
 
-import type { PayoutAccount, PortfolioItem, Pro, ProStats, Review, TeamMember, TeamRole } from './store-types';
+import type { CatalogItem, InvoiceSettings, PayoutAccount, PortfolioItem, Pro, ProStats, Review, TeamMember, TeamRole } from './store-types';
 
 export async function fetchPayoutAccount(userId: string): Promise<PayoutAccount | null> {
   const { data, error } = await supabase
@@ -476,6 +476,70 @@ export async function fetchMyAssignments(userId: string): Promise<Assignment[]> 
     .order('created_at', { ascending: false });
   if (error || !data) return [];
   return data.map((d: any) => ({ id: d.id, jobId: d.job_id, ownerId: d.owner_id, employeeId: d.employee_id }));
+}
+
+// ---------------- Invoices: branding + catalog ----------------
+
+export async function fetchInvoiceSettings(userId: string): Promise<InvoiceSettings | null> {
+  const { data, error } = await supabase
+    .from('invoice_settings')
+    .select('business_name, logo_url, brand_color, tax_id, payment_terms, footer_note, contact_phone, contact_email')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    businessName: data.business_name ?? '',
+    logoUrl: data.logo_url ?? null,
+    brandColor: data.brand_color ?? '#E11D26',
+    taxId: data.tax_id ?? '',
+    paymentTerms: data.payment_terms ?? '',
+    footerNote: data.footer_note ?? '',
+    contactPhone: data.contact_phone ?? '',
+    contactEmail: data.contact_email ?? '',
+  };
+}
+
+export async function saveInvoiceSettings(userId: string, s: InvoiceSettings): Promise<boolean> {
+  const { error } = await supabase.from('invoice_settings').upsert({
+    user_id: userId,
+    business_name: s.businessName || null,
+    logo_url: s.logoUrl,
+    brand_color: s.brandColor,
+    tax_id: s.taxId || null,
+    payment_terms: s.paymentTerms || null,
+    footer_note: s.footerNote || null,
+    contact_phone: s.contactPhone || null,
+    contact_email: s.contactEmail || null,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) { console.warn('[db] saveInvoiceSettings failed:', error.message); return false; }
+  return true;
+}
+
+export async function fetchCatalog(userId: string): Promise<CatalogItem[]> {
+  const { data, error } = await supabase
+    .from('catalog_items')
+    .select('id, name, kind, unit, price')
+    .eq('owner_id', userId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map((r: any) => ({ id: r.id, name: r.name, kind: r.kind, unit: r.unit ?? '', price: Number(r.price) }));
+}
+
+export async function addCatalogItem(userId: string, item: Omit<CatalogItem, 'id'>): Promise<boolean> {
+  const { error } = await supabase.from('catalog_items').insert({
+    owner_id: userId, name: item.name, kind: item.kind, unit: item.unit || null, price: item.price,
+  });
+  if (error) { console.warn('[db] addCatalogItem failed:', error.message); return false; }
+  return true;
+}
+
+export async function updateCatalogItem(id: string, item: Omit<CatalogItem, 'id'>): Promise<void> {
+  await supabase.from('catalog_items').update({ name: item.name, kind: item.kind, unit: item.unit || null, price: item.price }).eq('id', id);
+}
+
+export async function deleteCatalogItem(id: string): Promise<void> {
+  await supabase.from('catalog_items').delete().eq('id', id);
 }
 
 // ---------------- Storage ----------------

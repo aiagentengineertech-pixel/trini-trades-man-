@@ -607,6 +607,44 @@ create policy "messages readable to parties" on messages for select using (
 );
 
 -- ============================================================
+-- invoice_settings — a tradesman's branding for generated invoices/quotes.
+-- ============================================================
+create table if not exists invoice_settings (
+  user_id        uuid primary key references profiles(id) on delete cascade,
+  business_name  text,
+  logo_url       text,
+  brand_color    text not null default '#E11D26',
+  tax_id         text,
+  payment_terms  text,
+  footer_note    text,
+  contact_phone  text,
+  contact_email  text,
+  updated_at     timestamptz not null default now()
+);
+alter table invoice_settings enable row level security;
+drop policy if exists "invoice settings own" on invoice_settings;
+create policy "invoice settings own" on invoice_settings for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ============================================================
+-- catalog_items — a tradesman's saved services & materials (price book).
+-- ============================================================
+create table if not exists catalog_items (
+  id         uuid primary key default uuid_generate_v4(),
+  owner_id   uuid not null references profiles(id) on delete cascade,
+  name       text not null,
+  kind       text not null default 'service',  -- 'service' | 'material'
+  unit       text,                              -- e.g. 'job', 'ft', 'hr', 'each'
+  price      numeric(10,2) not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists catalog_owner_idx on catalog_items(owner_id, created_at desc);
+alter table catalog_items enable row level security;
+drop policy if exists "catalog own" on catalog_items;
+create policy "catalog own" on catalog_items for all
+  using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
+-- ============================================================
 -- Storage buckets + policies (photos & ID documents)
 -- ============================================================
 insert into storage.buckets (id, name, public) values ('uploads', 'uploads', true) on conflict (id) do nothing;

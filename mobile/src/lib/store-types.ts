@@ -53,6 +53,25 @@ export interface PortfolioItem {
   date: string;
 }
 
+export interface InvoiceSettings {
+  businessName: string;
+  logoUrl: string | null;
+  brandColor: string;
+  taxId: string;
+  paymentTerms: string;
+  footerNote: string;
+  contactPhone: string;
+  contactEmail: string;
+}
+
+export interface CatalogItem {
+  id: string;
+  name: string;
+  kind: 'service' | 'material';
+  unit: string;
+  price: number;
+}
+
 export type TeamRole = 'owner' | 'employee';
 
 export interface TeamMember {

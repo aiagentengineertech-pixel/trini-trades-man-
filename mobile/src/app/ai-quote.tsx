@@ -1,121 +1,196 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card, Segmented } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { Brand } from '@/constants/brand';
+import { useAuth } from '@/lib/auth';
+import { fetchCatalog, fetchInvoiceSettings } from '@/lib/db';
+import { generateInvoicePdf, invoiceTotals, type InvoiceLine } from '@/lib/invoice';
+import type { CatalogItem, InvoiceSettings } from '@/lib/store-types';
 
-const TRADES = ['Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 'Painting', 'Masonry'];
-const BASE: Record<string, number> = { Electrician: 350, Plumbing: 300, 'AC Repair': 400, Carpentry: 320, Painting: 280, Masonry: 380 };
-const SIZE_MULT: Record<string, number> = { Small: 1, Medium: 2.2, Large: 4 };
+const money = (n: number) => `TT$${n.toLocaleString(undefined, { minimumFractionDigits: 0 })}`;
 
-interface Estimate { labour: number; materials: number; callout: number; low: number; high: number; }
+export default function InvoiceBuilderScreen() {
+  const { userId } = useAuth();
+  const [settings, setSettings] = useState<InvoiceSettings | null>(null);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [customer, setCustomer] = useState('');
+  const [lines, setLines] = useState<InvoiceLine[]>([]);
+  const [vat, setVat] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
-export default function AiQuoteScreen() {
-  const [trade, setTrade] = useState('Electrician');
-  const [desc, setDesc] = useState('');
-  const [size, setSize] = useState('Medium');
-  const [estimate, setEstimate] = useState<Estimate | null>(null);
-  const [thinking, setThinking] = useState(false);
+  useEffect(() => {
+    if (!userId) return;
+    fetchInvoiceSettings(userId).then(setSettings);
+    fetchCatalog(userId).then(setCatalog);
+  }, [userId]);
 
-  const generate = () => {
-    setThinking(true);
-    setEstimate(null);
-    // Simulated AI estimate (deterministic heuristic). Swaps to Claude API later.
-    setTimeout(() => {
-      const emergency = /emergency|urgent|asap|leak|sparks|no power/i.test(desc);
-      const labour = Math.round(BASE[trade] * SIZE_MULT[size] * (emergency ? 1.3 : 1));
-      const materials = Math.round(labour * 0.6);
-      const callout = 200;
-      const total = labour + materials + callout;
-      setEstimate({ labour, materials, callout, low: Math.round(total * 0.9 / 10) * 10, high: Math.round(total * 1.15 / 10) * 10 });
-      setThinking(false);
-    }, 900);
+  const draft = useMemo(() => ({
+    number: `INV-${String(Date.now()).slice(-6)}`,
+    date: new Date().toLocaleDateString(),
+    customerName: customer,
+    lines,
+    taxPct: vat ? 12.5 : 0,
+  }), [customer, lines, vat]);
+  const totals = invoiceTotals(draft);
+
+  const addLine = (l: InvoiceLine) => setLines((p) => [...p, l]);
+  const updateLine = (i: number, patch: Partial<InvoiceLine>) => setLines((p) => p.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+  const removeLine = (i: number) => setLines((p) => p.filter((_, idx) => idx !== i));
+
+  const generate = async () => {
+    const effective: InvoiceSettings = settings ?? {
+      businessName: '', logoUrl: null, brandColor: '#E11D26', taxId: '',
+      paymentTerms: '', footerNote: '', contactPhone: '', contactEmail: '',
+    };
+    setGenerating(true);
+    try { await generateInvoicePdf(effective, draft); } finally { setGenerating(false); }
   };
+
+  const needsBranding = !settings || !settings.businessName;
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
-        <Text style={styles.title}>Invoice Generator</Text>
+        <Text style={styles.title}>New Invoice</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-          <View style={styles.intro}>
-            <Ionicons name="document-text" size={20} color={Brand.red} />
-            <Text style={styles.introText}>Describe the job and generate a branded invoice in seconds.</Text>
+          {/* quick links */}
+          <View style={styles.links}>
+            <Pressable style={styles.linkBtn} onPress={() => router.push('/invoice-settings')}>
+              <Ionicons name="color-palette-outline" size={16} color={Brand.ink} />
+              <Text style={styles.linkText}>Branding</Text>
+            </Pressable>
+            <Pressable style={styles.linkBtn} onPress={() => router.push('/catalog')}>
+              <Ionicons name="pricetags-outline" size={16} color={Brand.ink} />
+              <Text style={styles.linkText}>Price book</Text>
+            </Pressable>
+          </View>
+          {needsBranding && (
+            <Pressable style={styles.brandNudge} onPress={() => router.push('/invoice-settings')}>
+              <Ionicons name="information-circle" size={18} color={Brand.red} />
+              <Text style={styles.brandNudgeText}>Set up your logo & business details so invoices look professional.</Text>
+            </Pressable>
+          )}
+
+          <Text style={styles.label}>Bill to</Text>
+          <TextInput style={styles.input} placeholder="Customer name" placeholderTextColor={Brand.muted} value={customer} onChangeText={setCustomer} />
+
+          <View style={styles.lineHead}>
+            <Text style={styles.label}>Items</Text>
+            <Pressable style={styles.addItem} onPress={() => setPickerOpen(true)}>
+              <Ionicons name="add" size={16} color={Brand.red} />
+              <Text style={styles.addItemText}>Add item</Text>
+            </Pressable>
           </View>
 
-          <Text style={styles.label}>Trade</Text>
-          <View style={styles.chips}>
-            {TRADES.map((t) => (
-              <Pressable key={t} onPress={() => setTrade(t)} style={[styles.chip, trade === t && styles.chipActive]}>
-                <Text style={[styles.chipText, trade === t && styles.chipTextActive]}>{t}</Text>
-              </Pressable>
+          {lines.length === 0 && <Text style={styles.emptyLines}>Add services or materials from your price book — or a custom line.</Text>}
+
+          <View style={{ gap: 10 }}>
+            {lines.map((l, i) => (
+              <Card key={i} style={styles.lineCard}>
+                <View style={styles.lineTop}>
+                  <TextInput style={styles.lineDesc} value={l.description} onChangeText={(v) => updateLine(i, { description: v })} placeholder="Description" placeholderTextColor={Brand.muted} />
+                  <Pressable onPress={() => removeLine(i)} hitSlop={8}><Ionicons name="close-circle" size={20} color={Brand.muted} /></Pressable>
+                </View>
+                <View style={styles.lineBottom}>
+                  <View style={styles.qtyBox}>
+                    <Text style={styles.miniLabel}>Qty</Text>
+                    <TextInput style={styles.miniInput} keyboardType="numeric" value={String(l.qty)} onChangeText={(v) => updateLine(i, { qty: Number(v) || 0 })} />
+                  </View>
+                  <View style={styles.qtyBox}>
+                    <Text style={styles.miniLabel}>Unit price</Text>
+                    <TextInput style={styles.miniInput} keyboardType="numeric" value={String(l.unitPrice)} onChangeText={(v) => updateLine(i, { unitPrice: Number(v) || 0 })} />
+                  </View>
+                  <View style={styles.amountBox}>
+                    <Text style={styles.miniLabel}>Amount</Text>
+                    <Text style={styles.amountVal}>{money(l.qty * l.unitPrice)}</Text>
+                  </View>
+                </View>
+              </Card>
             ))}
           </View>
 
-          <Text style={styles.label}>Describe the job</Text>
-          <TextInput
-            style={styles.textarea}
-            placeholder="e.g. Replace main breaker panel, 2-storey home, some old wiring…"
-            placeholderTextColor={Brand.muted}
-            value={desc}
-            onChangeText={setDesc}
-            multiline
-          />
-
-          <Text style={styles.label}>Job size</Text>
-          <Segmented options={['Small', 'Medium', 'Large']} value={size} onChange={setSize} />
-
-          <Pressable style={styles.genBtn} onPress={generate} disabled={thinking}>
-            <Ionicons name="document-text" size={18} color="#fff" />
-            <Text style={styles.genBtnText}>{thinking ? 'Generating…' : 'Generate invoice'}</Text>
+          <Pressable style={styles.customBtn} onPress={() => addLine({ description: '', qty: 1, unitPrice: 0 })}>
+            <Ionicons name="create-outline" size={16} color={Brand.body} />
+            <Text style={styles.customText}>Add custom line</Text>
           </Pressable>
 
-          {estimate && (
-            <Card style={styles.result}>
-              <View style={styles.resultHead}>
-                <Ionicons name="document-text" size={16} color={Brand.red} />
-                <Text style={styles.resultTitle}>Branded invoice</Text>
-              </View>
-              <Text style={styles.range}>TT${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}</Text>
-              <View style={styles.breakdown}>
-                <Row label="Labour" value={estimate.labour} />
-                <Row label="Materials (est.)" value={estimate.materials} />
-                <Row label="Call-out fee" value={estimate.callout} />
-              </View>
-              <Text style={styles.note}>Based on {trade.toLowerCase()} rates and a {size.toLowerCase()} job. Edit any line before sending.</Text>
-              <Pressable style={styles.useBtn} onPress={() => router.back()}>
-                <Text style={styles.useBtnText}>Create invoice</Text>
-              </Pressable>
-            </Card>
-          )}
+          {/* VAT + totals */}
+          <Card style={styles.totalsCard}>
+            <Pressable style={styles.vatRow} onPress={() => setVat((v) => !v)}>
+              <Text style={styles.vatLabel}>Add VAT (12.5%)</Text>
+              <View style={[styles.toggle, vat && styles.toggleOn]}><View style={[styles.knob, vat && styles.knobOn]} /></View>
+            </Pressable>
+            <View style={styles.tRow}><Text style={styles.tMuted}>Subtotal</Text><Text style={styles.tVal}>{money(totals.subtotal)}</Text></View>
+            {vat && <View style={styles.tRow}><Text style={styles.tMuted}>VAT</Text><Text style={styles.tVal}>{money(totals.tax)}</Text></View>}
+            <View style={[styles.tRow, styles.grand]}><Text style={styles.grandLabel}>Total</Text><Text style={styles.grandVal}>{money(totals.total)}</Text></View>
+          </Card>
+
+          <Pressable style={[styles.genBtn, lines.length === 0 && { opacity: 0.5 }]} onPress={generate} disabled={generating || lines.length === 0}>
+            <Ionicons name="document-text" size={18} color="#fff" />
+            <Text style={styles.genBtnText}>{generating ? 'Generating…' : 'Generate branded PDF'}</Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {pickerOpen && (
+        <CatalogPicker
+          catalog={catalog}
+          onPick={(it) => { addLine({ description: it.name + (it.unit ? ` (per ${it.unit})` : ''), qty: 1, unitPrice: it.price }); setPickerOpen(false); }}
+          onClose={() => setPickerOpen(false)}
+          onManage={() => { setPickerOpen(false); router.push('/catalog'); }}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
-function Row({ label, value }: { label: string; value: number }) {
+function CatalogPicker({ catalog, onPick, onClose, onManage }: { catalog: CatalogItem[]; onPick: (i: CatalogItem) => void; onClose: () => void; onManage: () => void }) {
+  const [q, setQ] = useState('');
+  const list = catalog.filter((i) => !q || i.name.toLowerCase().includes(q.trim().toLowerCase()));
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>TT${value.toLocaleString()}</Text>
-    </View>
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.backdrop}>
+        <SafeAreaView style={styles.sheet} edges={['bottom']}>
+          <View style={styles.handle} />
+          <View style={styles.sheetHead}>
+            <Text style={styles.sheetTitle}>Add from price book</Text>
+            <Pressable onPress={onClose} hitSlop={10}><Ionicons name="close" size={24} color={Brand.ink} /></Pressable>
+          </View>
+          <View style={styles.search}>
+            <Ionicons name="search" size={18} color={Brand.muted} />
+            <TextInput placeholder="Search items…" placeholderTextColor={Brand.muted} style={styles.searchInput} value={q} onChangeText={setQ} autoFocus />
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 360 }}>
+            {list.length === 0 && (
+              <View style={styles.pickerEmpty}>
+                <Text style={styles.pickerEmptyText}>{catalog.length === 0 ? 'Your price book is empty.' : 'No matches.'}</Text>
+                <Pressable style={styles.manageBtn} onPress={onManage}><Text style={styles.manageText}>Manage price book</Text></Pressable>
+              </View>
+            )}
+            {list.map((it) => (
+              <Pressable key={it.id} style={styles.pickRow} onPress={() => onPick(it)}>
+                <Ionicons name={it.kind === 'material' ? 'cube-outline' : 'construct-outline'} size={18} color={it.kind === 'material' ? '#2F6FED' : Brand.red} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.pickName}>{it.name}</Text>
+                  {!!it.unit && <Text style={styles.pickUnit}>per {it.unit}</Text>}
+                </View>
+                <Text style={styles.pickPrice}>TT${it.price.toLocaleString()}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
   );
 }
 
@@ -124,29 +199,63 @@ const styles = StyleSheet.create({
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   title: { fontSize: 16, fontWeight: '700', color: Brand.ink },
 
-  intro: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Brand.redSoft, padding: 14, borderRadius: 14 },
-  introText: { flex: 1, fontSize: 13, color: Brand.body },
+  links: { flexDirection: 'row', gap: 10 },
+  linkBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Brand.surfaceAlt, borderRadius: 12, paddingVertical: 11 },
+  linkText: { fontSize: 13, fontWeight: '700', color: Brand.ink },
+  brandNudge: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Brand.redSoft, borderRadius: 12, padding: 12, marginTop: 12 },
+  brandNudgeText: { flex: 1, fontSize: 12, color: Brand.body, lineHeight: 17 },
 
   label: { fontSize: 14, fontWeight: '700', color: Brand.ink, marginTop: 22, marginBottom: 10 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: Brand.line },
-  chipActive: { backgroundColor: Brand.red, borderColor: Brand.red },
-  chipText: { fontSize: 13, fontWeight: '600', color: Brand.body },
-  chipTextActive: { color: '#fff' },
-  textarea: { borderWidth: 1, borderColor: Brand.line, borderRadius: 12, padding: 14, minHeight: 90, textAlignVertical: 'top', fontSize: 15, color: Brand.ink },
+  input: { borderWidth: 1, borderColor: Brand.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: Brand.ink },
 
-  genBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 14, paddingVertical: 16, marginTop: 24 },
+  lineHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  addItem: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 12 },
+  addItemText: { color: Brand.red, fontWeight: '700', fontSize: 14 },
+  emptyLines: { fontSize: 13, color: Brand.muted, lineHeight: 19, marginBottom: 10 },
+
+  lineCard: { padding: 14 },
+  lineTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  lineDesc: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.ink, paddingVertical: 2 },
+  lineBottom: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  qtyBox: { flex: 1 },
+  miniLabel: { fontSize: 11, color: Brand.muted, marginBottom: 4 },
+  miniInput: { borderWidth: 1, borderColor: Brand.line, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, fontSize: 14, color: Brand.ink },
+  amountBox: { flex: 1 },
+  amountVal: { fontSize: 15, fontWeight: '800', color: Brand.ink, paddingVertical: 8 },
+
+  customBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderStyle: 'dashed', borderColor: Brand.line, borderRadius: 12, paddingVertical: 14, marginTop: 12 },
+  customText: { color: Brand.body, fontWeight: '600', fontSize: 14 },
+
+  totalsCard: { marginTop: 18, padding: 16 },
+  vatRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' },
+  vatLabel: { fontSize: 14, fontWeight: '600', color: Brand.ink },
+  toggle: { width: 46, height: 28, borderRadius: 14, backgroundColor: '#D9DBDF', padding: 3 },
+  toggleOn: { backgroundColor: Brand.red },
+  knob: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff' },
+  knobOn: { alignSelf: 'flex-end' },
+  tRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 7 },
+  tMuted: { fontSize: 14, color: Brand.muted },
+  tVal: { fontSize: 14, fontWeight: '700', color: Brand.ink },
+  grand: { borderTopWidth: 2, borderTopColor: Brand.line, marginTop: 4, paddingTop: 10 },
+  grandLabel: { fontSize: 17, fontWeight: '800', color: Brand.ink },
+  grandVal: { fontSize: 20, fontWeight: '800', color: Brand.red },
+
+  genBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 14, paddingVertical: 16, marginTop: 20 },
   genBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
 
-  result: { marginTop: 20 },
-  resultHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  resultTitle: { fontSize: 13, fontWeight: '700', color: Brand.red, textTransform: 'uppercase', letterSpacing: 0.5 },
-  range: { fontSize: 30, fontWeight: '800', color: Brand.ink, marginTop: 8, letterSpacing: -0.5 },
-  breakdown: { marginTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', paddingTop: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
-  rowLabel: { fontSize: 14, color: Brand.body },
-  rowValue: { fontSize: 14, fontWeight: '700', color: Brand.ink },
-  note: { fontSize: 12, color: Brand.muted, marginTop: 12, lineHeight: 17 },
-  useBtn: { backgroundColor: Brand.red, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 16 },
-  useBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: Brand.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 10 },
+  handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: Brand.line, marginBottom: 12 },
+  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  sheetTitle: { fontSize: 18, fontWeight: '800', color: Brand.ink },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Brand.surfaceAlt, borderRadius: 12, paddingHorizontal: 14, marginBottom: 8 },
+  searchInput: { flex: 1, paddingVertical: 11, fontSize: 15, color: Brand.ink },
+  pickRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' },
+  pickName: { fontSize: 15, fontWeight: '600', color: Brand.ink },
+  pickUnit: { fontSize: 12, color: Brand.muted, marginTop: 1 },
+  pickPrice: { fontSize: 15, fontWeight: '800', color: Brand.ink },
+  pickerEmpty: { alignItems: 'center', gap: 12, paddingVertical: 30 },
+  pickerEmptyText: { color: Brand.muted, fontSize: 14 },
+  manageBtn: { backgroundColor: Brand.red, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 11 },
+  manageText: { color: '#fff', fontWeight: '800', fontSize: 14 },
 });
