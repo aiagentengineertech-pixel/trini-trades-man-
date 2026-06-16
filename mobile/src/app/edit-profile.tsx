@@ -24,8 +24,9 @@ const TRADES = ['Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 'Painting',
 
 export default function EditProfileScreen() {
   const { email, userId, role } = useAuth();
-  const { myProfile, updateMyProfile, setupTradesman } = useStore();
+  const { myProfile, updateMyProfile, setupTradesman, getPro } = useStore();
   const isTradesman = role === 'tradesman';
+  const pro = isTradesman && userId ? getPro(userId) : undefined;
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [area, setArea] = useState('');
@@ -43,6 +44,14 @@ export default function EditProfileScreen() {
       setPhoto(myProfile.photoUrl);
     }
   }, [myProfile]);
+
+  // Preload a tradesman's current trade + bio so re-saving doesn't wipe them.
+  const DEFAULT_BIO = 'Trusted local tradesman on Trini Tradesman.';
+  useEffect(() => {
+    if (!pro) return;
+    setTrade((t) => t ?? (TRADES.includes(pro.trade) ? pro.trade : null));
+    setBio((b) => b || (pro.bio && pro.bio !== DEFAULT_BIO ? pro.bio : ''));
+  }, [pro?.id, pro?.trade, pro?.bio]);
 
   const choosePhoto = async () => {
     const uri = await pickImage();
@@ -62,8 +71,8 @@ export default function EditProfileScreen() {
       area: area.trim(),
       ...(photo && !photo.startsWith('file') && !photo.startsWith('blob') ? { photo_url: photo.split('?')[0] } : {}),
     });
-    if (isTradesman && trade) {
-      await setupTradesman(trade, bio.trim());
+    if (isTradesman) {
+      await setupTradesman(trade ?? '', bio.trim());
     }
     setBusy(false);
     setSaved(true);
@@ -116,7 +125,9 @@ export default function EditProfileScreen() {
             </View>
           )}
 
-          <Field label={isTradesman ? 'About your business' : 'About'} value={bio} onChangeText={setBio} placeholder="Tell customers about your work…" multiline />
+          {isTradesman && (
+            <Field label="About your business" value={bio} onChangeText={setBio} placeholder="Tell customers about your work…" multiline />
+          )}
 
           {saved && (
             <View style={styles.savedRow}>
