@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import type { Href } from 'expo-router';
 
+import { AreaPicker } from '@/components/AreaPicker';
 import { Card, SectionTitle, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -101,7 +102,7 @@ function BusinessHub() {
 }
 
 function CustomerPost() {
-  const { addJob } = useStore();
+  const { addJob, myProfile } = useStore();
   const params = useLocalSearchParams<{ trade?: string; invitePro?: string; invitePname?: string }>();
   const invitePro = params.invitePro || null;
   const invitePname = params.invitePname || null;
@@ -115,11 +116,20 @@ function CustomerPost() {
   const [postedId, setPostedId] = useState<string | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [area, setArea] = useState('');
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // Pre-select the trade when arriving from a "Hire / Invite to quote" tap.
   useEffect(() => {
     if (params.trade && TRADES.includes(params.trade)) setTrade(params.trade);
   }, [params.trade]);
+
+  // Default the job location to the customer's saved area.
+  useEffect(() => {
+    if (!myProfile) return;
+    setArea((a) => a || myProfile.area || '');
+    setCoords((c) => c || (myProfile.lat != null && myProfile.lng != null ? { lat: myProfile.lat, lng: myProfile.lng } : null));
+  }, [myProfile]);
 
   const addPhotos = async () => {
     const uris = await pickImages();
@@ -153,6 +163,9 @@ function CustomerPost() {
       budgetMin: budgetMin ? Number(budgetMin) : undefined,
       budgetMax: budgetMax ? Number(budgetMax) : undefined,
       invitedProId: invitePro,
+      area: area || undefined,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
     });
     setPosting(false);
     if (!id) {
@@ -220,6 +233,9 @@ function CustomerPost() {
               </Pressable>
             ))}
           </View>
+
+          <Text style={styles.label}>Job location</Text>
+          <AreaPicker area={area} onChange={(v) => { setArea(v.area); setCoords({ lat: v.lat, lng: v.lng }); }} placeholder="Where is the job?" />
 
           <Text style={styles.label}>Job title</Text>
           <TextInput

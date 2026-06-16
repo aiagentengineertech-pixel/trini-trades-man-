@@ -23,6 +23,8 @@ export interface Pro {
   icon: IconName;
   color: string;
   bg: string;
+  lat: number | null;
+  lng: number | null;
   photoUrl: string | null;
   yearsExperience: number | null;
   bio: string;
@@ -66,6 +68,8 @@ export interface MyProfile {
   photoUrl: string | null;
   role: string;
   verified: boolean;
+  lat: number | null;
+  lng: number | null;
 }
 
 export type JobStatus = 'open' | 'hired' | 'done';
@@ -82,6 +86,8 @@ export interface Job {
   status: JobStatus;
   mine: boolean;
   invitedProId: string | null;
+  lat: number | null;
+  lng: number | null;
   createdAt: string;
   icon: IconName;
   color: string;

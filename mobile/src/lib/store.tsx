@@ -4,6 +4,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { useAuth } from './auth';
+import { formatDistance, haversineKm } from './locations';
 import {
   acceptBidRpc,
   fetchBids,
@@ -48,7 +49,7 @@ interface StoreState {
   conversations: Conversation[];
   notifications: Notification[];
   myProfile: MyProfile | null;
-  updateMyProfile: (fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; role: string }>) => Promise<void>;
+  updateMyProfile: (fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; role: string; location_lat: number; location_lng: number }>) => Promise<void>;
   setupTradesman: (trade: string, bio: string, yearsExperience?: number | null) => Promise<void>;
   getPro: (id: string) => Pro | undefined;
   getJob: (id: string) => Job | undefined;
@@ -57,7 +58,9 @@ interface StoreState {
   openJobs: () => Job[];
   myBids: () => Bid[];
   myBidForJob: (jobId: string) => Bid | undefined;
-  addJob: (data: { title: string; trade: string; description: string; budgetMin?: number; budgetMax?: number; area?: string; invitedProId?: string | null }) => Promise<string | null>;
+  addJob: (data: { title: string; trade: string; description: string; budgetMin?: number; budgetMax?: number; area?: string; invitedProId?: string | null; lat?: number | null; lng?: number | null }) => Promise<string | null>;
+  distanceKm: (lat: number | null, lng: number | null) => number | null;
+  distanceLabel: (lat: number | null, lng: number | null) => string | null;
   acceptBid: (bidId: string) => Promise<void>;
   submitBid: (jobId: string, amount: number, message: string) => Promise<void>;
   refresh: () => Promise<void>;
@@ -122,6 +125,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         area: fields.area ?? prev.area,
         photoUrl: fields.photo_url ?? prev.photoUrl,
         role: fields.role ?? prev.role,
+        lat: fields.location_lat ?? prev.lat,
+        lng: fields.location_lng ?? prev.lng,
       } : prev));
     },
     setupTradesman: async (trade, bio, yearsExperience) => {
@@ -136,6 +141,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     openJobs: () => jobs.filter((j) => j.status === 'open' && !j.mine),
     myBids: () => bids.filter((b) => b.mine),
     myBidForJob: (jobId) => bids.find((b) => b.jobId === jobId && b.mine),
+
+    distanceKm: (lat, lng) => {
+      if (lat == null || lng == null || myProfile?.lat == null || myProfile?.lng == null) return null;
+      return haversineKm({ lat: myProfile.lat, lng: myProfile.lng }, { lat, lng });
+    },
+    distanceLabel: (lat, lng) => {
+      if (lat == null || lng == null || myProfile?.lat == null || myProfile?.lng == null) return null;
+      return formatDistance(haversineKm({ lat: myProfile.lat, lng: myProfile.lng }, { lat, lng }));
+    },
 
     addJob: async (data) => {
       if (!userId) return null;

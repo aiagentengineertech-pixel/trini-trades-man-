@@ -24,8 +24,16 @@ const TRUST = [
 ];
 
 export default function HomeScreen() {
-  const { pros, openJobs } = useStore();
+  const { pros, openJobs, distanceKm, distanceLabel } = useStore();
   const jobs = openJobs();
+  const nearbyPros = [...pros].sort((a, b) => {
+    const da = distanceKm(a.lat, a.lng);
+    const db = distanceKm(b.lat, b.lng);
+    if (da == null && db == null) return 0;
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return da - db;
+  });
   return (
     <View style={styles.root}>
       <Ambient />
@@ -108,7 +116,7 @@ export default function HomeScreen() {
         {/* Top Rated Near You */}
         <SectionHeader title="Top Rated Near You" onPress={() => router.push('/explore')} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.prosRow}>
-          {pros.slice(0, 4).map((p) => (
+          {nearbyPros.slice(0, 4).map((p) => (
             <Pressable key={p.id} style={styles.proCard} onPress={() => router.push({ pathname: '/pro/[id]', params: { id: p.id } })}>
               <ProAvatar photoUrl={p.photoUrl} icon={p.icon} color={p.color} bg={p.bg} iconSize={40} style={styles.proImage}>
                 <View style={styles.ratingPill}>
@@ -120,7 +128,7 @@ export default function HomeScreen() {
               <Text style={styles.proTrade}>{p.trade}</Text>
               <View style={styles.proMetaRow}>
                 <Ionicons name="location" size={12} color={Brand.red} />
-                <Text style={styles.proDistance}>{p.distance}</Text>
+                <Text style={styles.proDistance}>{distanceLabel(p.lat, p.lng) ?? p.area}</Text>
                 {p.verified && <View style={styles.verifiedPill}><Text style={styles.verifiedText}>Verified</Text></View>}
               </View>
               <View style={styles.hireBtn}><Text style={styles.hireBtnText}>Hire Now</Text></View>

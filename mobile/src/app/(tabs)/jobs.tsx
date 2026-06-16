@@ -168,7 +168,7 @@ function CustomerJobCard({ job, quotes }: { job: Job; quotes: ReturnType<typeof 
 const CATEGORIES = ['All', 'Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 'Painting', 'Masonry'];
 
 function TradesmanJobs() {
-  const { openJobs, myBidForJob } = useStore();
+  const { openJobs, myBidForJob, distanceKm, distanceLabel } = useStore();
   const { userId } = useAuth();
   const [active, setActive] = useState('All');
   const [query, setQuery] = useState('');
@@ -179,8 +179,17 @@ function TradesmanJobs() {
         (active === 'All' || j.trade === active) &&
         (!q || j.title.toLowerCase().includes(q) || j.trade.toLowerCase().includes(q) || j.area.toLowerCase().includes(q)),
     )
-    // Jobs you've been personally invited to quote on float to the top.
-    .sort((a, b) => Number(b.invitedProId === userId) - Number(a.invitedProId === userId));
+    // Invited jobs first, then nearest to you.
+    .sort((a, b) => {
+      const inv = Number(b.invitedProId === userId) - Number(a.invitedProId === userId);
+      if (inv !== 0) return inv;
+      const da = distanceKm(a.lat, a.lng);
+      const db = distanceKm(b.lat, b.lng);
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return da - db;
+    });
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
@@ -228,6 +237,7 @@ function TradesmanJobs() {
                   <Text style={styles.meta}>{j.trade} · {j.area} · {j.createdAt}</Text>
                   <Text style={styles.budget}>
                     {j.budgetMin && j.budgetMax ? `TTD $${j.budgetMin} – $${j.budgetMax}` : 'Open to quotes'}
+                    {distanceLabel(j.lat, j.lng) ? `   ·   ${distanceLabel(j.lat, j.lng)}` : ''}
                   </Text>
                 </View>
                 {myBid ? (

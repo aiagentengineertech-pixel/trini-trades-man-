@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AreaPicker } from '@/components/AreaPicker';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { uploadImage } from '@/lib/db';
@@ -30,6 +31,7 @@ export default function EditProfileScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [area, setArea] = useState('');
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [bio, setBio] = useState('');
   const [years, setYears] = useState('');
   const [trade, setTrade] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export default function EditProfileScreen() {
       setPhone(myProfile.phone);
       setArea(myProfile.area || 'Port of Spain');
       setPhoto(myProfile.photoUrl);
+      if (myProfile.lat != null && myProfile.lng != null) setCoords({ lat: myProfile.lat, lng: myProfile.lng });
     }
   }, [myProfile]);
 
@@ -71,6 +74,7 @@ export default function EditProfileScreen() {
       full_name: name.trim(),
       phone: phone.trim(),
       area: area.trim(),
+      ...(coords ? { location_lat: coords.lat, location_lng: coords.lng } : {}),
       ...(photo && !photo.startsWith('file') && !photo.startsWith('blob') ? { photo_url: photo.split('?')[0] } : {}),
     });
     if (isTradesman) {
@@ -111,7 +115,12 @@ export default function EditProfileScreen() {
           <Field label="Full name" value={name} onChangeText={setName} placeholder="Your name" />
           <Field label="Email" value={email ?? ''} editable={false} placeholder="—" />
           <Field label="Phone" value={phone} onChangeText={setPhone} placeholder="+1 (868) 000-0000" keyboardType="phone-pad" />
-          <Field label="Area" value={area} onChangeText={setArea} placeholder="e.g. Port of Spain" />
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Area</Text>
+            <AreaPicker area={area} onChange={(v) => { setArea(v.area); setCoords({ lat: v.lat, lng: v.lng }); }} />
+            <Text style={styles.tradeHint}>Used to show customers how far you are and to match you with nearby jobs.</Text>
+          </View>
 
           {isTradesman && (
             <View style={styles.field}>

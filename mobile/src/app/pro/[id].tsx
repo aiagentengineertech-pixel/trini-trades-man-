@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Ambient, Badge, Card, Glass, ProAvatar, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
+import { Ambient, Card, Glass, ProAvatar, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { fetchPortfolio, fetchProReviews, fetchProStats } from '@/lib/db';
@@ -16,7 +16,7 @@ const SORTS = ['Newest', 'Highest', 'Relevant'];
 
 export default function ProProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getPro, startConversation } = useStore();
+  const { getPro, startConversation, distanceKm } = useStore();
   const { userId } = useAuth();
   const pro = getPro(id);
   const [readMore, setReadMore] = useState(false);
@@ -55,6 +55,7 @@ export default function ProProfileScreen() {
   const respLabel = respMins != null ? `~${respMins} min` : 'New';
   const radiusKm = stats?.serviceRadiusKm ?? 25;
   const services = pro.services.length ? pro.services : [pro.trade];
+  const distKm = distanceKm(pro.lat, pro.lng);
 
   return (
     <View style={styles.root}>
@@ -156,27 +157,34 @@ export default function ProProfileScreen() {
           </View>
         </View>
 
-        {/* ===== Service areas (map) ===== */}
+        {/* ===== Service area (coverage card) ===== */}
         <View style={styles.section}>
-          <SectionTitle title="Service Areas" />
-          <Card style={{ padding: 0, overflow: 'hidden' }}>
-            <View style={styles.map}>
-              <View style={[styles.mapPin, { top: 30, left: 60 }]}><Ionicons name="location" size={22} color={Brand.red} /></View>
-              <View style={[styles.mapPin, { top: 70, left: 150 }]}><Ionicons name="location" size={16} color={Brand.red} /></View>
-              <View style={[styles.mapPin, { top: 50, left: 230 }]}><Ionicons name="location" size={16} color={Brand.red} /></View>
-              <View style={styles.mapRadius} />
-            </View>
-            <View style={styles.mapInfo}>
-              <View style={styles.mapInfoRow}>
-                <Ionicons name="navigate-circle-outline" size={18} color={Brand.body} />
-                <Text style={styles.mapInfoText}>Primary: <Text style={{ fontWeight: '700' }}>{pro.area}</Text></Text>
+          <SectionTitle title="Service Area" />
+          <Card>
+            <View style={styles.coverHead}>
+              <View style={styles.coverRingOuter}>
+                <View style={styles.coverRingInner}>
+                  <Ionicons name="location" size={20} color={Brand.red} />
+                </View>
               </View>
-              <View style={styles.mapInfoRow}>
-                <Ionicons name="resize-outline" size={18} color={Brand.body} />
-                <Text style={styles.mapInfoText}>Travel radius: <Text style={{ fontWeight: '700' }}>{radiusKm} km</Text></Text>
+              <View style={styles.flex}>
+                <Text style={styles.coverArea}>{pro.area}</Text>
+                <Text style={styles.coverSub}>Primary service area</Text>
               </View>
-              <Badge label="Island-wide for large jobs" color={Brand.green} icon="checkmark-circle" />
             </View>
+            <View style={styles.coverRow}>
+              <Ionicons name="resize-outline" size={18} color={Brand.body} />
+              <Text style={styles.coverText}>Covers jobs within <Text style={{ fontWeight: '700' }}>{radiusKm} km</Text></Text>
+            </View>
+            {distKm != null && (
+              <View style={styles.coverRow}>
+                <Ionicons name="navigate-outline" size={18} color={Brand.body} />
+                <Text style={styles.coverText}>
+                  About <Text style={{ fontWeight: '700' }}>{distKm < 1 ? `${Math.round(distKm * 1000)} m` : `${distKm.toFixed(1)} km`}</Text> from you
+                  {distKm <= radiusKm ? ' · in their service area' : ''}
+                </Text>
+              </View>
+            )}
           </Card>
         </View>
 
@@ -339,12 +347,13 @@ const styles = StyleSheet.create({
   chip: { backgroundColor: Brand.surfaceAlt, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12 },
   chipText: { fontSize: 13, color: Brand.body, fontWeight: '600' },
 
-  map: { height: 140, backgroundColor: '#EAF1EE', position: 'relative' },
-  mapPin: { position: 'absolute' },
-  mapRadius: { position: 'absolute', top: 10, left: 30, width: 130, height: 110, borderRadius: 65, borderWidth: 2, borderColor: 'rgba(225,29,38,0.3)', backgroundColor: 'rgba(225,29,38,0.06)' },
-  mapInfo: { padding: 16, gap: 10 },
-  mapInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  mapInfoText: { fontSize: 14, color: Brand.body },
+  coverHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  coverRingOuter: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(225,29,38,0.08)', alignItems: 'center', justifyContent: 'center' },
+  coverRingInner: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(225,29,38,0.14)', alignItems: 'center', justifyContent: 'center' },
+  coverArea: { fontSize: 16, fontWeight: '800', color: Brand.ink },
+  coverSub: { fontSize: 12, color: Brand.muted, marginTop: 2 },
+  coverRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
+  coverText: { flex: 1, fontSize: 14, color: Brand.body },
 
   beforeAfter: { flexDirection: 'row', height: 130 },
   baHalf: { flex: 1, alignItems: 'center', justifyContent: 'center' },

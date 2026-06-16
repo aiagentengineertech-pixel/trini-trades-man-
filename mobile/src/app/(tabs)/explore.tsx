@@ -11,7 +11,7 @@ import { useStore } from '@/lib/store';
 const CATEGORIES = ['All', 'Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 'Painting', 'Masonry'];
 
 export default function ExploreScreen() {
-  const { pros } = useStore();
+  const { pros, distanceKm, distanceLabel } = useStore();
   const { trade } = useLocalSearchParams<{ trade?: string }>();
   const [active, setActive] = useState(trade && CATEGORIES.includes(trade) ? trade : 'All');
   const [query, setQuery] = useState('');
@@ -21,11 +21,20 @@ export default function ExploreScreen() {
     if (trade && CATEGORIES.includes(trade)) setActive(trade);
   }, [trade]);
   const q = query.trim().toLowerCase();
-  const list = pros.filter(
-    (p) =>
-      (active === 'All' || p.trade === active) &&
-      (!q || p.name.toLowerCase().includes(q) || p.trade.toLowerCase().includes(q) || p.area.toLowerCase().includes(q)),
-  );
+  const list = pros
+    .filter(
+      (p) =>
+        (active === 'All' || p.trade === active) &&
+        (!q || p.name.toLowerCase().includes(q) || p.trade.toLowerCase().includes(q) || p.area.toLowerCase().includes(q)),
+    )
+    .sort((a, b) => {
+      const da = distanceKm(a.lat, a.lng);
+      const db = distanceKm(b.lat, b.lng);
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return da - db;
+    });
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
@@ -80,8 +89,8 @@ export default function ExploreScreen() {
               <Text style={styles.trade}>{p.trade} · {p.area}</Text>
               <View style={styles.metaRow}>
                 <Ionicons name="star" size={13} color={Brand.star} />
-                <Text style={styles.meta}>{p.rating.toFixed(1)}</Text>
-                <Text style={styles.metaDim}>· {p.jobsDone} jobs</Text>
+                <Text style={styles.meta}>{p.reviewsCount > 0 ? p.rating.toFixed(1) : 'New'}</Text>
+                {distanceLabel(p.lat, p.lng) && <Text style={styles.metaDim}>· {distanceLabel(p.lat, p.lng)}</Text>}
               </View>
             </View>
             <View style={styles.cta}><Text style={styles.ctaText}>View</Text></View>

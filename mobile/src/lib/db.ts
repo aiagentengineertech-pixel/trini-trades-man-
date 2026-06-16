@@ -34,7 +34,7 @@ export async function fetchTrades(): Promise<Record<string, string>> {
 export async function fetchJobs(userId: string | null, idToName: Record<string, string>): Promise<Job[]> {
   const { data, error } = await supabase
     .from('jobs')
-    .select('id, customer_id, trade_id, title, description, area, budget_min, budget_max, status, invited_pro_id, created_at')
+    .select('id, customer_id, trade_id, title, description, area, budget_min, budget_max, status, invited_pro_id, location_lat, location_lng, created_at')
     .order('created_at', { ascending: false });
   if (error || !data) return [];
   return data.map((r: any) => {
@@ -52,6 +52,8 @@ export async function fetchJobs(userId: string | null, idToName: Record<string, 
       status: r.status,
       mine: !!userId && r.customer_id === userId,
       invitedProId: r.invited_pro_id ?? null,
+      lat: r.location_lat ?? null,
+      lng: r.location_lng ?? null,
       createdAt: relativeTime(r.created_at),
       ...style,
     } as Job;
@@ -61,7 +63,7 @@ export async function fetchJobs(userId: string | null, idToName: Record<string, 
 export async function insertJob(
   userId: string,
   nameToId: Record<string, string>,
-  data: { title: string; trade: string; description: string; budgetMin?: number; budgetMax?: number; area?: string; invitedProId?: string | null },
+  data: { title: string; trade: string; description: string; budgetMin?: number; budgetMax?: number; area?: string; invitedProId?: string | null; lat?: number | null; lng?: number | null },
 ): Promise<string | null> {
   const { data: row, error } = await supabase
     .from('jobs')
@@ -75,6 +77,8 @@ export async function insertJob(
       budget_max: data.budgetMax ?? null,
       status: 'open',
       invited_pro_id: data.invitedProId ?? null,
+      location_lat: data.lat ?? null,
+      location_lng: data.lng ?? null,
     })
     .select('id')
     .single();
@@ -137,7 +141,7 @@ export async function acceptBidRpc(bidId: string): Promise<boolean> {
 export async function fetchProfile(userId: string): Promise<MyProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('full_name, phone, area, photo_url, role, verified')
+    .select('full_name, phone, area, photo_url, role, verified, location_lat, location_lng')
     .eq('id', userId)
     .maybeSingle();
   if (error || !data) return null;
@@ -148,12 +152,14 @@ export async function fetchProfile(userId: string): Promise<MyProfile | null> {
     photoUrl: data.photo_url ?? null,
     role: data.role ?? 'customer',
     verified: !!data.verified,
+    lat: data.location_lat ?? null,
+    lng: data.location_lng ?? null,
   };
 }
 
 export async function updateProfile(
   userId: string,
-  fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; role: string }>,
+  fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; role: string; location_lat: number; location_lng: number }>,
 ): Promise<boolean> {
   const { error } = await supabase.from('profiles').update(fields).eq('id', userId);
   if (error) { console.warn('[db] updateProfile failed:', error.message); return false; }
@@ -238,7 +244,7 @@ export async function deletePortfolioItem(id: string): Promise<void> {
 export async function fetchPros(): Promise<Pro[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, area, photo_url, verified, rating_avg, rating_count, tradesman_info(bio, years_experience), tradesman_trades(trades(name))')
+    .select('id, full_name, area, photo_url, verified, rating_avg, rating_count, location_lat, location_lng, tradesman_info(bio, years_experience), tradesman_trades(trades(name))')
     .in('role', ['tradesman', 'both']);
   if (error || !data) return [];
   return data.map((p: any) => {
@@ -256,6 +262,8 @@ export async function fetchPros(): Promise<Pro[]> {
       area: p.area || 'Trinidad',
       distance: 'Nearby',
       verified: !!p.verified,
+      lat: p.location_lat ?? null,
+      lng: p.location_lng ?? null,
       photoUrl: p.photo_url ?? null,
       yearsExperience: info?.years_experience ?? null,
       bio: info?.bio || 'Trusted local tradesman on Trini Tradesman.',
