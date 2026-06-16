@@ -770,6 +770,30 @@ create policy "invoice items own" on invoice_items for all
   with check (exists (select 1 from invoices i where i.id = invoice_items.invoice_id and i.owner_id = auth.uid()));
 
 -- ============================================================
+-- Phase 5: dispatch scheduling on assignments + in-app notifications.
+-- ============================================================
+alter table job_assignments add column if not exists scheduled_at timestamptz;
+alter table job_assignments add column if not exists note         text;
+
+-- notify(): insert an in-app notification for yourself or one of your active
+-- employees (security definer; guarded so you can't spam arbitrary users).
+create or replace function notify(p_user uuid, p_type text, p_title text, p_body text, p_job uuid default null)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if p_user <> auth.uid() and not exists (
+    select 1 from team_members where owner_id = auth.uid() and member_id = p_user and status = 'active'
+  ) then
+    raise exception 'not allowed to notify this user';
+  end if;
+  insert into notifications (user_id, type, title, body, job_id) values (p_user, p_type, p_title, p_body, p_job);
+end;
+$$;
+grant execute on function notify(uuid, text, text, text, uuid) to authenticated;
+
+-- ============================================================
 -- expenses — receipts logged against a client project (Phase 4).
 -- ============================================================
 create table if not exists expenses (

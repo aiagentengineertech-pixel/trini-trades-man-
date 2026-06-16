@@ -41,6 +41,7 @@ const HUB: { icon: IconName; label: string; desc: string; route: Href; tint: str
   { icon: 'trending-up-outline', label: 'Profit', desc: 'Income vs expenses', route: '/profit', tint: '#2EA84F', bg: '#E9F8EE' },
   { icon: 'stats-chart-outline', label: 'Analytics', desc: 'Views & conversion', route: '/analytics', tint: '#8B5CF6', bg: '#F1ECFE' },
   { icon: 'people-outline', label: 'Team', desc: 'Staff & roles', route: '/team', tint: '#16B1C9', bg: '#E6F8FB' },
+  { icon: 'calendar-outline', label: 'Dispatch', desc: 'Schedule the team', route: '/dispatch', tint: '#E8852B', bg: '#FDF1E6' },
 ];
 
 function BusinessHub() {

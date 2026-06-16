@@ -192,7 +192,7 @@ export async function updateProfile(
 
 // ---------------- Pros (real tradesmen) ----------------
 
-import type { CatalogItem, Client, ClientPhoto, DocType, Expense, InvoiceSettings, PayoutAccount, PortfolioItem, Pro, ProStats, Review, TeamMember, TeamRole } from './store-types';
+import type { CatalogItem, Client, ClientPhoto, DocType, Expense, InvoiceSettings, Notification, PayoutAccount, PortfolioItem, Pro, ProStats, Review, TeamMember, TeamRole } from './store-types';
 
 export async function fetchPayoutAccount(userId: string): Promise<PayoutAccount | null> {
   const { data, error } = await supabase
@@ -444,6 +444,12 @@ export interface Assignment {
   ownerId: string;
   employeeId: string;
   employeeName?: string;
+  scheduledAt: string | null;
+  note: string;
+}
+
+function mapAssignment(d: any): Assignment {
+  return { id: d.id, jobId: d.job_id, ownerId: d.owner_id, employeeId: d.employee_id, employeeName: d.employee?.full_name, scheduledAt: d.scheduled_at ?? null, note: d.note ?? '' };
 }
 
 export async function assignJob(jobId: string, ownerId: string, employeeId: string): Promise<boolean> {
@@ -454,6 +460,10 @@ export async function assignJob(jobId: string, ownerId: string, employeeId: stri
   return true;
 }
 
+export async function scheduleAssignment(jobId: string, scheduledAt: string | null, note: string): Promise<void> {
+  await supabase.from('job_assignments').update({ scheduled_at: scheduledAt, note: note || null }).eq('job_id', jobId);
+}
+
 export async function unassignJob(jobId: string): Promise<void> {
   await supabase.from('job_assignments').delete().eq('job_id', jobId);
 }
@@ -461,22 +471,66 @@ export async function unassignJob(jobId: string): Promise<void> {
 export async function fetchAssignment(jobId: string): Promise<Assignment | null> {
   const { data, error } = await supabase
     .from('job_assignments')
-    .select('id, job_id, owner_id, employee_id, employee:profiles!employee_id(full_name)')
+    .select('id, job_id, owner_id, employee_id, scheduled_at, note, employee:profiles!employee_id(full_name)')
     .eq('job_id', jobId)
     .maybeSingle();
   if (error || !data) return null;
-  const d: any = data;
-  return { id: d.id, jobId: d.job_id, ownerId: d.owner_id, employeeId: d.employee_id, employeeName: d.employee?.full_name };
+  return mapAssignment(data);
 }
 
 export async function fetchMyAssignments(userId: string): Promise<Assignment[]> {
   const { data, error } = await supabase
     .from('job_assignments')
-    .select('id, job_id, owner_id, employee_id')
+    .select('id, job_id, owner_id, employee_id, scheduled_at, note')
     .eq('employee_id', userId)
-    .order('created_at', { ascending: false });
+    .order('scheduled_at', { ascending: true, nullsFirst: false });
   if (error || !data) return [];
-  return data.map((d: any) => ({ id: d.id, jobId: d.job_id, ownerId: d.owner_id, employeeId: d.employee_id }));
+  return data.map(mapAssignment);
+}
+
+export async function fetchOwnerAssignments(ownerId: string): Promise<Assignment[]> {
+  const { data, error } = await supabase
+    .from('job_assignments')
+    .select('id, job_id, owner_id, employee_id, scheduled_at, note, employee:profiles!employee_id(full_name)')
+    .eq('owner_id', ownerId)
+    .order('scheduled_at', { ascending: true, nullsFirst: false });
+  if (error || !data) return [];
+  return data.map(mapAssignment);
+}
+
+export async function notifyUser(userId: string, type: string, title: string, body: string, jobId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('notify', { p_user: userId, p_type: type, p_title: title, p_body: body, p_job: jobId ?? null });
+  if (error) console.warn('[db] notify failed:', error.message);
+}
+
+const NOTIF_STYLE: Record<string, { icon: any; color: string; bg: string }> = {
+  dispatch: { icon: 'calendar', color: '#E8852B', bg: '#FDF1E6' },
+  reminder: { icon: 'cash', color: '#2EA84F', bg: '#E9F8EE' },
+  bid: { icon: 'pricetag', color: '#2EA84F', bg: '#E9F8EE' },
+  message: { icon: 'chatbubble-ellipses', color: '#2F6FED', bg: '#EAF1FE' },
+  system: { icon: 'notifications', color: '#E11D26', bg: '#FDECEC' },
+};
+
+export async function fetchNotifications(userId: string): Promise<Notification[]> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('id, type, title, body, read, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error || !data) return [];
+  return data.map((r: any) => {
+    const st = NOTIF_STYLE[r.type] ?? NOTIF_STYLE.system;
+    return { id: r.id, type: r.type, title: r.title, body: r.body ?? '', time: relativeTime(r.created_at), unread: !r.read, ...st } as Notification;
+  });
+}
+
+export async function markNotificationsRead(userId: string): Promise<void> {
+  await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false);
+}
+
+export async function markInvoicePaid(id: string): Promise<void> {
+  await supabase.from('invoices').update({ status: 'paid' }).eq('id', id);
 }
 
 // ---------------- Clients (CRM) ----------------

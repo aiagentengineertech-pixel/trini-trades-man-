@@ -125,6 +125,9 @@ export default function TeamScreen() {
                     <View style={styles.grow}>
                       <Text style={styles.rowName}>{job?.title ?? 'Assigned job'}</Text>
                       <Text style={styles.rowSub}>{job ? `${job.trade} · ${job.area}` : 'Tap message to contact the customer'}</Text>
+                      {a.scheduledAt && (
+                        <Text style={styles.schedSub}>🗓 {new Date(a.scheduledAt).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</Text>
+                      )}
                     </View>
                     <Pressable style={styles.msgBtn} onPress={() => messageCustomer(a)}>
                       <Ionicons name="chatbubble-ellipses-outline" size={15} color={Brand.red} />
@@ -207,6 +210,7 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   rowName: { fontSize: 15, fontWeight: '700', color: Brand.ink },
   rowSub: { fontSize: 12, color: Brand.muted, marginTop: 2 },
+  schedSub: { fontSize: 12, color: Brand.red, fontWeight: '700', marginTop: 3 },
 
   inviteCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, marginBottom: 10 },
   acceptBtn: { backgroundColor: Brand.green, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 10 },

@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { assignJob, fetchAssignment, fetchTeam, unassignJob, type Assignment } from '@/lib/db';
+import { assignJob, fetchAssignment, fetchTeam, notifyUser, scheduleAssignment, unassignJob, type Assignment } from '@/lib/db';
 import { useStore } from '@/lib/store';
 import type { TeamMember } from '@/lib/store-types';
 
@@ -57,6 +57,11 @@ export default function JobDetailScreen() {
     }
   }, [canAssign, userId, id]);
 
+  const [schedDay, setSchedDay] = useState<number | null>(null); // days from today
+  const [schedTime, setSchedTime] = useState<number | null>(null); // hour
+  const [schedNote, setSchedNote] = useState('');
+  const [dispatched, setDispatched] = useState(false);
+
   const assign = async (employeeId: string) => {
     if (!userId || !job) return;
     await assignJob(job.id, userId, employeeId);
@@ -66,6 +71,24 @@ export default function JobDetailScreen() {
     if (!job) return;
     await unassignJob(job.id);
     setAssignment(null);
+    setDispatched(false);
+  };
+
+  const dispatch = async () => {
+    if (!job || !assignment) return;
+    let iso: string | null = null;
+    let when = 'as soon as possible';
+    if (schedDay != null && schedTime != null) {
+      const d = new Date();
+      d.setDate(d.getDate() + schedDay);
+      d.setHours(schedTime, 0, 0, 0);
+      iso = d.toISOString();
+      when = d.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+    await scheduleAssignment(job.id, iso, schedNote);
+    await notifyUser(assignment.employeeId, 'dispatch', `Job assigned: ${job.title}`, `${when} · ${job.area}${schedNote ? ` · ${schedNote}` : ''}`, job.id);
+    setDispatched(true);
+    fetchAssignment(job.id).then(setAssignment);
   };
 
   if (!job) {
@@ -164,11 +187,36 @@ export default function JobDetailScreen() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Assign to a team member</Text>
                 {assignment ? (
+                  <>
                   <View style={styles.assignedRow}>
                     <Ionicons name="person-circle" size={22} color={Brand.green} />
                     <Text style={styles.assignedText}>{assignment.employeeName || 'Employee'} is on this job</Text>
                     <Pressable onPress={unassign} hitSlop={8}><Text style={styles.assignChange}>Change</Text></Pressable>
                   </View>
+                  {assignment.scheduledAt && !dispatched && (
+                    <Text style={styles.schedCurrent}>Scheduled: {new Date(assignment.scheduledAt).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</Text>
+                  )}
+                  <Text style={styles.schedLabel}>Schedule (optional)</Text>
+                  <View style={styles.chipRow}>
+                    {[['Today', 0], ['Tomorrow', 1], ['+2 days', 2], ['+3 days', 3]].map(([lbl, d]) => (
+                      <Pressable key={lbl as string} onPress={() => setSchedDay(d as number)} style={[styles.schedChip, schedDay === d && styles.schedChipOn]}>
+                        <Text style={[styles.schedChipText, schedDay === d && styles.schedChipTextOn]}>{lbl as string}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <View style={styles.chipRow}>
+                    {[['Morning', 8], ['Midday', 12], ['Afternoon', 15]].map(([lbl, h]) => (
+                      <Pressable key={lbl as string} onPress={() => setSchedTime(h as number)} style={[styles.schedChip, schedTime === h && styles.schedChipOn]}>
+                        <Text style={[styles.schedChipText, schedTime === h && styles.schedChipTextOn]}>{lbl as string}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <TextInput style={styles.schedNote} placeholder="Note for the employee (optional)" placeholderTextColor={Brand.muted} value={schedNote} onChangeText={setSchedNote} />
+                  <Pressable style={styles.dispatchBtn} onPress={dispatch}>
+                    <Ionicons name={dispatched ? 'checkmark-done' : 'send'} size={16} color="#fff" />
+                    <Text style={styles.dispatchText}>{dispatched ? 'Dispatched ✓' : 'Dispatch & notify employee'}</Text>
+                  </Pressable>
+                  </>
                 ) : team.length === 0 ? (
                   <Text style={styles.assignHint}>Invite employees on the Team screen, then assign this job to one of them.</Text>
                 ) : (
@@ -355,6 +403,16 @@ const styles = StyleSheet.create({
   assignPick: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: Brand.line, borderRadius: 12, padding: 12 },
   assignAvatar: { width: 34, height: 34, borderRadius: 17, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   assignName: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.ink },
+  schedCurrent: { fontSize: 13, color: Brand.green, fontWeight: '700', marginTop: 10 },
+  schedLabel: { fontSize: 13, fontWeight: '700', color: Brand.ink, marginTop: 16, marginBottom: 8 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  schedChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: Brand.line },
+  schedChipOn: { backgroundColor: Brand.red, borderColor: Brand.red },
+  schedChipText: { fontSize: 13, fontWeight: '600', color: Brand.body },
+  schedChipTextOn: { color: '#fff' },
+  schedNote: { borderWidth: 1, borderColor: Brand.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: Brand.ink, marginTop: 4 },
+  dispatchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 12, paddingVertical: 14, marginTop: 12 },
+  dispatchText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 
   completeCard: { backgroundColor: '#F1FBF5', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#CDEBD8' },
   completeTitle: { fontSize: 16, fontWeight: '800', color: Brand.ink },

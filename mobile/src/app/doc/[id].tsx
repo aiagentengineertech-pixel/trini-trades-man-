@@ -1,16 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Card } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { convertToInvoice, fetchInvoiceSettings, fetchInvoiceWithItems, signOffDocument } from '@/lib/db';
+import { convertToInvoice, fetchClient, fetchInvoiceSettings, fetchInvoiceWithItems, markInvoicePaid, notifyUser, signOffDocument } from '@/lib/db';
 import { generateInvoicePdf, invoiceTotals } from '@/lib/invoice';
-import type { InvoiceSettings } from '@/lib/store-types';
+import type { Client, InvoiceSettings } from '@/lib/store-types';
 
 const LABEL: Record<string, string> = { invoice: 'Invoice', bill: 'Bill', estimate: 'Estimate', quote: 'Quote' };
 const money = (n: number) => `TT$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -21,12 +21,16 @@ export default function DocDetailScreen() {
   const premium = usePremium();
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof fetchInvoiceWithItems>>>(null);
   const [settings, setSettings] = useState<InvoiceSettings | null>(null);
+  const [client, setClient] = useState<Client | null>(null);
   const [signName, setSignName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [reminded, setReminded] = useState(false);
 
   const load = useCallback(async () => {
-    setDoc(await fetchInvoiceWithItems(id));
+    const d = await fetchInvoiceWithItems(id);
+    setDoc(d);
     if (userId) setSettings(await fetchInvoiceSettings(userId));
+    if (d?.clientId) setClient(await fetchClient(d.clientId));
   }, [id, userId]);
   useEffect(() => { load(); }, [load]);
 
@@ -67,6 +71,20 @@ export default function DocDetailScreen() {
     if (newId) router.replace({ pathname: '/doc/[id]', params: { id: newId } });
   };
 
+  const markPaid = async () => { setBusy(true); await markInvoicePaid(id); setBusy(false); load(); };
+
+  const sendReminder = () => {
+    const biz = settings?.businessName || 'Trini Tradesman';
+    const subject = `Payment reminder — ${doc!.number}`;
+    const body = `Hi ${doc!.customerName || 'there'},\n\nThis is a friendly reminder that ${doc!.number} for ${money(totals.total)} is now due.\n\nYou can pay by bank transfer or WiPay. Please let me know once settled, and thank you for your business.\n\n${biz}`;
+    Linking.openURL(`mailto:${client?.email ?? ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`).catch(() => {});
+    if (userId) notifyUser(userId, 'reminder', 'Payment reminder sent', `${doc!.number} · ${doc!.customerName || 'client'} · ${money(totals.total)}`, null);
+    setReminded(true);
+  };
+
+  const isBillable = doc.docType === 'invoice' || doc.docType === 'bill';
+  const paid = doc.status === 'paid';
+
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
       <View style={styles.topbar}>
@@ -82,8 +100,8 @@ export default function DocDetailScreen() {
               <Text style={styles.docType}>{LABEL[doc.docType]}</Text>
               <Text style={styles.num}>{doc.number}</Text>
             </View>
-            <View style={[styles.badge, approved && styles.badgeOk, converted && styles.badgeConv]}>
-              <Text style={[styles.badgeText, (approved || converted) && { color: '#fff' }]}>{converted ? 'Converted' : approved ? 'Approved' : 'Sent'}</Text>
+            <View style={[styles.badge, (approved || paid) && styles.badgeOk, converted && styles.badgeConv]}>
+              <Text style={[styles.badgeText, (approved || converted || paid) && { color: '#fff' }]}>{paid ? 'Paid' : converted ? 'Converted' : approved ? 'Approved' : 'Sent'}</Text>
             </View>
           </View>
           <Text style={styles.billTo}>Bill to: <Text style={{ fontWeight: '700', color: Brand.ink }}>{doc.customerName || 'Customer'}</Text></Text>
@@ -104,6 +122,28 @@ export default function DocDetailScreen() {
           <Ionicons name="download-outline" size={18} color="#fff" />
           <Text style={styles.pdfText}>{busy ? 'Working…' : 'Download / share PDF'}</Text>
         </Pressable>
+
+        {/* Payment (invoices/bills) */}
+        {isBillable && (
+          <Card style={styles.payCard}>
+            <View style={styles.payRow}>
+              <Text style={styles.payTitle}>Payment</Text>
+              <Text style={[styles.payStatus, { color: paid ? Brand.green : Brand.star }]}>{paid ? 'Paid' : 'Unpaid'}</Text>
+            </View>
+            {!paid && (
+              <View style={{ gap: 10, marginTop: 14 }}>
+                <Pressable style={styles.remindBtn} onPress={sendReminder}>
+                  <Ionicons name="mail-outline" size={16} color={Brand.red} />
+                  <Text style={styles.remindText}>{reminded ? 'Reminder email opened ✓' : 'Send payment reminder (email)'}</Text>
+                </Pressable>
+                <Pressable style={styles.paidBtn} onPress={markPaid} disabled={busy}>
+                  <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                  <Text style={styles.paidText}>Mark as paid</Text>
+                </Pressable>
+              </View>
+            )}
+          </Card>
+        )}
 
         {/* Estimate sign-off */}
         {isEstimate && !approved && !converted && (
@@ -161,6 +201,15 @@ const styles = StyleSheet.create({
 
   pdfBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 14, paddingVertical: 15, marginTop: 16 },
   pdfText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+
+  payCard: { padding: 16, marginTop: 16 },
+  payRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  payTitle: { fontSize: 16, fontWeight: '800', color: Brand.ink },
+  payStatus: { fontSize: 14, fontWeight: '800' },
+  remindBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderColor: Brand.red, borderRadius: 12, paddingVertical: 13 },
+  remindText: { color: Brand.red, fontWeight: '800', fontSize: 14 },
+  paidBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.green, borderRadius: 12, paddingVertical: 13 },
+  paidText: { color: '#fff', fontWeight: '800', fontSize: 14 },
 
   signCard: { padding: 16, marginTop: 16 },
   signTitle: { fontSize: 16, fontWeight: '800', color: Brand.ink },
