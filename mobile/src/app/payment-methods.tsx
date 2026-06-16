@@ -76,16 +76,16 @@ export default function PaymentMethodsScreen() {
         </Pressable>
 
         <Text style={styles.section}>Payout account (for tradesmen)</Text>
-        <View style={styles.card}>
+        <Pressable style={styles.card} onPress={() => router.push('/payout-account')}>
           <View style={styles.cardIcon}>
             <Ionicons name="business" size={22} color={Brand.ink} />
           </View>
           <View style={styles.flex}>
-            <Text style={styles.cardBrand}>Republic Bank •••• 7781</Text>
-            <Text style={styles.cardExp}>Earnings are paid out here</Text>
+            <Text style={styles.cardBrand}>Set up payout account</Text>
+            <Text style={styles.cardExp}>Where your earnings are paid out</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={Brand.muted} />
-        </View>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );

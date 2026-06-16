@@ -364,6 +364,23 @@ create policy "portfolio write own" on portfolio for all
   using (auth.uid() = tradesman_id) with check (auth.uid() = tradesman_id);
 
 -- ============================================================
+-- payout_accounts — where a tradesman receives their money (private)
+-- ============================================================
+create table if not exists payout_accounts (
+  user_id        uuid primary key references profiles(id) on delete cascade,
+  method         text not null default 'bank',  -- 'bank' | 'wipay'
+  bank_name      text,
+  account_number text,
+  account_holder text,
+  wipay_number   text,
+  updated_at     timestamptz not null default now()
+);
+alter table payout_accounts enable row level security;
+drop policy if exists "payout own" on payout_accounts;
+create policy "payout own" on payout_accounts for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ============================================================
 -- Storage buckets + policies (photos & ID documents)
 -- ============================================================
 insert into storage.buckets (id, name, public) values ('uploads', 'uploads', true) on conflict (id) do nothing;

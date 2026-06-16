@@ -160,7 +160,37 @@ export async function updateProfile(
 
 // ---------------- Pros (real tradesmen) ----------------
 
-import type { PortfolioItem, Pro, Review } from './store-types';
+import type { PayoutAccount, PortfolioItem, Pro, Review } from './store-types';
+
+export async function fetchPayoutAccount(userId: string): Promise<PayoutAccount | null> {
+  const { data, error } = await supabase
+    .from('payout_accounts')
+    .select('method, bank_name, account_number, account_holder, wipay_number')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    method: (data.method as 'bank' | 'wipay') || 'bank',
+    bankName: data.bank_name ?? '',
+    accountNumber: data.account_number ?? '',
+    accountHolder: data.account_holder ?? '',
+    wipayNumber: data.wipay_number ?? '',
+  };
+}
+
+export async function savePayoutAccount(userId: string, a: PayoutAccount): Promise<boolean> {
+  const { error } = await supabase.from('payout_accounts').upsert({
+    user_id: userId,
+    method: a.method,
+    bank_name: a.bankName || null,
+    account_number: a.accountNumber || null,
+    account_holder: a.accountHolder || null,
+    wipay_number: a.wipayNumber || null,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) { console.warn('[db] savePayoutAccount failed:', error.message); return false; }
+  return true;
+}
 
 export async function fetchPortfolio(proId: string): Promise<PortfolioItem[]> {
   const { data, error } = await supabase

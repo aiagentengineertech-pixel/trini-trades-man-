@@ -37,6 +37,14 @@ export interface PortfolioItem {
   date: string;
 }
 
+export interface PayoutAccount {
+  method: 'bank' | 'wipay';
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  wipayNumber: string;
+}
+
 export interface MyProfile {
   fullName: string;
   phone: string;
