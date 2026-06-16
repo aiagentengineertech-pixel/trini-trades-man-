@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleShee
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, Segmented } from '@/components/ui';
+import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { addCatalogItem, deleteCatalogItem, fetchCatalog, updateCatalogItem } from '@/lib/db';
@@ -20,8 +21,11 @@ export default function CatalogScreen() {
   const load = useCallback(async () => { if (userId) setItems(await fetchCatalog(userId)); }, [userId]);
   useEffect(() => { load(); }, [load]);
 
+  const premium = usePremium();
   const q = query.trim().toLowerCase();
   const list = items.filter((i) => !q || i.name.toLowerCase().includes(q));
+
+  if (!premium) return <PremiumGateScreen title="Price Book" feature="Your saved services & materials price book" />;
 
   const openNew = () => { setEditing({ id: '', name: '', kind: 'service', unit: 'job', price: 0 }); setOpen(true); };
   const openEdit = (it: CatalogItem) => { setEditing(it); setOpen(true); };

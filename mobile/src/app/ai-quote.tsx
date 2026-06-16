@@ -5,9 +5,10 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleShee
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/ui';
+import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { fetchCatalog, fetchInvoiceSettings } from '@/lib/db';
+import { fetchCatalog, fetchInvoiceSettings, saveInvoice } from '@/lib/db';
 import { generateInvoicePdf, invoiceTotals, type InvoiceLine } from '@/lib/invoice';
 import type { CatalogItem, InvoiceSettings } from '@/lib/store-types';
 
@@ -15,6 +16,7 @@ const money = (n: number) => `TT$${n.toLocaleString(undefined, { minimumFraction
 
 export default function InvoiceBuilderScreen() {
   const { userId } = useAuth();
+  const premium = usePremium();
   const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [customer, setCustomer] = useState('');
@@ -22,6 +24,7 @@ export default function InvoiceBuilderScreen() {
   const [vat, setVat] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -48,10 +51,18 @@ export default function InvoiceBuilderScreen() {
       paymentTerms: '', footerNote: '', contactPhone: '', contactEmail: '',
     };
     setGenerating(true);
-    try { await generateInvoicePdf(effective, draft); } finally { setGenerating(false); }
+    try {
+      await generateInvoicePdf(effective, draft);
+      if (userId) {
+        const id = await saveInvoice(userId, { number: draft.number, customerName: draft.customerName, subtotal: totals.subtotal, tax: totals.tax, total: totals.total }, draft.lines);
+        if (id) setSavedId(id);
+      }
+    } finally { setGenerating(false); }
   };
 
   const needsBranding = !settings || !settings.businessName;
+
+  if (!premium) return <PremiumGateScreen title="New Invoice" feature="The invoice generator" />;
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
@@ -72,6 +83,10 @@ export default function InvoiceBuilderScreen() {
             <Pressable style={styles.linkBtn} onPress={() => router.push('/catalog')}>
               <Ionicons name="pricetags-outline" size={16} color={Brand.ink} />
               <Text style={styles.linkText}>Price book</Text>
+            </Pressable>
+            <Pressable style={styles.linkBtn} onPress={() => router.push('/invoices')}>
+              <Ionicons name="time-outline" size={16} color={Brand.ink} />
+              <Text style={styles.linkText}>History</Text>
             </Pressable>
           </View>
           {needsBranding && (
@@ -139,6 +154,12 @@ export default function InvoiceBuilderScreen() {
             <Ionicons name="document-text" size={18} color="#fff" />
             <Text style={styles.genBtnText}>{generating ? 'Generating…' : 'Generate branded PDF'}</Text>
           </Pressable>
+          {savedId && (
+            <Pressable style={styles.savedRow} onPress={() => router.push('/invoices')}>
+              <Ionicons name="checkmark-circle" size={16} color={Brand.green} />
+              <Text style={styles.savedText}>Saved to invoice history — tap to view</Text>
+            </Pressable>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -242,6 +263,8 @@ const styles = StyleSheet.create({
 
   genBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 14, paddingVertical: 16, marginTop: 20 },
   genBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  savedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14 },
+  savedText: { color: Brand.green, fontWeight: '700', fontSize: 13 },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: Brand.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 10 },

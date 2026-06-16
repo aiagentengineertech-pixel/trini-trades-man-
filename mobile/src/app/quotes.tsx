@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, Segmented } from '@/components/ui';
+import { usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useStore } from '@/lib/store';
 
@@ -17,6 +18,8 @@ const STATUS_FOR: Record<string, 'pending' | 'accepted' | 'rejected'> = {
 
 export default function QuotesScreen() {
   const { myQuotes } = useStore();
+  const premium = usePremium();
+  const invoiceRoute = premium ? '/ai-quote' : '/upgrade';
   const [tab, setTab] = useState<string>('Pending');
   const all = myQuotes();
   const list = all.filter((q) => q.bid.status === STATUS_FOR[tab]);
@@ -32,11 +35,12 @@ export default function QuotesScreen() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         {/* Create actions */}
         <View style={styles.actions}>
-          <Pressable style={styles.aiBtn} onPress={() => router.push('/ai-quote')}>
+          <Pressable style={styles.aiBtn} onPress={() => router.push(invoiceRoute)}>
             <Ionicons name="document-text" size={18} color="#fff" />
             <Text style={styles.aiText}>Invoice Generator</Text>
+            {!premium && <View style={styles.proPill}><Ionicons name="star" size={10} color="#fff" /><Text style={styles.proPillText}>PRO</Text></View>}
           </Pressable>
-          <Pressable style={styles.actionMini} onPress={() => router.push('/ai-quote')}><Ionicons name="add" size={20} color={Brand.red} /></Pressable>
+          <Pressable style={styles.actionMini} onPress={() => router.push(invoiceRoute)}><Ionicons name="add" size={20} color={Brand.red} /></Pressable>
         </View>
         <Text style={styles.actionHint}>Your quotes are the bids you send on jobs. Generate a branded invoice once a quote is accepted.</Text>
 
@@ -88,6 +92,8 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 10 },
   aiBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 14, paddingVertical: 14 },
   aiText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  proPill: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8, marginLeft: 8 },
+  proPillText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   actionMini: { width: 50, height: 50, borderRadius: 14, borderWidth: 1.5, borderColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
   actionHint: { fontSize: 12, color: Brand.muted, marginTop: 10 },
   empty: { color: Brand.muted, textAlign: 'center', paddingVertical: 30 },

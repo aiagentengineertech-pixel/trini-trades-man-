@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { fetchInvoiceSettings, saveInvoiceSettings, uploadImage } from '@/lib/db';
@@ -39,6 +40,8 @@ export default function InvoiceSettingsScreen() {
     if (url) set('logoUrl', url + '?t=' + Date.now());
   };
 
+  const premium = usePremium();
+
   const save = async () => {
     if (!userId) return;
     setBusy(true);
@@ -47,6 +50,8 @@ export default function InvoiceSettingsScreen() {
     setBusy(false);
     setSaved(ok);
   };
+
+  if (!premium) return <PremiumGateScreen title="Invoice Branding" feature="Custom invoice branding (logo, colours, payment terms)" />;
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>

@@ -517,6 +517,67 @@ export async function saveInvoiceSettings(userId: string, s: InvoiceSettings): P
   return true;
 }
 
+export interface SavedInvoice {
+  id: string;
+  number: string;
+  customerName: string;
+  total: number;
+  status: string;
+  createdAt: string;
+}
+
+export async function saveInvoice(
+  userId: string,
+  inv: { number: string; customerName: string; notes?: string; subtotal: number; tax: number; total: number; clientId?: string | null; jobId?: string | null },
+  lines: { description: string; qty: number; unitPrice: number }[],
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('invoices')
+    .insert({
+      owner_id: userId, number: inv.number, customer_name: inv.customerName || null,
+      status: 'sent', currency: 'TTD', subtotal: inv.subtotal, tax: inv.tax, total: inv.total,
+      notes: inv.notes || null, client_id: inv.clientId ?? null, job_id: inv.jobId ?? null,
+    })
+    .select('id')
+    .single();
+  if (error || !data) { console.warn('[db] saveInvoice failed:', error?.message); return null; }
+  const rows = lines.map((l, i) => ({ invoice_id: data.id, description: l.description, qty: l.qty, unit_price: l.unitPrice, amount: l.qty * l.unitPrice, sort: i }));
+  if (rows.length) await supabase.from('invoice_items').insert(rows);
+  return data.id;
+}
+
+export async function fetchInvoices(userId: string): Promise<SavedInvoice[]> {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('id, number, customer_name, total, status, created_at')
+    .eq('owner_id', userId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map((r: any) => ({
+    id: r.id, number: r.number, customerName: r.customer_name ?? 'Customer',
+    total: Number(r.total), status: r.status, createdAt: relativeTime(r.created_at),
+  }));
+}
+
+export async function fetchInvoiceWithItems(id: string): Promise<{ number: string; customerName: string; taxPct: number; notes: string; lines: { description: string; qty: number; unitPrice: number }[] } | null> {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('number, customer_name, subtotal, tax, notes, invoice_items(description, qty, unit_price, sort)')
+    .eq('id', id)
+    .maybeSingle();
+  if (error || !data) return null;
+  const d: any = data;
+  const items = (Array.isArray(d.invoice_items) ? d.invoice_items : []).sort((a: any, b: any) => a.sort - b.sort);
+  const taxPct = Number(d.subtotal) > 0 ? Math.round((Number(d.tax) / Number(d.subtotal)) * 1000) / 10 : 0;
+  return {
+    number: d.number,
+    customerName: d.customer_name ?? '',
+    taxPct,
+    notes: d.notes ?? '',
+    lines: items.map((it: any) => ({ description: it.description, qty: Number(it.qty), unitPrice: Number(it.unit_price) })),
+  };
+}
+
 export async function fetchCatalog(userId: string): Promise<CatalogItem[]> {
   const { data, error } = await supabase
     .from('catalog_items')
