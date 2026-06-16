@@ -57,7 +57,7 @@ interface StoreState {
   openJobs: () => Job[];
   myBids: () => Bid[];
   myBidForJob: (jobId: string) => Bid | undefined;
-  addJob: (data: { title: string; trade: string; description: string; budgetMin?: number; budgetMax?: number; area?: string }) => Promise<string | null>;
+  addJob: (data: { title: string; trade: string; description: string; budgetMin?: number; budgetMax?: number; area?: string; invitedProId?: string | null }) => Promise<string | null>;
   acceptBid: (bidId: string) => Promise<void>;
   submitBid: (jobId: string, amount: number, message: string) => Promise<void>;
   refresh: () => Promise<void>;

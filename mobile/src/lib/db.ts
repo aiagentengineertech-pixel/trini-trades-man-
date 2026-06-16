@@ -34,7 +34,7 @@ export async function fetchTrades(): Promise<Record<string, string>> {
 export async function fetchJobs(userId: string | null, idToName: Record<string, string>): Promise<Job[]> {
   const { data, error } = await supabase
     .from('jobs')
-    .select('id, customer_id, trade_id, title, description, area, budget_min, budget_max, status, created_at')
+    .select('id, customer_id, trade_id, title, description, area, budget_min, budget_max, status, invited_pro_id, created_at')
     .order('created_at', { ascending: false });
   if (error || !data) return [];
   return data.map((r: any) => {
@@ -51,6 +51,7 @@ export async function fetchJobs(userId: string | null, idToName: Record<string, 
       budgetMax: r.budget_max ?? undefined,
       status: r.status,
       mine: !!userId && r.customer_id === userId,
+      invitedProId: r.invited_pro_id ?? null,
       createdAt: relativeTime(r.created_at),
       ...style,
     } as Job;
@@ -60,7 +61,7 @@ export async function fetchJobs(userId: string | null, idToName: Record<string, 
 export async function insertJob(
   userId: string,
   nameToId: Record<string, string>,
-  data: { title: string; trade: string; description: string; budgetMin?: number; budgetMax?: number; area?: string },
+  data: { title: string; trade: string; description: string; budgetMin?: number; budgetMax?: number; area?: string; invitedProId?: string | null },
 ): Promise<string | null> {
   const { data: row, error } = await supabase
     .from('jobs')
@@ -73,6 +74,7 @@ export async function insertJob(
       budget_min: data.budgetMin ?? null,
       budget_max: data.budgetMax ?? null,
       status: 'open',
+      invited_pro_id: data.invitedProId ?? null,
     })
     .select('id')
     .single();

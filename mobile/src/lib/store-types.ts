@@ -68,6 +68,7 @@ export interface Job {
   budgetMax?: number;
   status: JobStatus;
   mine: boolean;
+  invitedProId: string | null;
   createdAt: string;
   icon: IconName;
   color: string;

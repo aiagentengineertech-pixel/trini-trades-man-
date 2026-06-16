@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -102,7 +102,12 @@ function BusinessHub() {
 
 function CustomerPost() {
   const { addJob } = useStore();
-  const [trade, setTrade] = useState<string | null>(null);
+  const params = useLocalSearchParams<{ trade?: string; invitePro?: string; invitePname?: string }>();
+  const invitePro = params.invitePro || null;
+  const invitePname = params.invitePname || null;
+  const [trade, setTrade] = useState<string | null>(
+    params.trade && TRADES.includes(params.trade) ? params.trade : null,
+  );
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [budgetMin, setBudgetMin] = useState('');
@@ -110,6 +115,11 @@ function CustomerPost() {
   const [postedId, setPostedId] = useState<string | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Pre-select the trade when arriving from a "Hire / Invite to quote" tap.
+  useEffect(() => {
+    if (params.trade && TRADES.includes(params.trade)) setTrade(params.trade);
+  }, [params.trade]);
 
   const addPhotos = async () => {
     const uris = await pickImages();
@@ -142,6 +152,7 @@ function CustomerPost() {
       description: description.trim(),
       budgetMin: budgetMin ? Number(budgetMin) : undefined,
       budgetMax: budgetMax ? Number(budgetMax) : undefined,
+      invitedProId: invitePro,
     });
     setPosting(false);
     if (!id) {
@@ -149,7 +160,12 @@ function CustomerPost() {
       return;
     }
     setPostedId(id);
-    notifyLocal('Job posted ✅', `Verified ${trade.toLowerCase()} tradesmen near you are being notified.`);
+    notifyLocal(
+      'Job posted ✅',
+      invitePname
+        ? `${invitePname} has been invited to quote on your job.`
+        : `Verified ${trade.toLowerCase()} tradesmen near you are being notified.`,
+    );
   };
 
   if (postedId) {
@@ -160,8 +176,9 @@ function CustomerPost() {
         </View>
         <Text style={styles.successTitle}>Job posted!</Text>
         <Text style={styles.successSub}>
-          Verified {trade?.toLowerCase()} tradesmen near you are being notified. Quotes will start
-          coming in shortly.
+          {invitePname
+            ? `${invitePname} has been invited to quote, and other verified ${trade?.toLowerCase()} pros can quote too. Quotes will start coming in shortly.`
+            : `Verified ${trade?.toLowerCase()} tradesmen near you are being notified. Quotes will start coming in shortly.`}
         </Text>
         <Pressable
           style={styles.primaryBtn}
@@ -183,8 +200,17 @@ function CustomerPost() {
     <SafeAreaView style={styles.flex} edges={['top']}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.h1}>Post a Job</Text>
+          <Text style={styles.h1}>{invitePname ? 'Invite to Quote' : 'Post a Job'}</Text>
           <Text style={styles.subtitle}>Describe what you need and get quotes from verified pros.</Text>
+
+          {invitePname && (
+            <View style={styles.inviteBanner}>
+              <Ionicons name="person-circle" size={22} color={Brand.red} />
+              <Text style={styles.inviteText}>
+                <Text style={{ fontWeight: '800' }}>{invitePname}</Text> will be invited to quote on this job. Other verified pros can quote too.
+              </Text>
+            </View>
+          )}
 
           <Text style={styles.label}>What type of work?</Text>
           <View style={styles.tradeGrid}>
@@ -261,6 +287,9 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 100 },
   h1: { fontSize: 26, fontWeight: '800', color: Brand.ink },
   subtitle: { fontSize: 14, color: Brand.muted, marginTop: 4, marginBottom: 8 },
+
+  inviteBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Brand.redSoft, borderRadius: 14, padding: 14, marginTop: 14 },
+  inviteText: { flex: 1, fontSize: 13, color: Brand.body, lineHeight: 19 },
 
   label: { fontSize: 14, fontWeight: '700', color: Brand.ink, marginTop: 20, marginBottom: 10 },
   tradeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

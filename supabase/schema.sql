@@ -88,10 +88,12 @@ create table if not exists jobs (
   budget_min   numeric(10,2),
   budget_max   numeric(10,2),
   status       job_status not null default 'open',
+  invited_pro_id uuid references profiles(id) on delete set null,
   created_at   timestamptz not null default now()
 );
 create index if not exists jobs_status_idx on jobs(status);
 create index if not exists jobs_trade_idx  on jobs(trade_id);
+create index if not exists jobs_invited_idx on jobs(invited_pro_id);
 
 -- ============================================================
 -- bids — a tradesman's offer on a job

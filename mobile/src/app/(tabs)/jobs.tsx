@@ -169,14 +169,18 @@ const CATEGORIES = ['All', 'Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 
 
 function TradesmanJobs() {
   const { openJobs, myBidForJob } = useStore();
+  const { userId } = useAuth();
   const [active, setActive] = useState('All');
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
-  const jobs = openJobs().filter(
-    (j) =>
-      (active === 'All' || j.trade === active) &&
-      (!q || j.title.toLowerCase().includes(q) || j.trade.toLowerCase().includes(q) || j.area.toLowerCase().includes(q)),
-  );
+  const jobs = openJobs()
+    .filter(
+      (j) =>
+        (active === 'All' || j.trade === active) &&
+        (!q || j.title.toLowerCase().includes(q) || j.trade.toLowerCase().includes(q) || j.area.toLowerCase().includes(q)),
+    )
+    // Jobs you've been personally invited to quote on float to the top.
+    .sort((a, b) => Number(b.invitedProId === userId) - Number(a.invitedProId === userId));
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
@@ -214,6 +218,12 @@ function TradesmanJobs() {
                   <Ionicons name={j.icon} size={24} color={j.color} />
                 </View>
                 <View style={styles.flex}>
+                  {j.invitedProId === userId && (
+                    <View style={styles.invitedTag}>
+                      <Ionicons name="star" size={10} color={Brand.red} />
+                      <Text style={styles.invitedText}>Invited to quote</Text>
+                    </View>
+                  )}
                   <Text style={styles.title}>{j.title}</Text>
                   <Text style={styles.meta}>{j.trade} · {j.area} · {j.createdAt}</Text>
                   <Text style={styles.budget}>
@@ -282,6 +292,8 @@ const styles = StyleSheet.create({
   budget: { fontSize: 13, fontWeight: '700', color: Brand.red, marginTop: 6 },
   quotedTag: { backgroundColor: '#E9F8EE', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   quotedText: { color: Brand.green, fontSize: 11, fontWeight: '700' },
+  invitedTag: { flexDirection: 'row', alignItems: 'center', gap: 3, alignSelf: 'flex-start', backgroundColor: Brand.redSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 7, marginBottom: 4 },
+  invitedText: { color: Brand.red, fontSize: 10, fontWeight: '800' },
 
   // Empty state
   empty: { alignItems: 'center', paddingHorizontal: 40, paddingTop: 40 },

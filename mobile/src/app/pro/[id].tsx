@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ambient, Badge, Card, Glass, ProAvatar, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
+import { useAuth } from '@/lib/auth';
 import { fetchPortfolio, fetchProReviews } from '@/lib/db';
 import { useStore } from '@/lib/store';
 import type { PortfolioItem, Review } from '@/lib/store-types';
@@ -18,7 +19,8 @@ const SORTS = ['Newest', 'Highest', 'Relevant'];
 
 export default function ProProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getPro } = useStore();
+  const { getPro, startConversation } = useStore();
+  const { userId } = useAuth();
   const pro = getPro(id);
   const [readMore, setReadMore] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -37,9 +39,16 @@ export default function ProProfileScreen() {
     );
   }
 
-  // Featured pros are demo listings — to actually engage a pro, post a job and
-  // receive real quotes (real messaging happens in the job/bid flow).
-  const message = (_initial?: string) => router.push('/post');
+  // Message → open a real in-app conversation with this tradesman.
+  const openChat = async () => {
+    if (!userId) { router.push('/login'); return; }
+    const cid = await startConversation(userId, pro.id, null);
+    if (cid) router.push({ pathname: '/chat/[id]', params: { id: cid } });
+  };
+
+  // Hire Now / Request a quote → post a job with this pro invited to quote.
+  const invite = () =>
+    router.push({ pathname: '/post', params: { trade: pro.trade, invitePro: pro.id, invitePname: pro.name } });
 
   // Display data for the rich profile (mocked per pro for the prototype).
   const yearsExp = 12;
@@ -231,7 +240,7 @@ export default function ProProfileScreen() {
                 <Text style={styles.priceValue}>{p.price}</Text>
               </View>
             ))}
-            <Pressable style={styles.quoteBtn} onPress={() => message(`Hi ${pro.name}, could you send me a quote for a job?`)}>
+            <Pressable style={styles.quoteBtn} onPress={invite}>
               <Ionicons name="document-text-outline" size={18} color={Brand.red} />
               <Text style={styles.quoteBtnText}>Request a custom quote</Text>
             </Pressable>
@@ -296,13 +305,12 @@ export default function ProProfileScreen() {
 
       {/* ===== Sticky action bar ===== */}
       <Glass intensity={55} style={styles.actionBar}>
-        <Pressable style={styles.iconAction} onPress={() => message()}>
-          <Ionicons name="chatbubble-ellipses-outline" size={22} color={Brand.red} />
+        <Pressable style={styles.messageBtn} onPress={openChat}>
+          <Ionicons name="chatbubble-ellipses-outline" size={20} color={Brand.red} />
+          <Text style={styles.messageText}>Message</Text>
         </Pressable>
-        <Pressable style={styles.iconAction}>
-          <Ionicons name="call-outline" size={22} color={Brand.red} />
-        </Pressable>
-        <Pressable style={styles.hireBtn} onPress={() => message(`Hi ${pro.name}, I'd like to hire you for a job.`)}>
+        <Pressable style={styles.hireBtn} onPress={invite}>
+          <Ionicons name="briefcase" size={18} color="#fff" />
           <Text style={styles.hireText}>Hire Now</Text>
         </Pressable>
       </Glass>
@@ -396,7 +404,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28,
     backgroundColor: 'rgba(255,255,255,0.7)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.6)',
   },
-  iconAction: { width: 52, height: 52, borderRadius: 16, borderWidth: 1.5, borderColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
-  hireBtn: { flex: 1, borderRadius: 16, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
+  messageBtn: { flex: 1, height: 52, borderRadius: 16, borderWidth: 1.5, borderColor: Brand.red, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  messageText: { color: Brand.red, fontWeight: '800', fontSize: 15 },
+  hireBtn: { flex: 1.4, height: 52, borderRadius: 16, backgroundColor: Brand.red, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   hireText: { color: '#fff', fontWeight: '800', fontSize: 16 },
 });
