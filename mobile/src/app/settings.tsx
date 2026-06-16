@@ -74,13 +74,6 @@ export default function SettingsScreen() {
           <ListRow icon="shield-outline" label="Privacy Policy" onPress={() => {}} last />
         </Card>
 
-        {/* Operator */}
-        <View style={styles.gap} />
-        <SectionTitle title="Operator (demo)" />
-        <Card style={styles.cardTight}>
-          <ListRow icon="shield-half-outline" label="Admin console" value="Platform ops" onPress={() => router.push('/admin')} last />
-        </Card>
-
         {/* Account actions */}
         <View style={styles.gap} />
         <SectionTitle title="Account" />
