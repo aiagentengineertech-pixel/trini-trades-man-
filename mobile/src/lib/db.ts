@@ -160,7 +160,48 @@ export async function updateProfile(
 
 // ---------------- Pros (real tradesmen) ----------------
 
-import type { Pro, Review } from './store-types';
+import type { PortfolioItem, Pro, Review } from './store-types';
+
+export async function fetchPortfolio(proId: string): Promise<PortfolioItem[]> {
+  const { data, error } = await supabase
+    .from('portfolio')
+    .select('id, title, value, before_url, after_url, created_at')
+    .eq('tradesman_id', proId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    value: r.value ? `TT$${Number(r.value).toLocaleString()}` : '',
+    beforeUrl: r.before_url,
+    afterUrl: r.after_url,
+    date: relativeTime(r.created_at),
+  }));
+}
+
+export async function addPortfolioItem(
+  tradesmanId: string,
+  item: { title: string; value?: number; beforeUri?: string | null; afterUri?: string | null },
+): Promise<boolean> {
+  const stamp = Date.now();
+  let beforeUrl: string | null = null;
+  let afterUrl: string | null = null;
+  if (item.beforeUri) beforeUrl = await uploadImage('uploads', `portfolio/${tradesmanId}/${stamp}-before.jpg`, item.beforeUri);
+  if (item.afterUri) afterUrl = await uploadImage('uploads', `portfolio/${tradesmanId}/${stamp}-after.jpg`, item.afterUri);
+  const { error } = await supabase.from('portfolio').insert({
+    tradesman_id: tradesmanId,
+    title: item.title,
+    value: item.value ?? null,
+    before_url: beforeUrl,
+    after_url: afterUrl,
+  });
+  if (error) { console.warn('[db] addPortfolioItem failed:', error.message); return false; }
+  return true;
+}
+
+export async function deletePortfolioItem(id: string): Promise<void> {
+  await supabase.from('portfolio').delete().eq('id', id);
+}
 
 export async function fetchPros(): Promise<Pro[]> {
   const { data, error } = await supabase

@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/brand';
 import { Ambient, Badge, Card, ListRow, Progress, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
+import { fetchPortfolio } from '@/lib/db';
 import { useStore } from '@/lib/store';
 
 type JobStatusTab = 'Active' | 'Pending' | 'Completed' | 'Cancelled';
@@ -43,6 +44,11 @@ const TXNS = [
 ];
 
 export default function ProfileScreen() {
+  const { role } = useAuth();
+  return role === 'tradesman' ? <TradesmanProfile /> : <CustomerProfile />;
+}
+
+function CustomerProfile() {
   const { email } = useAuth();
   const { pros, myProfile } = useStore();
   const [tab, setTab] = useState<JobStatusTab>('Active');
@@ -241,6 +247,118 @@ export default function ProfileScreen() {
   );
 }
 
+function TradesmanProfile() {
+  const { userId, signOut } = useAuth();
+  const { myProfile, getPro } = useStore();
+  const me = userId ? getPro(userId) : undefined;
+  const [portfolioCount, setPortfolioCount] = useState(0);
+
+  useEffect(() => {
+    if (userId) fetchPortfolio(userId).then((p) => setPortfolioCount(p.length));
+  }, [userId]);
+
+  const name = me?.name || myProfile?.fullName?.trim() || 'Your business';
+  const trade = me?.trade && me.trade !== 'General' ? me.trade : null;
+  const area = myProfile?.area?.trim() || me?.area || 'Trinidad & Tobago';
+  const verified = myProfile?.verified || me?.verified;
+
+  return (
+    <View style={styles.root}>
+      <Ambient />
+      <SafeAreaView style={styles.flex} edges={['top']}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+          <View style={styles.headerActions}>
+            <Pressable style={styles.iconBtn} onPress={() => router.push('/edit-profile')}>
+              <Ionicons name="create-outline" size={20} color={Brand.ink} />
+            </Pressable>
+            <Pressable style={styles.iconBtn} onPress={() => router.push('/settings')}>
+              <Ionicons name="settings-outline" size={20} color={Brand.ink} />
+            </Pressable>
+          </View>
+
+          <View style={styles.header}>
+            <View style={styles.avatar}>
+              {myProfile?.photoUrl ? (
+                <Image source={{ uri: myProfile.photoUrl }} style={styles.avatarImg} contentFit="cover" />
+              ) : (
+                <Ionicons name="briefcase" size={40} color={Brand.muted} />
+              )}
+            </View>
+            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.tradeLine}>{trade ? `${trade} · ${area}` : area}</Text>
+            <View style={styles.badgeRow}>
+              {verified ? (
+                <Badge label="Gold Verified" color="#B8860B" icon="shield-checkmark" />
+              ) : (
+                <Badge label="Not verified" color={Brand.muted} icon="shield-outline" />
+              )}
+            </View>
+          </View>
+
+          {!trade && (
+            <View style={styles.section}>
+              <Card style={styles.setupCard}>
+                <Ionicons name="construct-outline" size={22} color={Brand.red} />
+                <Text style={styles.setupText}>Finish your tradesman profile — pick your trade and add a bio so customers can find you.</Text>
+                <Pressable style={styles.setupBtn} onPress={() => router.push('/edit-profile')}>
+                  <Text style={styles.setupBtnText}>Set up profile</Text>
+                </Pressable>
+              </Card>
+            </View>
+          )}
+
+          <View style={[styles.section, styles.statsRow]}>
+            <StatCard value={(me?.rating ?? 0).toFixed(1)} label="Rating" icon="star" tint="#F5A623" bg="#FEF4E2" />
+            <StatCard value={`${me?.reviewsCount ?? 0}`} label="Reviews" icon="chatbubble-ellipses" tint="#2F6FED" bg="#EAF1FE" />
+            <StatCard value={`${me?.jobsDone ?? 0}`} label="Jobs" icon="checkmark-done" tint="#2EA84F" bg="#E9F8EE" />
+            <StatCard value={`${portfolioCount}`} label="Portfolio" icon="images" tint="#8B5CF6" bg="#F1ECFE" />
+          </View>
+
+          <View style={styles.section}>
+            <Card style={styles.listingCard}>
+              <View style={styles.flex}>
+                <Text style={styles.listingTitle}>Your public listing</Text>
+                <Text style={styles.listingSub}>See exactly how customers view your profile.</Text>
+              </View>
+              <Pressable style={styles.viewBtn} onPress={() => userId && router.push({ pathname: '/pro/[id]', params: { id: userId } })}>
+                <Text style={styles.viewBtnText}>View</Text>
+              </Pressable>
+            </Card>
+          </View>
+
+          <View style={styles.section}>
+            <SectionTitle title="Portfolio" action="Manage" onAction={() => router.push('/portfolio')} />
+            <Card style={{ paddingVertical: 4 }}>
+              <ListRow
+                icon="images-outline"
+                label={portfolioCount > 0 ? `${portfolioCount} project${portfolioCount === 1 ? '' : 's'}` : 'Add your first project'}
+                onPress={() => router.push('/portfolio')}
+                last
+              />
+            </Card>
+          </View>
+
+          <View style={styles.section}>
+            <Card style={{ paddingVertical: 4 }}>
+              <ListRow icon="grid-outline" label="Business dashboard" onPress={() => router.push('/post')} />
+              <ListRow icon="shield-checkmark-outline" label="Verification" onPress={() => router.push('/verification')} />
+              <ListRow icon="person-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />
+              <ListRow icon="help-circle-outline" label="Help & support" onPress={() => router.push('/help')} last />
+            </Card>
+          </View>
+
+          <View style={styles.section}>
+            <Pressable style={styles.signOut} onPress={signOut}>
+              <Ionicons name="log-out-outline" size={20} color={Brand.red} />
+              <Text style={styles.signOutText}>Sign out</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Brand.surface },
   flex: { flex: 1, backgroundColor: 'transparent' },
@@ -258,6 +376,21 @@ const styles = StyleSheet.create({
   location: { fontSize: 14, color: Brand.muted },
   member: { fontSize: 12, color: Brand.muted, marginTop: 4 },
   badgeRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  tradeLine: { fontSize: 14, color: Brand.muted, marginTop: 6 },
+
+  setupCard: { alignItems: 'center', gap: 10, paddingVertical: 20 },
+  setupText: { fontSize: 14, color: Brand.body, textAlign: 'center', lineHeight: 20 },
+  setupBtn: { backgroundColor: Brand.red, borderRadius: 12, paddingHorizontal: 22, paddingVertical: 12, marginTop: 4 },
+  setupBtnText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+
+  listingCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  listingTitle: { fontSize: 15, fontWeight: '700', color: Brand.ink },
+  listingSub: { fontSize: 12, color: Brand.muted, marginTop: 2 },
+  viewBtn: { backgroundColor: Brand.redSoft, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12 },
+  viewBtnText: { color: Brand.red, fontWeight: '700', fontSize: 14 },
+
+  signOut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 15, borderRadius: 14, borderWidth: 1, borderColor: Brand.line },
+  signOutText: { color: Brand.red, fontWeight: '700', fontSize: 15 },
 
   completeTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   completeTitle: { fontSize: 15, fontWeight: '700', color: Brand.ink },

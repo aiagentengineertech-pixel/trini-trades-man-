@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -6,11 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ambient, Badge, Card, Glass, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
-import { fetchProReviews } from '@/lib/db';
+import { fetchPortfolio, fetchProReviews } from '@/lib/db';
 import { useStore } from '@/lib/store';
-import type { Review } from '@/lib/store-types';
+import type { PortfolioItem, Review } from '@/lib/store-types';
 
-interface PortfolioItem { title: string; value: string; date: string; beforeBg: string; afterBg: string; icon: IconName; color: string; }
 interface Cert { name: string; issuer: string; status: 'verified' | 'expiring'; expiry: string; }
 interface Price { service: string; price: string; }
 
@@ -24,9 +24,11 @@ export default function ProProfileScreen() {
   const [saved, setSaved] = useState(false);
   const [sort, setSort] = useState('Newest');
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
 
   useEffect(() => {
     fetchProReviews(id).then(setReviews);
+    fetchPortfolio(id).then(setPortfolio);
   }, [id]);
 
   if (!pro) {
@@ -43,10 +45,6 @@ export default function ProProfileScreen() {
   const yearsExp = 12;
   const responseTime = '15 minutes';
   const services = pro.services.concat(['Emergency call-outs', 'Free estimates']);
-  const portfolio: PortfolioItem[] = [
-    { title: `${pro.trade} project — full job`, value: 'TT$6,500', date: 'Completed Jun 2026', beforeBg: '#ECEDEF', afterBg: pro.bg, icon: pro.icon, color: pro.color },
-    { title: 'Residential upgrade', value: 'TT$3,200', date: 'Completed May 2026', beforeBg: '#ECEDEF', afterBg: pro.bg, icon: pro.icon, color: pro.color },
-  ];
   const certs: Cert[] = [
     { name: 'Trade Licence', issuer: 'T&T Board', status: 'verified', expiry: 'Valid till 2028' },
     { name: 'Liability Insurance', issuer: 'Guardian', status: 'verified', expiry: 'Valid till 2027' },
@@ -179,32 +177,34 @@ export default function ProProfileScreen() {
         </View>
 
         {/* ===== Portfolio ===== */}
-        <View style={styles.section}>
-          <SectionTitle title="Portfolio" action="See all" />
-          <View style={{ gap: 14 }}>
-            {portfolio.map((p, i) => (
-              <Card key={i} style={{ padding: 0, overflow: 'hidden' }}>
-                <View style={styles.beforeAfter}>
-                  <View style={[styles.baHalf, { backgroundColor: p.beforeBg }]}>
-                    <Ionicons name={p.icon} size={30} color={Brand.muted} />
-                    <View style={styles.baTag}><Text style={styles.baTagText}>BEFORE</Text></View>
+        {portfolio.length > 0 && (
+          <View style={styles.section}>
+            <SectionTitle title="Portfolio" />
+            <View style={{ gap: 14 }}>
+              {portfolio.map((p) => (
+                <Card key={p.id} style={{ padding: 0, overflow: 'hidden' }}>
+                  <View style={styles.beforeAfter}>
+                    <View style={styles.baHalf}>
+                      {p.beforeUrl ? <Image source={{ uri: p.beforeUrl }} style={styles.baImg} contentFit="cover" /> : <View style={[styles.baImg, styles.baEmpty]}><Ionicons name="image-outline" size={26} color={Brand.muted} /></View>}
+                      <View style={styles.baTag}><Text style={styles.baTagText}>BEFORE</Text></View>
+                    </View>
+                    <View style={styles.baHalf}>
+                      {p.afterUrl ? <Image source={{ uri: p.afterUrl }} style={styles.baImg} contentFit="cover" /> : <View style={[styles.baImg, styles.baEmpty]}><Ionicons name="image-outline" size={26} color={Brand.muted} /></View>}
+                      <View style={[styles.baTag, { backgroundColor: Brand.green }]}><Text style={styles.baTagText}>AFTER</Text></View>
+                    </View>
                   </View>
-                  <View style={[styles.baHalf, { backgroundColor: p.afterBg }]}>
-                    <Ionicons name={p.icon} size={30} color={p.color} />
-                    <View style={[styles.baTag, { backgroundColor: Brand.green }]}><Text style={styles.baTagText}>AFTER</Text></View>
+                  <View style={styles.portInfo}>
+                    <Text style={styles.portTitle}>{p.title}</Text>
+                    <View style={styles.portMeta}>
+                      {!!p.value && <Text style={styles.portValue}>{p.value}</Text>}
+                      <Text style={styles.portDate}>{p.date}</Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.portInfo}>
-                  <Text style={styles.portTitle}>{p.title}</Text>
-                  <View style={styles.portMeta}>
-                    <Text style={styles.portValue}>{p.value}</Text>
-                    <Text style={styles.portDate}>{p.date}</Text>
-                  </View>
-                </View>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* ===== Certifications ===== */}
         <View style={styles.section}>
@@ -357,6 +357,8 @@ const styles = StyleSheet.create({
 
   beforeAfter: { flexDirection: 'row', height: 130 },
   baHalf: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  baImg: { width: '100%', height: '100%' },
+  baEmpty: { backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   baTag: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(14,17,22,0.7)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   baTagText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   portInfo: { padding: 14 },

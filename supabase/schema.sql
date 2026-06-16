@@ -343,6 +343,27 @@ end;
 $$;
 
 -- ============================================================
+-- portfolio — a tradesman's showcase projects (before/after photos)
+-- ============================================================
+create table if not exists portfolio (
+  id           uuid primary key default uuid_generate_v4(),
+  tradesman_id uuid not null references profiles(id) on delete cascade,
+  title        text not null,
+  description  text,
+  value        numeric(10,2),
+  before_url   text,
+  after_url    text,
+  created_at   timestamptz not null default now()
+);
+create index if not exists portfolio_tradesman_idx on portfolio(tradesman_id, created_at desc);
+alter table portfolio enable row level security;
+drop policy if exists "portfolio readable" on portfolio;
+create policy "portfolio readable" on portfolio for select using (true);
+drop policy if exists "portfolio write own" on portfolio;
+create policy "portfolio write own" on portfolio for all
+  using (auth.uid() = tradesman_id) with check (auth.uid() = tradesman_id);
+
+-- ============================================================
 -- Storage buckets + policies (photos & ID documents)
 -- ============================================================
 insert into storage.buckets (id, name, public) values ('uploads', 'uploads', true) on conflict (id) do nothing;

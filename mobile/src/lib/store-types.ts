@@ -28,6 +28,15 @@ export interface Pro {
   reviews: Review[];
 }
 
+export interface PortfolioItem {
+  id: string;
+  title: string;
+  value: string;
+  beforeUrl: string | null;
+  afterUrl: string | null;
+  date: string;
+}
+
 export interface MyProfile {
   fullName: string;
   phone: string;
