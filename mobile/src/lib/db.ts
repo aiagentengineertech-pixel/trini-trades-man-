@@ -437,6 +437,47 @@ export async function leaveTeam(id: string): Promise<void> {
   await supabase.rpc('leave_team', { p_id: id });
 }
 
+export interface Assignment {
+  id: string;
+  jobId: string;
+  ownerId: string;
+  employeeId: string;
+  employeeName?: string;
+}
+
+export async function assignJob(jobId: string, ownerId: string, employeeId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('job_assignments')
+    .upsert({ job_id: jobId, owner_id: ownerId, employee_id: employeeId }, { onConflict: 'job_id' });
+  if (error) { console.warn('[db] assignJob failed:', error.message); return false; }
+  return true;
+}
+
+export async function unassignJob(jobId: string): Promise<void> {
+  await supabase.from('job_assignments').delete().eq('job_id', jobId);
+}
+
+export async function fetchAssignment(jobId: string): Promise<Assignment | null> {
+  const { data, error } = await supabase
+    .from('job_assignments')
+    .select('id, job_id, owner_id, employee_id, employee:profiles!employee_id(full_name)')
+    .eq('job_id', jobId)
+    .maybeSingle();
+  if (error || !data) return null;
+  const d: any = data;
+  return { id: d.id, jobId: d.job_id, ownerId: d.owner_id, employeeId: d.employee_id, employeeName: d.employee?.full_name };
+}
+
+export async function fetchMyAssignments(userId: string): Promise<Assignment[]> {
+  const { data, error } = await supabase
+    .from('job_assignments')
+    .select('id, job_id, owner_id, employee_id')
+    .eq('employee_id', userId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map((d: any) => ({ id: d.id, jobId: d.job_id, ownerId: d.owner_id, employeeId: d.employee_id }));
+}
+
 // ---------------- Storage ----------------
 
 export async function uploadImage(bucket: string, path: string, uri: string): Promise<string | null> {

@@ -538,6 +538,75 @@ $$;
 grant execute on function leave_team(uuid) to authenticated;
 
 -- ============================================================
+-- Acting on behalf of the business: an owner assigns an employee to a hired
+-- job; the employee can then see the business's jobs/quotes and message that
+-- customer. is_team_member() is security definer to avoid RLS recursion.
+-- ============================================================
+create or replace function is_team_member(p_owner uuid)
+returns boolean
+language sql
+security definer set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from team_members
+    where owner_id = p_owner and member_id = auth.uid() and status = 'active'
+  );
+$$;
+grant execute on function is_team_member(uuid) to authenticated;
+
+create table if not exists job_assignments (
+  id          uuid primary key default uuid_generate_v4(),
+  job_id      uuid not null references jobs(id) on delete cascade,
+  owner_id    uuid not null references profiles(id) on delete cascade,
+  employee_id uuid not null references profiles(id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  unique (job_id)
+);
+create index if not exists job_assign_emp_idx   on job_assignments(employee_id);
+create index if not exists job_assign_owner_idx on job_assignments(owner_id);
+alter table job_assignments enable row level security;
+drop policy if exists "assign owner all" on job_assignments;
+create policy "assign owner all" on job_assignments for all
+  using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+drop policy if exists "assign employee read" on job_assignments;
+create policy "assign employee read" on job_assignments for select
+  using (employee_id = auth.uid());
+
+-- bids: also readable by the bidding business's active employees
+drop policy if exists "bids readable to parties" on bids;
+create policy "bids readable to parties" on bids for select using (
+  auth.uid() = tradesman_id
+  or auth.uid() = (select customer_id from jobs where jobs.id = bids.job_id)
+  or public.is_team_member(bids.tradesman_id)
+);
+
+-- conversations: also visible/creatable/updatable by the tradesman's employees
+drop policy if exists "conversations readable to parties" on conversations;
+create policy "conversations readable to parties" on conversations for select using (
+  auth.uid() = customer_id or auth.uid() = tradesman_id or public.is_team_member(tradesman_id)
+);
+drop policy if exists "conversations insert party" on conversations;
+create policy "conversations insert party" on conversations for insert with check (
+  auth.uid() = customer_id or auth.uid() = tradesman_id or public.is_team_member(tradesman_id)
+);
+drop policy if exists "conversations update party" on conversations;
+create policy "conversations update party" on conversations for update using (
+  auth.uid() = customer_id or auth.uid() = tradesman_id or public.is_team_member(tradesman_id)
+);
+
+-- messages: also readable by the conversation tradesman's employees
+drop policy if exists "messages readable to parties" on messages;
+create policy "messages readable to parties" on messages for select using (
+  auth.uid() in (
+    select customer_id from conversations where conversations.id = messages.conversation_id
+    union
+    select tradesman_id from conversations where conversations.id = messages.conversation_id
+  )
+  or public.is_team_member((select tradesman_id from conversations where conversations.id = messages.conversation_id))
+);
+
+-- ============================================================
 -- Storage buckets + policies (photos & ID documents)
 -- ============================================================
 insert into storage.buckets (id, name, public) values ('uploads', 'uploads', true) on conflict (id) do nothing;

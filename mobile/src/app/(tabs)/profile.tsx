@@ -236,6 +236,7 @@ function CustomerProfile() {
         {/* ===== Settings shortcut ===== */}
         <View style={styles.section}>
           <Card style={{ paddingVertical: 4 }}>
+            <ListRow icon="people-outline" label="My team & assignments" onPress={() => router.push('/team')} />
             <ListRow icon="shield-checkmark-outline" label="Security & verification" onPress={() => router.push('/settings')} />
             <ListRow icon="notifications-outline" label="Notifications" onPress={() => router.push('/settings')} />
             <ListRow icon="help-circle-outline" label="Help & support" onPress={() => router.push('/help')} last />
@@ -341,6 +342,7 @@ function TradesmanProfile() {
           <View style={styles.section}>
             <Card style={{ paddingVertical: 4 }}>
               <ListRow icon="grid-outline" label="Business dashboard" onPress={() => router.push('/post')} />
+              <ListRow icon="people-outline" label="Team" onPress={() => router.push('/team')} />
               <ListRow icon="shield-checkmark-outline" label="Verification" onPress={() => router.push('/verification')} />
               <ListRow icon="person-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />
               <ListRow icon="help-circle-outline" label="Help & support" onPress={() => router.push('/help')} last />

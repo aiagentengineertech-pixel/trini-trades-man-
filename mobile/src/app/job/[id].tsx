@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,7 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
+import { assignJob, fetchAssignment, fetchTeam, unassignJob, type Assignment } from '@/lib/db';
 import { useStore } from '@/lib/store';
+import type { TeamMember } from '@/lib/store-types';
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,6 +43,30 @@ export default function JobDetailScreen() {
   const [bidSent, setBidSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
+
+  const myBid = bids.find((b) => b.mine);
+  const isTradesmanRole = role === 'tradesman';
+  const canAssign = isTradesmanRole && myBid?.status === 'accepted' && (job?.status === 'hired' || job?.status === 'done');
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [assignment, setAssignment] = useState<Assignment | null>(null);
+
+  useEffect(() => {
+    if (canAssign && userId) {
+      fetchTeam(userId).then((t) => setTeam(t.filter((m) => m.status === 'active' && m.memberId)));
+      fetchAssignment(id).then(setAssignment);
+    }
+  }, [canAssign, userId, id]);
+
+  const assign = async (employeeId: string) => {
+    if (!userId || !job) return;
+    await assignJob(job.id, userId, employeeId);
+    fetchAssignment(job.id).then(setAssignment);
+  };
+  const unassign = async () => {
+    if (!job) return;
+    await unassignJob(job.id);
+    setAssignment(null);
+  };
 
   if (!job) {
     return (
@@ -133,13 +159,44 @@ export default function JobDetailScreen() {
 
           {/* TRADESMAN: submit a bid */}
           {isTradesman ? (
+            <>
+            {canAssign && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Assign to a team member</Text>
+                {assignment ? (
+                  <View style={styles.assignedRow}>
+                    <Ionicons name="person-circle" size={22} color={Brand.green} />
+                    <Text style={styles.assignedText}>{assignment.employeeName || 'Employee'} is on this job</Text>
+                    <Pressable onPress={unassign} hitSlop={8}><Text style={styles.assignChange}>Change</Text></Pressable>
+                  </View>
+                ) : team.length === 0 ? (
+                  <Text style={styles.assignHint}>Invite employees on the Team screen, then assign this job to one of them.</Text>
+                ) : (
+                  <View style={{ gap: 8 }}>
+                    {team.map((m) => (
+                      <Pressable key={m.id} style={styles.assignPick} onPress={() => m.memberId && assign(m.memberId)}>
+                        <View style={styles.assignAvatar}><Ionicons name="person" size={16} color={Brand.body} /></View>
+                        <Text style={styles.assignName}>{m.name}</Text>
+                        <Ionicons name="chevron-forward" size={18} color={Brand.muted} />
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Your quote</Text>
-              {bidSent ? (
+              {bidSent || myBid ? (
                 <>
                   <View style={styles.sentCard}>
                     <Ionicons name="checkmark-circle" size={22} color={Brand.green} />
-                    <Text style={styles.sentText}>Quote submitted! The customer will be notified.</Text>
+                    <Text style={styles.sentText}>
+                      {myBid?.status === 'accepted'
+                        ? "Your quote was accepted — you're hired!"
+                        : myBid?.status === 'rejected'
+                          ? 'This job went to another tradesman.'
+                          : `Quote submitted${myBid ? ` — TT$${myBid.amount.toLocaleString()}` : ''}. The customer will be notified.`}
+                    </Text>
                   </View>
                   <Pressable style={styles.msgCustomerBtn} onPress={messageCustomer}>
                     <Ionicons name="chatbubble-ellipses-outline" size={18} color={Brand.red} />
@@ -175,6 +232,7 @@ export default function JobDetailScreen() {
                 </>
               )}
             </View>
+            </>
           ) : (
             /* CUSTOMER: view & accept bids */
             <View style={styles.section}>
@@ -290,6 +348,14 @@ const styles = StyleSheet.create({
   error: { color: Brand.red, fontWeight: '600', marginTop: 12 },
   primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.red, borderRadius: 14, paddingVertical: 16, marginTop: 16 },
   primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  assignedRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F1FBF5', borderRadius: 12, padding: 14 },
+  assignedText: { flex: 1, fontSize: 14, fontWeight: '700', color: Brand.ink },
+  assignChange: { color: Brand.red, fontWeight: '700', fontSize: 13 },
+  assignHint: { fontSize: 13, color: Brand.muted, lineHeight: 19 },
+  assignPick: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: Brand.line, borderRadius: 12, padding: 12 },
+  assignAvatar: { width: 34, height: 34, borderRadius: 17, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  assignName: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.ink },
+
   completeCard: { backgroundColor: '#F1FBF5', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#CDEBD8' },
   completeTitle: { fontSize: 16, fontWeight: '800', color: Brand.ink },
   completeSub: { fontSize: 13, color: Brand.body, lineHeight: 19, marginTop: 6 },

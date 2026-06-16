@@ -8,16 +8,19 @@ import { Card, SectionTitle } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import {
-  acceptTeamInvite, fetchMyInvites, fetchMyMemberships, fetchTeam,
-  inviteTeamMember, leaveTeam, removeTeamMember,
+  acceptTeamInvite, fetchMyAssignments, fetchMyInvites, fetchMyMemberships, fetchTeam,
+  inviteTeamMember, leaveTeam, removeTeamMember, type Assignment,
 } from '@/lib/db';
+import { useStore } from '@/lib/store';
 import type { TeamMember } from '@/lib/store-types';
 
 export default function TeamScreen() {
   const { userId, email } = useAuth();
+  const { getJob, startConversation } = useStore();
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [invites, setInvites] = useState<TeamMember[]>([]);
   const [memberships, setMemberships] = useState<TeamMember[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
@@ -27,11 +30,21 @@ export default function TeamScreen() {
 
   const load = useCallback(async () => {
     if (!userId) return;
-    const [t, i, m] = await Promise.all([fetchTeam(userId), fetchMyInvites(email), fetchMyMemberships(userId)]);
+    const [t, i, m, a] = await Promise.all([
+      fetchTeam(userId), fetchMyInvites(email), fetchMyMemberships(userId), fetchMyAssignments(userId),
+    ]);
     setTeam(t);
     setInvites(i);
     setMemberships(m);
+    setAssignments(a);
   }, [userId, email]);
+
+  const messageCustomer = async (a: Assignment) => {
+    const job = getJob(a.jobId);
+    if (!job) return;
+    const convId = await startConversation(job.customerId, a.ownerId, a.jobId);
+    if (convId) router.push({ pathname: '/chat/[id]', params: { id: convId } });
+  };
 
   useEffect(() => { load(); }, [load]);
 
@@ -97,6 +110,31 @@ export default function TeamScreen() {
             </View>
           )}
 
+          {/* Jobs assigned to me */}
+          {assignments.length > 0 && (
+            <View style={{ marginBottom: 8 }}>
+              <SectionTitle title="Jobs assigned to you" />
+              {assignments.map((a) => {
+                const job = getJob(a.jobId);
+                return (
+                  <Card key={a.id} style={styles.row}>
+                    <View style={[styles.avatar, job ? { backgroundColor: job.bg } : null]}>
+                      <Ionicons name={job?.icon ?? 'briefcase'} size={18} color={job?.color ?? Brand.body} />
+                    </View>
+                    <View style={styles.grow}>
+                      <Text style={styles.rowName}>{job?.title ?? 'Assigned job'}</Text>
+                      <Text style={styles.rowSub}>{job ? `${job.trade} · ${job.area}` : 'Tap message to contact the customer'}</Text>
+                    </View>
+                    <Pressable style={styles.msgBtn} onPress={() => messageCustomer(a)}>
+                      <Ionicons name="chatbubble-ellipses-outline" size={15} color={Brand.red} />
+                      <Text style={styles.msgBtnText}>Message</Text>
+                    </Pressable>
+                  </Card>
+                );
+              })}
+            </View>
+          )}
+
           {/* My team (as owner) */}
           <SectionTitle title="Your team" />
           <Card style={styles.formCard}>
@@ -159,6 +197,8 @@ const styles = StyleSheet.create({
   acceptBtn: { backgroundColor: Brand.green, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 10 },
   acceptText: { color: '#fff', fontWeight: '800', fontSize: 13 },
   leaveText: { color: Brand.red, fontWeight: '700', fontSize: 13 },
+  msgBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: Brand.line, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
+  msgBtnText: { color: Brand.red, fontWeight: '700', fontSize: 12 },
 
   formCard: { padding: 16 },
   formLabel: { fontSize: 14, fontWeight: '700', color: Brand.ink, marginBottom: 10 },
