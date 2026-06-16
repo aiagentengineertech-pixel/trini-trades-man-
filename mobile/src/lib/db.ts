@@ -550,6 +550,16 @@ export async function markInvoicePaid(id: string): Promise<void> {
   await supabase.from('invoices').update({ status: 'paid' }).eq('id', id);
 }
 
+// ---------------- Feature gates (admin-controlled kill switches) ----------------
+
+export async function fetchFeatureGates(): Promise<Record<string, boolean>> {
+  const { data, error } = await supabase.from('feature_gates').select('key, enabled');
+  if (error || !data) return {};
+  const map: Record<string, boolean> = {};
+  data.forEach((r: any) => { map[r.key] = r.enabled; });
+  return map;
+}
+
 // ---------------- Clients (CRM) ----------------
 
 export async function fetchClients(userId: string): Promise<Client[]> {

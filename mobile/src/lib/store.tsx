@@ -9,6 +9,7 @@ import {
   acceptBidRpc,
   completeJobRpc,
   fetchBids,
+  fetchFeatureGates,
   fetchNotifications,
   fetchConversations,
   fetchJobs,
@@ -57,6 +58,7 @@ interface StoreState {
   addJob: (data: { title: string; trade: string; description: string; budgetMin?: number; budgetMax?: number; area?: string; invitedProId?: string | null; lat?: number | null; lng?: number | null }) => Promise<string | null>;
   distanceKm: (lat: number | null, lng: number | null) => number | null;
   distanceLabel: (lat: number | null, lng: number | null) => string | null;
+  featureEnabled: (key: string) => boolean;
   acceptBid: (bidId: string) => Promise<void>;
   completeJob: (jobId: string) => Promise<void>;
   submitBid: (jobId: string, amount: number, message: string) => Promise<void>;
@@ -93,6 +95,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [myProfile, setMyProfile] = useState<MyProfile | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [gates, setGates] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     const nti = await fetchTrades();
@@ -112,6 +115,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (userId) {
       setMyProfile(await fetchProfile(userId));
       setNotifications(await fetchNotifications(userId));
+      setGates(await fetchFeatureGates());
     }
   }, [userId]);
 
@@ -168,6 +172,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (lat == null || lng == null || myProfile?.lat == null || myProfile?.lng == null) return null;
       return formatDistance(haversineKm({ lat: myProfile.lat, lng: myProfile.lng }, { lat, lng }));
     },
+    featureEnabled: (key) => gates[key] !== false, // default ON unless explicitly disabled
 
     addJob: async (data) => {
       if (!userId) return null;
@@ -222,7 +227,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       await load();
       return id;
     },
-  }), [pros, jobs, bids, conversations, notifications, myProfile, nameToId, userId, load]);
+  }), [pros, jobs, bids, conversations, notifications, myProfile, gates, nameToId, userId, load]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

@@ -6,7 +6,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CoverageMap } from '@/components/CoverageMap';
-import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
+import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
 import { Card, SectionTitle } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -23,6 +23,7 @@ export default function ClientDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { userId } = useAuth();
   const premium = usePremium();
+  const crmOn = useFeature('crm');
   const [client, setClient] = useState<Client | null>(null);
   const [photos, setPhotos] = useState<ClientPhoto[]>([]);
   const [docs, setDocs] = useState<SavedInvoice[]>([]);
@@ -56,6 +57,7 @@ export default function ClientDetailScreen() {
   const removeClient = async () => { await deleteClient(id); router.back(); };
 
   if (!premium) return <PremiumGateScreen title="Client" feature="The Client Hub (CRM)" />;
+  if (!crmOn) return <FeatureGateScreen title="Client" feature="The Client Hub" />;
   if (!client) {
     return <SafeAreaView style={styles.flex}><Text style={{ padding: 24 }}>Client not found.</Text></SafeAreaView>;
   }

@@ -31,21 +31,21 @@ export default function PostTab() {
   return role === 'tradesman' ? <BusinessHub /> : <CustomerPost />;
 }
 
-const HUB: { icon: IconName; label: string; desc: string; route: Href; tint: string; bg: string }[] = [
+const HUB: { icon: IconName; label: string; desc: string; route: Href; tint: string; bg: string; gate?: string }[] = [
   { icon: 'cash-outline', label: 'Earnings', desc: 'Revenue & payouts', route: '/earnings', tint: '#2EA84F', bg: '#E9F8EE' },
   { icon: 'wallet-outline', label: 'Wallet', desc: 'Balance & withdraw', route: '/wallet', tint: '#E11D26', bg: '#FDECEC' },
-  { icon: 'people-circle-outline', label: 'Clients', desc: 'Your client hub', route: '/clients', tint: '#16B1C9', bg: '#E6F8FB' },
-  { icon: 'document-text-outline', label: 'Quotes & Invoices', desc: 'Estimates & billing', route: '/quotes', tint: '#2F6FED', bg: '#EAF1FE' },
+  { icon: 'people-circle-outline', label: 'Clients', desc: 'Your client hub', route: '/clients', tint: '#16B1C9', bg: '#E6F8FB', gate: 'crm' },
+  { icon: 'document-text-outline', label: 'Quotes & Invoices', desc: 'Estimates & billing', route: '/quotes', tint: '#2F6FED', bg: '#EAF1FE', gate: 'invoices' },
   { icon: 'briefcase-outline', label: 'Jobs', desc: 'Active & completed', route: '/jobs-manage', tint: '#E8852B', bg: '#FDF1E6' },
-  { icon: 'receipt-outline', label: 'Expenses', desc: 'Receipts & costs', route: '/expenses', tint: '#E8852B', bg: '#FDF1E6' },
-  { icon: 'trending-up-outline', label: 'Profit', desc: 'Income vs expenses', route: '/profit', tint: '#2EA84F', bg: '#E9F8EE' },
+  { icon: 'receipt-outline', label: 'Expenses', desc: 'Receipts & costs', route: '/expenses', tint: '#E8852B', bg: '#FDF1E6', gate: 'expenses' },
+  { icon: 'trending-up-outline', label: 'Profit', desc: 'Income vs expenses', route: '/profit', tint: '#2EA84F', bg: '#E9F8EE', gate: 'expenses' },
   { icon: 'stats-chart-outline', label: 'Analytics', desc: 'Views & conversion', route: '/analytics', tint: '#8B5CF6', bg: '#F1ECFE' },
-  { icon: 'people-outline', label: 'Team', desc: 'Staff & roles', route: '/team', tint: '#16B1C9', bg: '#E6F8FB' },
-  { icon: 'calendar-outline', label: 'Dispatch', desc: 'Schedule the team', route: '/dispatch', tint: '#E8852B', bg: '#FDF1E6' },
+  { icon: 'people-outline', label: 'Team', desc: 'Staff & roles', route: '/team', tint: '#16B1C9', bg: '#E6F8FB', gate: 'team' },
+  { icon: 'calendar-outline', label: 'Dispatch', desc: 'Schedule the team', route: '/dispatch', tint: '#E8852B', bg: '#FDF1E6', gate: 'dispatch' },
 ];
 
 function BusinessHub() {
-  const { proSummary, conversations } = useStore();
+  const { proSummary, conversations, featureEnabled } = useStore();
   const s = proSummary();
   const unread = conversations.reduce((n, c) => n + c.unread, 0);
 
@@ -75,7 +75,7 @@ function BusinessHub() {
 
         {/* Hub grid */}
         <View style={styles.gridWrap}>
-          {HUB.map((h) => (
+          {HUB.filter((h) => !h.gate || featureEnabled(h.gate)).map((h) => (
             <Pressable key={h.label} style={styles.hubCard} onPress={() => router.push(h.route)}>
               <View style={[styles.hubIcon, { backgroundColor: h.bg }]}>
                 <Ionicons name={h.icon} size={22} color={h.tint} />

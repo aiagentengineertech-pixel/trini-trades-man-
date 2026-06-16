@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
+import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
 import { Card, SectionTitle } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -17,6 +17,7 @@ const money = (n: number) => `TT$${Math.round(n).toLocaleString()}`;
 export default function ProfitScreen() {
   const { userId } = useAuth();
   const premium = usePremium();
+  const expensesOn = useFeature('expenses');
   const [invoices, setInvoices] = useState<SavedInvoice[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -29,6 +30,7 @@ export default function ProfitScreen() {
   }, [userId]);
 
   if (!premium) return <PremiumGateScreen title="Profit" feature="The profit matrix" />;
+  if (!expensesOn) return <FeatureGateScreen title="Profit" feature="Profit & expenses" />;
 
   const billed = invoices.filter((i) => i.docType === 'invoice' || i.docType === 'bill');
   const income = billed.reduce((s, i) => s + i.total, 0);

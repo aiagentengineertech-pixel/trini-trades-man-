@@ -5,7 +5,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleShee
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AreaPicker } from '@/components/AreaPicker';
-import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
+import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
 import { Card } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -15,6 +15,7 @@ import type { Client } from '@/lib/store-types';
 export default function ClientsScreen() {
   const { userId } = useAuth();
   const premium = usePremium();
+  const crmOn = useFeature('crm');
   const [clients, setClients] = useState<Client[]>([]);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -23,6 +24,7 @@ export default function ClientsScreen() {
   useEffect(() => { load(); }, [load]);
 
   if (!premium) return <PremiumGateScreen title="Clients" feature="The Client Hub (CRM)" />;
+  if (!crmOn) return <FeatureGateScreen title="Clients" feature="The Client Hub" />;
 
   const q = query.trim().toLowerCase();
   const list = clients.filter((c) => !q || c.name.toLowerCase().includes(q) || c.area.toLowerCase().includes(q));

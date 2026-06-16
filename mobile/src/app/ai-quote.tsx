@@ -5,7 +5,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleShee
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, Segmented } from '@/components/ui';
-import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
+import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { fetchCatalog, fetchInvoiceSettings, saveInvoice } from '@/lib/db';
@@ -20,6 +20,7 @@ const toDocType = (s: string): DocType => (s.toLowerCase() as DocType);
 export default function InvoiceBuilderScreen() {
   const { userId } = useAuth();
   const premium = usePremium();
+  const invoicesOn = useFeature('invoices');
   const params = useLocalSearchParams<{ type?: string; clientId?: string; clientName?: string }>();
   const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
@@ -71,6 +72,7 @@ export default function InvoiceBuilderScreen() {
   const needsBranding = !settings || !settings.businessName;
 
   if (!premium) return <PremiumGateScreen title="New Invoice" feature="The invoice generator" />;
+  if (!invoicesOn) return <FeatureGateScreen title="New Invoice" feature="Invoicing" />;
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>

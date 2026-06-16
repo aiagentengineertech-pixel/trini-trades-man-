@@ -12,6 +12,29 @@ export function usePremium(): boolean {
   return !!useStore().myProfile?.isPremium;
 }
 
+/** Whether an admin-controlled feature module is enabled (default true). */
+export function useFeature(key: string): boolean {
+  return useStore().featureEnabled(key);
+}
+
+/** Shown when an admin has switched a module off globally. */
+export function FeatureGateScreen({ title, feature }: { title: string; feature: string }) {
+  return (
+    <SafeAreaView style={styles.flex} edges={['top']}>
+      <View style={styles.topbar}>
+        <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
+        <Text style={styles.title}>{title}</Text>
+        <View style={{ width: 26 }} />
+      </View>
+      <View style={styles.body}>
+        <View style={styles.icon}><Ionicons name="construct" size={28} color={Brand.muted} /></View>
+        <Text style={styles.h}>Temporarily unavailable</Text>
+        <Text style={styles.sub}>{feature} is paused for maintenance. Please check back shortly.</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
 export function PremiumGateScreen({ title, feature }: { title: string; feature: string }) {
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
+import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
 import { Card } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -19,6 +19,7 @@ export default function DocDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { userId } = useAuth();
   const premium = usePremium();
+  const invoicesOn = useFeature('invoices');
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof fetchInvoiceWithItems>>>(null);
   const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [client, setClient] = useState<Client | null>(null);
@@ -35,6 +36,7 @@ export default function DocDetailScreen() {
   useEffect(() => { load(); }, [load]);
 
   if (!premium) return <PremiumGateScreen title="Document" feature="Documents & estimates" />;
+  if (!invoicesOn) return <FeatureGateScreen title="Document" feature="Invoicing" />;
   if (!doc) return <SafeAreaView style={styles.flex}><Text style={{ padding: 24 }}>Document not found.</Text></SafeAreaView>;
 
   const totals = invoiceTotals({ number: doc.number, date: '', customerName: doc.customerName, lines: doc.lines, taxPct: doc.taxPct });

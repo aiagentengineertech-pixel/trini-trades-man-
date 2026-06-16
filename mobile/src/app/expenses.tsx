@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
+import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
 import { Card } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -20,6 +20,7 @@ const CAT_ICON: Record<string, string> = { materials: 'cube', fuel: 'car', tools
 export default function ExpensesScreen() {
   const { userId } = useAuth();
   const premium = usePremium();
+  const expensesOn = useFeature('expenses');
   const params = useLocalSearchParams<{ clientId?: string }>();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -33,6 +34,7 @@ export default function ExpensesScreen() {
   useEffect(() => { load(); }, [load]);
 
   if (!premium) return <PremiumGateScreen title="Expenses" feature="The expense tracker" />;
+  if (!expensesOn) return <FeatureGateScreen title="Expenses" feature="Expense tracking" />;
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const clientName = (id: string | null) => clients.find((c) => c.id === id)?.name ?? 'General';

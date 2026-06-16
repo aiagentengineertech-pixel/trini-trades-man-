@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FeatureGateScreen, useFeature } from '@/components/PremiumGate';
 import { Card, SectionTitle } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -18,6 +19,7 @@ export default function TeamScreen() {
   const { userId, email } = useAuth();
   const { getJob, startConversation, myProfile } = useStore();
   const premium = !!myProfile?.isPremium;
+  const teamOn = useFeature('team');
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [invites, setInvites] = useState<TeamMember[]>([]);
   const [memberships, setMemberships] = useState<TeamMember[]>([]);
@@ -65,6 +67,8 @@ export default function TeamScreen() {
   const accept = async (id: string) => { await acceptTeamInvite(id); load(); };
   const leave = async (id: string) => { await leaveTeam(id); load(); };
   const remove = async (id: string) => { await removeTeamMember(id); load(); };
+
+  if (!teamOn) return <FeatureGateScreen title="Team" feature="Team management" />;
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>

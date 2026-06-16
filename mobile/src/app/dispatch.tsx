@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
+import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
 import { Card } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -27,6 +27,7 @@ const ORDER = ['Overdue', 'Today', 'Tomorrow', 'This week', 'Later', 'Unschedule
 export default function DispatchScreen() {
   const { userId } = useAuth();
   const premium = usePremium();
+  const dispatchOn = useFeature('dispatch');
   const { getJob } = useStore();
   const [items, setItems] = useState<Assignment[]>([]);
 
@@ -34,6 +35,7 @@ export default function DispatchScreen() {
   useEffect(() => { load(); }, [load]);
 
   if (!premium) return <PremiumGateScreen title="Dispatch" feature="Employee dispatch & scheduling" />;
+  if (!dispatchOn) return <FeatureGateScreen title="Dispatch" feature="Dispatch & scheduling" />;
 
   const groups: Record<string, Assignment[]> = {};
   items.forEach((a) => { const k = dayKey(a.scheduledAt); (groups[k] ??= []).push(a); });

@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/ui';
-import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
+import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { fetchInvoices, fetchInvoiceSettings, fetchInvoiceWithItems, type SavedInvoice } from '@/lib/db';
@@ -16,6 +16,7 @@ const LABEL: Record<string, string> = { invoice: 'Invoice', bill: 'Bill', estima
 export default function InvoicesScreen() {
   const { userId } = useAuth();
   const premium = usePremium();
+  const invoicesOn = useFeature('invoices');
   const [items, setItems] = useState<SavedInvoice[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -34,6 +35,7 @@ export default function InvoicesScreen() {
   };
 
   if (!premium) return <PremiumGateScreen title="Invoices" feature="Saved invoice history" />;
+  if (!invoicesOn) return <FeatureGateScreen title="Invoices" feature="Invoicing" />;
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
