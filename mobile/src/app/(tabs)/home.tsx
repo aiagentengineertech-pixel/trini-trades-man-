@@ -20,7 +20,7 @@ const SERVICES: { name: string; icon: IconName; color: string; bg: string }[] = 
 const TRUST = [
   { icon: 'shield-checkmark' as IconName, title: 'Verified Pros', sub: 'ID checked & rated' },
   { icon: 'lock-closed' as IconName, title: 'Secure Payments', sub: 'Escrow protection' },
-  { icon: 'chatbubble-ellipses' as IconName, title: 'AI SmartQuotes', sub: 'Fast, accurate quotes' },
+  { icon: 'document-text' as IconName, title: 'Branded Invoices', sub: 'Generated in seconds' },
 ];
 
 export default function HomeScreen() {
@@ -64,8 +64,7 @@ export default function HomeScreen() {
         </Pressable>
 
         {/* Hero */}
-        <Text style={styles.hero}>Find trusted tradesmen.</Text>
-        <Text style={styles.hero}>Get it fixed <Text style={{ color: Brand.red }}>today.</Text></Text>
+        <Text style={styles.hero}>Get it <Text style={{ color: Brand.red }}>Done.</Text></Text>
         <Text style={styles.heroSub}>Quality work. Fair prices. Peace of mind.</Text>
 
         {/* Search */}

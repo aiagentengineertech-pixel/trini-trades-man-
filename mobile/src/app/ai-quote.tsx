@@ -48,15 +48,15 @@ export default function AiQuoteScreen() {
     <SafeAreaView style={styles.flex} edges={['top']}>
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
-        <Text style={styles.title}>AI Quote Generator</Text>
+        <Text style={styles.title}>Invoice Generator</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
           <View style={styles.intro}>
-            <Ionicons name="sparkles" size={20} color={Brand.red} />
-            <Text style={styles.introText}>Describe the job and get a suggested price in seconds.</Text>
+            <Ionicons name="document-text" size={20} color={Brand.red} />
+            <Text style={styles.introText}>Describe the job and generate a branded invoice in seconds.</Text>
           </View>
 
           <Text style={styles.label}>Trade</Text>
@@ -82,15 +82,15 @@ export default function AiQuoteScreen() {
           <Segmented options={['Small', 'Medium', 'Large']} value={size} onChange={setSize} />
 
           <Pressable style={styles.genBtn} onPress={generate} disabled={thinking}>
-            <Ionicons name="sparkles" size={18} color="#fff" />
-            <Text style={styles.genBtnText}>{thinking ? 'Generating…' : 'Generate estimate'}</Text>
+            <Ionicons name="document-text" size={18} color="#fff" />
+            <Text style={styles.genBtnText}>{thinking ? 'Generating…' : 'Generate invoice'}</Text>
           </Pressable>
 
           {estimate && (
             <Card style={styles.result}>
               <View style={styles.resultHead}>
-                <Ionicons name="sparkles" size={16} color={Brand.red} />
-                <Text style={styles.resultTitle}>Suggested quote</Text>
+                <Ionicons name="document-text" size={16} color={Brand.red} />
+                <Text style={styles.resultTitle}>Branded invoice</Text>
               </View>
               <Text style={styles.range}>TT${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}</Text>
               <View style={styles.breakdown}>
@@ -98,9 +98,9 @@ export default function AiQuoteScreen() {
                 <Row label="Materials (est.)" value={estimate.materials} />
                 <Row label="Call-out fee" value={estimate.callout} />
               </View>
-              <Text style={styles.note}>Based on {trade.toLowerCase()} rates and a {size.toLowerCase()} job. Adjust before sending.</Text>
+              <Text style={styles.note}>Based on {trade.toLowerCase()} rates and a {size.toLowerCase()} job. Edit any line before sending.</Text>
               <Pressable style={styles.useBtn} onPress={() => router.back()}>
-                <Text style={styles.useBtnText}>Use this quote</Text>
+                <Text style={styles.useBtnText}>Create invoice</Text>
               </Pressable>
             </Card>
           )}

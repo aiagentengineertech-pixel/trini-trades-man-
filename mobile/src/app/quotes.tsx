@@ -33,13 +33,13 @@ export default function QuotesScreen() {
         {/* Create actions */}
         <View style={styles.actions}>
           <Pressable style={styles.aiBtn} onPress={() => router.push('/ai-quote')}>
-            <Ionicons name="sparkles" size={18} color="#fff" />
-            <Text style={styles.aiText}>AI Quote Generator</Text>
+            <Ionicons name="document-text" size={18} color="#fff" />
+            <Text style={styles.aiText}>Invoice Generator</Text>
           </Pressable>
           <Pressable style={styles.actionMini} onPress={() => router.push('/ai-quote')}><Ionicons name="add" size={20} color={Brand.red} /></Pressable>
           <Pressable style={styles.actionMini}><Ionicons name="documents-outline" size={18} color={Brand.red} /></Pressable>
         </View>
-        <Text style={styles.actionHint}>Create a quote, use a saved template, or export to PDF.</Text>
+        <Text style={styles.actionHint}>Generate a branded invoice, use a saved template, or export to PDF.</Text>
 
         <View style={{ marginTop: 18 }}>
           <Segmented options={['Pending', 'Accepted', 'Rejected']} value={tab} onChange={setTab} />

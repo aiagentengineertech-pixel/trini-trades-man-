@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glass } from '@/components/ui';
 import { Brand } from '@/constants/brand';
@@ -8,10 +9,12 @@ import { useAuth } from '@/lib/auth';
 
 export default function TabsLayout() {
   const { loading, signedIn, role } = useAuth();
+  const insets = useSafeAreaInsets();
 
   if (!loading && !signedIn) return <Redirect href="/login" />;
 
   const isTradesman = role === 'tradesman';
+  const bottomInset = insets.bottom; // home indicator / rounded-corner safe area
 
   return (
     <Tabs
@@ -21,14 +24,20 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: '#9AA0A6',
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: 'rgba(255,255,255,0.78)',
-          borderTopColor: 'rgba(255,255,255,0.6)',
-          height: 66,
-          paddingBottom: 8,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(255,255,255,0.85)',
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: 'rgba(0,0,0,0.08)',
+          height: 56 + bottomInset,
+          paddingBottom: bottomInset > 0 ? bottomInset : 8,
           paddingTop: 8,
+          elevation: 0,
         },
+        tabBarItemStyle: { paddingTop: 2 },
         tabBarBackground: () => <Glass intensity={60} style={StyleSheet.absoluteFillObject} />,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 10.5, fontWeight: '600' },
       }}>
       <Tabs.Screen
         name="home"
@@ -54,7 +63,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="post"
         options={{
-          title: isTradesman ? 'Business' : 'Post Job',
+          title: isTradesman ? 'Dashboard' : 'Post Job',
           tabBarIcon: ({ color, size }) =>
             isTradesman ? (
               <Ionicons name="grid-outline" size={size} color={color} />

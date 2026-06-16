@@ -46,7 +46,7 @@ function BusinessHub() {
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        <Text style={styles.hubTitle}>Business</Text>
+        <Text style={styles.hubTitle}>Dashboard</Text>
         <Text style={styles.subtitle}>Manage your work, earnings and growth.</Text>
 
         {/* Earnings snapshot */}
