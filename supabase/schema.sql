@@ -69,6 +69,43 @@ $$;
 grant execute on function is_premium() to authenticated;
 
 -- ============================================================
+-- Super-Admin Command Console (standalone ops site).
+-- Adds the SUPER_ADMIN role, an operational region, a global feature-gate
+-- table, and an is_super_admin() helper. The admin role is enforced in the
+-- standalone admin server (service-role) AND available to RLS here.
+-- ============================================================
+-- Add 'super_admin' to the role enum (run on its own; safe to re-run).
+alter type user_role add value if not exists 'super_admin';
+
+-- Operational region (e.g. "San Fernando", "Arima", "Port of Spain").
+alter table profiles add column if not exists region text;
+
+create or replace function is_super_admin()
+returns boolean
+language sql
+security definer set search_path = public
+stable
+as $$
+  select coalesce((select role = 'super_admin' from profiles where id = auth.uid()), false);
+$$;
+grant execute on function is_super_admin() to authenticated;
+
+-- Global feature gates the admin can toggle at will.
+create table if not exists feature_gates (
+  key        text primary key,           -- e.g. 'invoices', 'crm', 'dispatch'
+  enabled    boolean not null default true,
+  note       text,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references profiles(id) on delete set null
+);
+alter table feature_gates enable row level security;
+drop policy if exists "gates readable" on feature_gates;
+create policy "gates readable" on feature_gates for select to authenticated using (true);
+drop policy if exists "gates admin write" on feature_gates;
+create policy "gates admin write" on feature_gates for all
+  using (public.is_super_admin()) with check (public.is_super_admin());
+
+-- ============================================================
 -- trades — the catalog of services (Electrician, Plumber, Mason…)
 -- ============================================================
 create table if not exists trades (
