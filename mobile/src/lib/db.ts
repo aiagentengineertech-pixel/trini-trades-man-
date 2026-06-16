@@ -164,7 +164,7 @@ export async function countProfileViews(proId: string): Promise<number> {
 export async function fetchProfile(userId: string): Promise<MyProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('full_name, phone, area, photo_url, role, verified, location_lat, location_lng')
+    .select('full_name, phone, area, photo_url, role, verified, is_premium, location_lat, location_lng')
     .eq('id', userId)
     .maybeSingle();
   if (error || !data) return null;
@@ -175,6 +175,7 @@ export async function fetchProfile(userId: string): Promise<MyProfile | null> {
     photoUrl: data.photo_url ?? null,
     role: data.role ?? 'customer',
     verified: !!data.verified,
+    isPremium: !!data.is_premium,
     lat: data.location_lat ?? null,
     lng: data.location_lng ?? null,
   };

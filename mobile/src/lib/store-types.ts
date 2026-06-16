@@ -100,6 +100,7 @@ export interface MyProfile {
   photoUrl: string | null;
   role: string;
   verified: boolean;
+  isPremium: boolean;
   lat: number | null;
   lng: number | null;
 }

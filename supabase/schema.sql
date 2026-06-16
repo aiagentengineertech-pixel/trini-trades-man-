@@ -41,8 +41,32 @@ create table if not exists profiles (
   verified     boolean not null default false,  -- ID-checked by admin
   rating_avg   numeric(2,1) not null default 0, -- 0.0 .. 5.0
   rating_count integer not null default 0,
+  -- subscription / premium tier (Phase 1)
+  is_premium        boolean not null default false,
+  subscription_tier text not null default 'free',   -- 'free' | 'premium'
+  premium_until     timestamptz,
   created_at   timestamptz not null default now()
 );
+
+-- For existing databases: add the subscription columns if missing.
+alter table profiles add column if not exists is_premium boolean not null default false;
+alter table profiles add column if not exists subscription_tier text not null default 'free';
+alter table profiles add column if not exists premium_until timestamptz;
+
+-- is_premium(): does the current user have an active premium subscription?
+-- security definer so paywall policies can call it without extra grants.
+create or replace function is_premium()
+returns boolean
+language sql
+security definer set search_path = public
+stable
+as $$
+  select coalesce(
+    (select is_premium and (premium_until is null or premium_until > now())
+       from profiles where id = auth.uid()),
+    false);
+$$;
+grant execute on function is_premium() to authenticated;
 
 -- ============================================================
 -- trades — the catalog of services (Electrician, Plumber, Mason…)
@@ -496,10 +520,19 @@ create index if not exists team_member_idx on team_members(member_id);
 create index if not exists team_email_idx  on team_members(lower(email));
 alter table team_members enable row level security;
 
--- owner manages their own roster (invite / change / remove)
+-- owner manages their own roster. Inviting (insert) is a PREMIUM feature;
+-- reading / editing / removing existing members stays available.
 drop policy if exists "team owner all" on team_members;
-create policy "team owner all" on team_members for all
+drop policy if exists "team owner select" on team_members;
+drop policy if exists "team owner update" on team_members;
+drop policy if exists "team owner delete" on team_members;
+drop policy if exists "team owner insert premium" on team_members;
+create policy "team owner select" on team_members for select using (auth.uid() = owner_id);
+create policy "team owner update" on team_members for update
   using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy "team owner delete" on team_members for delete using (auth.uid() = owner_id);
+create policy "team owner insert premium" on team_members for insert
+  with check (auth.uid() = owner_id and public.is_premium());
 
 -- an employee can read invites addressed to their email, and their memberships
 drop policy if exists "team member read" on team_members;
@@ -643,6 +676,72 @@ alter table catalog_items enable row level security;
 drop policy if exists "catalog own" on catalog_items;
 create policy "catalog own" on catalog_items for all
   using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
+-- ============================================================
+-- PHASE 1 base models for the Business Management platform.
+-- (SavedItems already exists above as `catalog_items`.)
+-- ============================================================
+
+-- clients — a tradesman's CRM contacts (expanded in Phase 3)
+create table if not exists clients (
+  id           uuid primary key default uuid_generate_v4(),
+  owner_id     uuid not null references profiles(id) on delete cascade,
+  name         text not null,
+  phone        text,
+  email        text,
+  area         text,
+  location_lat double precision,
+  location_lng double precision,
+  notes        text,
+  created_at   timestamptz not null default now()
+);
+create index if not exists clients_owner_idx on clients(owner_id, created_at desc);
+alter table clients enable row level security;
+drop policy if exists "clients own" on clients;
+create policy "clients own" on clients for all
+  using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
+-- invoices + line items (persisted; the builder/PDF land in Phase 2)
+do $$ begin
+  create type invoice_status as enum ('draft', 'sent', 'paid', 'void');
+exception when duplicate_object then null; end $$;
+
+create table if not exists invoices (
+  id            uuid primary key default uuid_generate_v4(),
+  owner_id      uuid not null references profiles(id) on delete cascade,
+  client_id     uuid references clients(id) on delete set null,
+  job_id        uuid references jobs(id) on delete set null,
+  number        text not null,
+  customer_name text,
+  status        invoice_status not null default 'draft',
+  currency      text not null default 'TTD',
+  subtotal      numeric(12,2) not null default 0,
+  tax           numeric(12,2) not null default 0,
+  total         numeric(12,2) not null default 0,
+  notes         text,
+  created_at    timestamptz not null default now()
+);
+create index if not exists invoices_owner_idx on invoices(owner_id, created_at desc);
+alter table invoices enable row level security;
+drop policy if exists "invoices own" on invoices;
+create policy "invoices own" on invoices for all
+  using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
+create table if not exists invoice_items (
+  id          uuid primary key default uuid_generate_v4(),
+  invoice_id  uuid not null references invoices(id) on delete cascade,
+  description text not null,
+  qty         numeric(10,2) not null default 1,
+  unit_price  numeric(12,2) not null default 0,
+  amount      numeric(12,2) not null default 0,
+  sort        int not null default 0
+);
+create index if not exists invoice_items_invoice_idx on invoice_items(invoice_id);
+alter table invoice_items enable row level security;
+drop policy if exists "invoice items own" on invoice_items;
+create policy "invoice items own" on invoice_items for all
+  using (exists (select 1 from invoices i where i.id = invoice_items.invoice_id and i.owner_id = auth.uid()))
+  with check (exists (select 1 from invoices i where i.id = invoice_items.invoice_id and i.owner_id = auth.uid()));
 
 -- ============================================================
 -- Storage buckets + policies (photos & ID documents)

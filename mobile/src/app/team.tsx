@@ -16,7 +16,8 @@ import type { TeamMember } from '@/lib/store-types';
 
 export default function TeamScreen() {
   const { userId, email } = useAuth();
-  const { getJob, startConversation } = useStore();
+  const { getJob, startConversation, myProfile } = useStore();
+  const premium = !!myProfile?.isPremium;
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [invites, setInvites] = useState<TeamMember[]>([]);
   const [memberships, setMemberships] = useState<TeamMember[]>([]);
@@ -135,8 +136,20 @@ export default function TeamScreen() {
             </View>
           )}
 
-          {/* My team (as owner) */}
+          {/* My team (as owner) — PREMIUM */}
           <SectionTitle title="Your team" />
+          {!premium ? (
+            <Card style={styles.lockCard}>
+              <View style={styles.lockIcon}><Ionicons name="lock-closed" size={22} color={Brand.red} /></View>
+              <Text style={styles.lockTitle}>Add employees with Premium</Text>
+              <Text style={styles.lockText}>Invite staff to respond to your clients and get assigned to jobs on behalf of your business. Part of the Trini Tradesman Premium plan.</Text>
+              <Pressable style={styles.lockBtn} onPress={() => router.push('/upgrade')}>
+                <Ionicons name="star" size={16} color="#fff" />
+                <Text style={styles.lockBtnText}>Upgrade to Premium</Text>
+              </Pressable>
+            </Card>
+          ) : (
+          <>
           <Card style={styles.formCard}>
             <Text style={styles.formLabel}>Invite an employee</Text>
             <TextInput style={styles.input} placeholder="Employee email" placeholderTextColor={Brand.muted} autoCapitalize="none" keyboardType="email-address" value={inviteEmail} onChangeText={setInviteEmail} />
@@ -176,6 +189,8 @@ export default function TeamScreen() {
             ))}
             {team.length === 0 && <Text style={styles.empty}>No employees yet. Invite someone above — they join by signing up with the invited email.</Text>}
           </View>
+          </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -199,6 +214,13 @@ const styles = StyleSheet.create({
   leaveText: { color: Brand.red, fontWeight: '700', fontSize: 13 },
   msgBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: Brand.line, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
   msgBtnText: { color: Brand.red, fontWeight: '700', fontSize: 12 },
+
+  lockCard: { padding: 18, alignItems: 'center' },
+  lockIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: Brand.redSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  lockTitle: { fontSize: 17, fontWeight: '800', color: Brand.ink, textAlign: 'center' },
+  lockText: { fontSize: 13, color: Brand.muted, textAlign: 'center', lineHeight: 19, marginTop: 8 },
+  lockBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.red, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 24, marginTop: 16 },
+  lockBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 
   formCard: { padding: 16 },
   formLabel: { fontSize: 14, fontWeight: '700', color: Brand.ink, marginBottom: 10 },
