@@ -92,6 +92,17 @@ export interface ClientPhoto {
   date: string;
 }
 
+export interface Expense {
+  id: string;
+  clientId: string | null;
+  vendor: string;
+  category: string;
+  amount: number;
+  note: string;
+  receiptUrl: string | null;
+  spentOn: string;
+}
+
 export type TeamRole = 'owner' | 'employee';
 
 export interface TeamMember {

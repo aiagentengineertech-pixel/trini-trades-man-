@@ -11,11 +11,11 @@ import { Card, SectionTitle } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import {
-  addClientPhoto, deleteClient, deleteClientPhoto, fetchClient, fetchClientDocuments, fetchClientPhotos,
+  addClientPhoto, deleteClient, deleteClientPhoto, fetchClient, fetchClientDocuments, fetchClientExpenses, fetchClientPhotos,
   type SavedInvoice,
 } from '@/lib/db';
 import { pickImage } from '@/lib/images';
-import type { Client, ClientPhoto } from '@/lib/store-types';
+import type { Client, ClientPhoto, Expense } from '@/lib/store-types';
 
 const DOC_LABEL: Record<string, string> = { invoice: 'Invoice', bill: 'Bill', estimate: 'Estimate', quote: 'Quote' };
 
@@ -26,13 +26,19 @@ export default function ClientDetailScreen() {
   const [client, setClient] = useState<Client | null>(null);
   const [photos, setPhotos] = useState<ClientPhoto[]>([]);
   const [docs, setDocs] = useState<SavedInvoice[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const load = useCallback(async () => {
     setClient(await fetchClient(id));
     setPhotos(await fetchClientPhotos(id));
     setDocs(await fetchClientDocuments(id));
+    setExpenses(await fetchClientExpenses(id));
   }, [id]);
+
+  const income = docs.filter((d) => d.docType === 'invoice' || d.docType === 'bill').reduce((s, d) => s + d.total, 0);
+  const spent = expenses.reduce((s, e) => s + e.amount, 0);
+  const net = income - spent;
   useEffect(() => { load(); }, [load]);
 
   const addPhoto = async () => {
@@ -87,6 +93,15 @@ export default function ClientDetailScreen() {
           {!!client.notes && <Text style={styles.notes}>{client.notes}</Text>}
         </Card>
 
+        {/* profit strip */}
+        {(income > 0 || spent > 0) && (
+          <View style={styles.profitRow}>
+            <View style={styles.profitCell}><Text style={styles.profitVal}>TT${Math.round(income).toLocaleString()}</Text><Text style={styles.profitLabel}>Billed</Text></View>
+            <View style={styles.profitCell}><Text style={styles.profitVal}>TT${Math.round(spent).toLocaleString()}</Text><Text style={styles.profitLabel}>Spent</Text></View>
+            <View style={styles.profitCell}><Text style={[styles.profitVal, { color: net >= 0 ? Brand.green : Brand.red }]}>TT${Math.round(net).toLocaleString()}</Text><Text style={styles.profitLabel}>Net</Text></View>
+          </View>
+        )}
+
         {/* site map */}
         {client.lat != null && client.lng != null && (
           <View style={{ marginTop: 16 }}>
@@ -104,6 +119,10 @@ export default function ClientDetailScreen() {
             <Pressable style={styles.docBtn} onPress={() => newDoc('estimate')}><Ionicons name="document-outline" size={15} color={Brand.red} /><Text style={styles.docBtnText}>New estimate</Text></Pressable>
             <Pressable style={styles.docBtn} onPress={() => newDoc('invoice')}><Ionicons name="document-text-outline" size={15} color={Brand.red} /><Text style={styles.docBtnText}>New invoice</Text></Pressable>
           </View>
+          <Pressable style={styles.logExpBtn} onPress={() => router.push({ pathname: '/expenses', params: { clientId: id } })}>
+            <Ionicons name="receipt-outline" size={15} color={Brand.body} />
+            <Text style={styles.logExpText}>Log an expense for this client</Text>
+          </Pressable>
           {docs.length === 0 ? (
             <Text style={styles.emptyLine}>No documents yet for this client.</Text>
           ) : (
@@ -151,6 +170,13 @@ const styles = StyleSheet.create({
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   title: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: Brand.ink, marginHorizontal: 8 },
   grow: { flex: 1 },
+
+  profitRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  profitCell: { flex: 1, backgroundColor: Brand.surface, borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
+  profitVal: { fontSize: 16, fontWeight: '800', color: Brand.ink },
+  profitLabel: { fontSize: 11, color: Brand.muted, marginTop: 2 },
+  logExpBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderStyle: 'dashed', borderColor: Brand.line, borderRadius: 12, paddingVertical: 12, marginTop: 10 },
+  logExpText: { color: Brand.body, fontWeight: '600', fontSize: 13 },
 
   cName: { fontSize: 18, fontWeight: '800', color: Brand.ink },
   cArea: { fontSize: 13, color: Brand.muted, marginTop: 4 },

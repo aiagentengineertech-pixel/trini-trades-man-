@@ -770,6 +770,28 @@ create policy "invoice items own" on invoice_items for all
   with check (exists (select 1 from invoices i where i.id = invoice_items.invoice_id and i.owner_id = auth.uid()));
 
 -- ============================================================
+-- expenses — receipts logged against a client project (Phase 4).
+-- ============================================================
+create table if not exists expenses (
+  id          uuid primary key default uuid_generate_v4(),
+  owner_id    uuid not null references profiles(id) on delete cascade,
+  client_id   uuid references clients(id) on delete set null,
+  vendor      text,
+  category    text not null default 'materials',  -- materials | fuel | tools | labour | permits | other
+  amount      numeric(12,2) not null default 0,
+  note        text,
+  receipt_url text,
+  spent_on    date not null default current_date,
+  created_at  timestamptz not null default now()
+);
+create index if not exists expenses_owner_idx  on expenses(owner_id, created_at desc);
+create index if not exists expenses_client_idx on expenses(client_id);
+alter table expenses enable row level security;
+drop policy if exists "expenses own" on expenses;
+create policy "expenses own" on expenses for all
+  using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
+-- ============================================================
 -- Storage buckets + policies (photos & ID documents)
 -- ============================================================
 insert into storage.buckets (id, name, public) values ('uploads', 'uploads', true) on conflict (id) do nothing;
