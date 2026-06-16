@@ -96,7 +96,7 @@ export default function HomeScreen() {
         <SectionHeader title="Popular Services" onPress={() => router.push('/explore')} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicesRow}>
           {SERVICES.map((s) => (
-            <Pressable key={s.name} style={styles.serviceCard} onPress={() => router.push('/explore')}>
+            <Pressable key={s.name} style={styles.serviceCard} onPress={() => router.push({ pathname: '/explore', params: { trade: s.name } })}>
               <View style={[styles.serviceIcon, { backgroundColor: s.bg }]}>
                 <Ionicons name={s.icon} size={26} color={s.color} />
               </View>

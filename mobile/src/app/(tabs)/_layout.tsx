@@ -68,7 +68,7 @@ export default function TabsLayout() {
             isTradesman ? (
               <Ionicons name="grid-outline" size={size} color={color} />
             ) : (
-              <Ionicons name="add-circle" size={size + 10} color={Brand.red} />
+              <Ionicons name="add-circle" size={size + 6} color={Brand.red} style={{ marginTop: -2 }} />
             ),
         }}
       />

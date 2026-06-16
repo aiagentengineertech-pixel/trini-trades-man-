@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,8 +11,14 @@ const CATEGORIES = ['All', 'Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 
 
 export default function ExploreScreen() {
   const { pros } = useStore();
-  const [active, setActive] = useState('All');
+  const { trade } = useLocalSearchParams<{ trade?: string }>();
+  const [active, setActive] = useState(trade && CATEGORIES.includes(trade) ? trade : 'All');
   const [query, setQuery] = useState('');
+
+  // Apply the trade filter when arriving from a service tap on Home.
+  useEffect(() => {
+    if (trade && CATEGORIES.includes(trade)) setActive(trade);
+  }, [trade]);
   const q = query.trim().toLowerCase();
   const list = pros.filter(
     (p) =>
