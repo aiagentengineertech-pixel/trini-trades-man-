@@ -8,12 +8,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ambient, Badge, Card, Glass, ProAvatar, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { fetchPortfolio, fetchProReviews } from '@/lib/db';
+import { fetchPortfolio, fetchProReviews, fetchProStats } from '@/lib/db';
 import { useStore } from '@/lib/store';
-import type { PortfolioItem, Review } from '@/lib/store-types';
-
-interface Cert { name: string; issuer: string; status: 'verified' | 'expiring'; expiry: string; }
-interface Price { service: string; price: string; }
+import type { PortfolioItem, ProStats, Review } from '@/lib/store-types';
 
 const SORTS = ['Newest', 'Highest', 'Relevant'];
 
@@ -27,10 +24,12 @@ export default function ProProfileScreen() {
   const [sort, setSort] = useState('Newest');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
+  const [stats, setStats] = useState<ProStats | null>(null);
 
   useEffect(() => {
     fetchProReviews(id).then(setReviews);
     fetchPortfolio(id).then(setPortfolio);
+    fetchProStats(id).then(setStats);
   }, [id]);
 
   if (!pro) {
@@ -50,20 +49,12 @@ export default function ProProfileScreen() {
   const invite = () =>
     router.push({ pathname: '/post', params: { trade: pro.trade, invitePro: pro.id, invitePname: pro.name } });
 
-  // Display data for the rich profile (mocked per pro for the prototype).
-  const yearsExp = 12;
-  const responseTime = '15 minutes';
-  const services = pro.services.concat(['Emergency call-outs', 'Free estimates']);
-  const certs: Cert[] = [
-    { name: 'Trade Licence', issuer: 'T&T Board', status: 'verified', expiry: 'Valid till 2028' },
-    { name: 'Liability Insurance', issuer: 'Guardian', status: 'verified', expiry: 'Valid till 2027' },
-    { name: 'Safety Certificate', issuer: 'OSHA T&T', status: 'expiring', expiry: 'Expires Aug 2026' },
-  ];
-  const pricing: Price[] = [
-    { service: 'Call-out fee', price: 'TT$200' },
-    { service: `${pro.trade} — standard job`, price: 'from TT$400' },
-    { service: 'Emergency (after hours)', price: 'TT$600' },
-  ];
+  // Real, data-backed figures (null/0 until there's activity — shown honestly).
+  const years = stats?.yearsExperience ?? pro.yearsExperience ?? null;
+  const respMins = stats?.avgResponseMins ?? null;
+  const respLabel = respMins != null ? `~${respMins} min` : 'New';
+  const radiusKm = stats?.serviceRadiusKm ?? 25;
+  const services = pro.services.length ? pro.services : [pro.trade];
 
   return (
     <View style={styles.root}>
@@ -92,26 +83,33 @@ export default function ProProfileScreen() {
             <Text style={styles.name}>{pro.name}</Text>
           </View>
           <Text style={styles.trade}>{pro.trade} · {pro.area}</Text>
-          <View style={styles.goldBadge}>
-            <Ionicons name="shield-checkmark" size={14} color="#B8860B" />
-            <Text style={styles.goldText}>Gold Verified</Text>
-          </View>
+          {pro.verified ? (
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="shield-checkmark" size={14} color={Brand.green} />
+              <Text style={styles.verifiedBadgeText}>Verified Pro</Text>
+            </View>
+          ) : (
+            <View style={styles.pendingBadge}>
+              <Ionicons name="time-outline" size={14} color={Brand.muted} />
+              <Text style={styles.pendingBadgeText}>Verification pending</Text>
+            </View>
+          )}
           <View style={styles.headlineRow}>
             <View style={styles.headlineItem}>
               <View style={styles.starsRow}>
                 <Ionicons name="star" size={14} color={Brand.star} />
-                <Text style={styles.headlineNum}>{pro.rating.toFixed(1)}</Text>
+                <Text style={styles.headlineNum}>{pro.reviewsCount > 0 ? pro.rating.toFixed(1) : 'New'}</Text>
               </View>
-              <Text style={styles.headlineLbl}>{pro.reviewsCount} reviews</Text>
+              <Text style={styles.headlineLbl}>{pro.reviewsCount} review{pro.reviewsCount === 1 ? '' : 's'}</Text>
             </View>
             <View style={styles.headlineDivider} />
             <View style={styles.headlineItem}>
-              <Text style={styles.headlineNum}>{yearsExp} yrs</Text>
+              <Text style={styles.headlineNum}>{years != null ? `${years} yr${years === 1 ? '' : 's'}` : 'New'}</Text>
               <Text style={styles.headlineLbl}>experience</Text>
             </View>
             <View style={styles.headlineDivider} />
             <View style={styles.headlineItem}>
-              <Text style={styles.headlineNum}>~15 min</Text>
+              <Text style={styles.headlineNum}>{respLabel}</Text>
               <Text style={styles.headlineLbl}>response</Text>
             </View>
           </View>
@@ -120,32 +118,31 @@ export default function ProProfileScreen() {
         {/* ===== Availability ===== */}
         <View style={styles.section}>
           <Card style={styles.availCard}>
-            <View style={styles.availDot} />
-            <Text style={styles.availText}>Available Now</Text>
-            <Text style={styles.availSub}>· Usually responds within {responseTime}</Text>
+            <Ionicons name="time-outline" size={18} color={Brand.body} />
+            <Text style={styles.availText}>
+              {respMins != null ? `Usually responds in ~${respMins} min` : 'New to Trini Tradesman'}
+            </Text>
           </Card>
         </View>
 
-        {/* ===== Business stats ===== */}
+        {/* ===== Business stats (real) ===== */}
         <View style={[styles.section, styles.statsRow]}>
-          <StatCard value={`${pro.jobsDone}`} label="Jobs Done" icon="checkmark-done" tint="#2EA84F" bg="#E9F8EE" />
-          <StatCard value="98%" label="Response" icon="flash" />
-          <StatCard value="96%" label="Completion" icon="ribbon" tint="#2F6FED" bg="#EAF1FE" />
-          <StatCard value="64%" label="Repeat" icon="repeat" tint="#8B5CF6" bg="#F1ECFE" />
+          <StatCard value={`${stats?.jobsDone ?? 0}`} label="Jobs Done" icon="checkmark-done" tint="#2EA84F" bg="#E9F8EE" />
+          <StatCard value={`${stats?.hiredCount ?? 0}`} label="Hired" icon="briefcase" />
+          <StatCard value={stats?.responseRate != null ? `${stats.responseRate}%` : '—'} label="Response" icon="flash" tint="#2F6FED" bg="#EAF1FE" />
+          <StatCard value={stats?.repeatRate != null ? `${stats.repeatRate}%` : '—'} label="Repeat" icon="repeat" tint="#8B5CF6" bg="#F1ECFE" />
         </View>
 
         {/* ===== About ===== */}
         <View style={styles.section}>
           <SectionTitle title="About" />
           <Card>
-            <Text style={styles.about} numberOfLines={readMore ? undefined : 3}>
-              {pro.bio} We pride ourselves on quality workmanship, fair pricing, and showing up on
-              time. Fully licensed and insured, serving homes and businesses across Trinidad & Tobago
-              with a satisfaction guarantee on every job.
-            </Text>
-            <Pressable onPress={() => setReadMore((r) => !r)}>
-              <Text style={styles.readMore}>{readMore ? 'Read less' : 'Read more'}</Text>
-            </Pressable>
+            <Text style={styles.about} numberOfLines={readMore ? undefined : 4}>{pro.bio}</Text>
+            {pro.bio.length > 140 && (
+              <Pressable onPress={() => setReadMore((r) => !r)}>
+                <Text style={styles.readMore}>{readMore ? 'Read less' : 'Read more'}</Text>
+              </Pressable>
+            )}
           </Card>
         </View>
 
@@ -176,7 +173,7 @@ export default function ProProfileScreen() {
               </View>
               <View style={styles.mapInfoRow}>
                 <Ionicons name="resize-outline" size={18} color={Brand.body} />
-                <Text style={styles.mapInfoText}>Travel radius: <Text style={{ fontWeight: '700' }}>25 km</Text></Text>
+                <Text style={styles.mapInfoText}>Travel radius: <Text style={{ fontWeight: '700' }}>{radiusKm} km</Text></Text>
               </View>
               <Badge label="Island-wide for large jobs" color={Brand.green} icon="checkmark-circle" />
             </View>
@@ -213,33 +210,14 @@ export default function ProProfileScreen() {
           </View>
         )}
 
-        {/* ===== Certifications ===== */}
-        <View style={styles.section}>
-          <SectionTitle title="Certifications & Insurance" />
-          <Card style={{ paddingVertical: 4 }}>
-            {certs.map((c, i) => (
-              <View key={c.name} style={[styles.certRow, i < certs.length - 1 && styles.divider]}>
-                <View style={styles.certIcon}><Ionicons name="document-text" size={18} color={Brand.body} /></View>
-                <View style={styles.flex}>
-                  <Text style={styles.certName}>{c.name}</Text>
-                  <Text style={styles.certIssuer}>{c.issuer} · {c.expiry}</Text>
-                </View>
-                <Badge label={c.status === 'verified' ? 'Verified' : 'Expiring'} color={c.status === 'verified' ? Brand.green : Brand.star} icon={c.status === 'verified' ? 'checkmark-circle' : 'time'} />
-              </View>
-            ))}
-          </Card>
-        </View>
-
-        {/* ===== Pricing ===== */}
+        {/* ===== Pricing (quote-based model) ===== */}
         <View style={styles.section}>
           <SectionTitle title="Pricing" />
-          <Card style={{ paddingVertical: 4 }}>
-            {pricing.map((p, i) => (
-              <View key={p.service} style={[styles.priceRow, i < pricing.length - 1 && styles.divider]}>
-                <Text style={styles.priceService}>{p.service}</Text>
-                <Text style={styles.priceValue}>{p.price}</Text>
-              </View>
-            ))}
+          <Card>
+            <View style={styles.priceNoteRow}>
+              <Ionicons name="pricetag-outline" size={18} color={Brand.body} />
+              <Text style={styles.priceNote}>Pricing is quote-based — you get a price for your exact job, with payment held safely in escrow until it's done.</Text>
+            </View>
             <Pressable style={styles.quoteBtn} onPress={invite}>
               <Ionicons name="document-text-outline" size={18} color={Brand.red} />
               <Text style={styles.quoteBtnText}>Request a custom quote</Text>
@@ -247,25 +225,32 @@ export default function ProProfileScreen() {
           </Card>
         </View>
 
-        {/* ===== Trust & verification ===== */}
+        {/* ===== Verification (real) ===== */}
         <View style={styles.section}>
-          <SectionTitle title="Trust & Verification" />
-          <Card>
-            <View style={styles.trustHead}>
-              <Ionicons name="ribbon" size={22} color="#B8860B" />
-              <Text style={styles.trustLevel}>Gold Verified</Text>
-              <Text style={styles.trustNext}>1 step from Platinum</Text>
+          <SectionTitle title="Verification" />
+          <Card style={{ paddingVertical: 4 }}>
+            <View style={[styles.trustRow, styles.divider]}>
+              <Ionicons name={pro.verified ? 'shield-checkmark' : 'time-outline'} size={18} color={pro.verified ? Brand.green : Brand.muted} />
+              <Text style={styles.trustItemText}>
+                {pro.verified ? 'Identity & trade verified by Trini Tradesman' : 'Verification pending'}
+              </Text>
             </View>
-            {[
-              ['Phone verified', true], ['Email verified', true], ['Government ID', true],
-              ['Business registration', true], ['Trade certification', true],
-              ['Insurance verified', true], ['Background check', false],
-            ].map(([label, ok], i, arr) => (
-              <View key={label as string} style={[styles.trustRow, i < arr.length - 1 && styles.divider]}>
-                <Ionicons name={ok ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={ok ? Brand.green : Brand.muted} />
-                <Text style={[styles.trustItemText, !ok && { color: Brand.muted }]}>{label as string}</Text>
+            {stats?.memberSince != null && (
+              <View style={[styles.trustRow, styles.divider]}>
+                <Ionicons name="calendar-outline" size={18} color={Brand.body} />
+                <Text style={styles.trustItemText}>Member since {stats.memberSince}</Text>
               </View>
-            ))}
+            )}
+            {years != null && (
+              <View style={[styles.trustRow, styles.divider]}>
+                <Ionicons name="briefcase-outline" size={18} color={Brand.body} />
+                <Text style={styles.trustItemText}>{years} year{years === 1 ? '' : 's'} of experience</Text>
+              </View>
+            )}
+            <View style={styles.trustRow}>
+              <Ionicons name="checkmark-done" size={18} color={Brand.body} />
+              <Text style={styles.trustItemText}>{stats?.hiredCount ?? 0} job{(stats?.hiredCount ?? 0) === 1 ? '' : 's'} hired via Trini Tradesman</Text>
+            </View>
           </Card>
         </View>
 
@@ -331,8 +316,10 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { fontSize: 23, fontWeight: '800', color: Brand.ink, letterSpacing: -0.3, textAlign: 'center' },
   trade: { fontSize: 14, color: Brand.muted, marginTop: 4 },
-  goldBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FBF3DD', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 12 },
-  goldText: { color: '#9A6B00', fontWeight: '800', fontSize: 12 },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#E9F8EE', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 12 },
+  verifiedBadgeText: { color: Brand.green, fontWeight: '800', fontSize: 12 },
+  pendingBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Brand.surfaceAlt, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 12 },
+  pendingBadgeText: { color: Brand.muted, fontWeight: '800', fontSize: 12 },
   headlineRow: { flexDirection: 'row', alignItems: 'center', marginTop: 18, backgroundColor: Brand.surfaceAlt, borderRadius: 16, paddingVertical: 14, alignSelf: 'stretch', marginHorizontal: 20 },
   headlineItem: { flex: 1, alignItems: 'center' },
   headlineDivider: { width: 1, height: 28, backgroundColor: Brand.line },
@@ -341,9 +328,7 @@ const styles = StyleSheet.create({
   headlineLbl: { fontSize: 11, color: Brand.muted, marginTop: 2 },
 
   availCard: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14 },
-  availDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Brand.green },
-  availText: { fontSize: 15, fontWeight: '800', color: Brand.green },
-  availSub: { fontSize: 12, color: Brand.muted, flexShrink: 1 },
+  availText: { fontSize: 14, fontWeight: '700', color: Brand.ink, flexShrink: 1 },
 
   statsRow: { flexDirection: 'row', gap: 10 },
 
@@ -379,9 +364,8 @@ const styles = StyleSheet.create({
   certName: { fontSize: 14, fontWeight: '700', color: Brand.ink },
   certIssuer: { fontSize: 12, color: Brand.muted, marginTop: 2 },
 
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 13 },
-  priceService: { fontSize: 14, color: Brand.ink },
-  priceValue: { fontSize: 14, fontWeight: '800', color: Brand.ink },
+  priceNoteRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  priceNote: { flex: 1, fontSize: 13, color: Brand.body, lineHeight: 19 },
   quoteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, marginTop: 6 },
   quoteBtnText: { color: Brand.red, fontWeight: '700', fontSize: 14 },
 

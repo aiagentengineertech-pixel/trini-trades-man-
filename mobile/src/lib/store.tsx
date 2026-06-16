@@ -49,7 +49,7 @@ interface StoreState {
   notifications: Notification[];
   myProfile: MyProfile | null;
   updateMyProfile: (fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; role: string }>) => Promise<void>;
-  setupTradesman: (trade: string, bio: string) => Promise<void>;
+  setupTradesman: (trade: string, bio: string, yearsExperience?: number | null) => Promise<void>;
   getPro: (id: string) => Pro | undefined;
   getJob: (id: string) => Job | undefined;
   bidsForJob: (jobId: string) => Bid[];
@@ -124,9 +124,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         role: fields.role ?? prev.role,
       } : prev));
     },
-    setupTradesman: async (trade, bio) => {
+    setupTradesman: async (trade, bio, yearsExperience) => {
       if (!userId) return;
-      await saveTradesmanProfile(userId, trade, bio, nameToId);
+      await saveTradesmanProfile(userId, trade, bio, nameToId, yearsExperience);
       await load();
     },
     getPro: (id) => pros.find((p) => p.id === id),

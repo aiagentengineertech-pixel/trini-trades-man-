@@ -162,7 +162,7 @@ export async function updateProfile(
 
 // ---------------- Pros (real tradesmen) ----------------
 
-import type { PayoutAccount, PortfolioItem, Pro, Review } from './store-types';
+import type { PayoutAccount, PortfolioItem, Pro, ProStats, Review } from './store-types';
 
 export async function fetchPayoutAccount(userId: string): Promise<PayoutAccount | null> {
   const { data, error } = await supabase
@@ -257,6 +257,7 @@ export async function fetchPros(): Promise<Pro[]> {
       distance: 'Nearby',
       verified: !!p.verified,
       photoUrl: p.photo_url ?? null,
+      yearsExperience: info?.years_experience ?? null,
       bio: info?.bio || 'Trusted local tradesman on Trini Tradesman.',
       services: tt.map((x: any) => x.trades?.name).filter(Boolean),
       reviews: [],
@@ -280,15 +281,40 @@ export async function fetchProReviews(proId: string): Promise<Review[]> {
   }));
 }
 
+export async function fetchProStats(proId: string): Promise<ProStats | null> {
+  const { data, error } = await supabase.rpc('get_pro_stats', { p_pro_id: proId });
+  if (error || !data) {
+    if (error) console.warn('[db] fetchProStats failed:', error.message);
+    return null;
+  }
+  const d: any = data;
+  return {
+    yearsExperience: d.years_experience ?? null,
+    serviceRadiusKm: d.service_radius_km ?? null,
+    memberSince: d.member_since ?? null,
+    jobsDone: d.jobs_done ?? 0,
+    hiredCount: d.hired_count ?? 0,
+    completionRate: d.completion_rate ?? null,
+    responseRate: d.response_rate ?? null,
+    avgResponseMins: d.avg_response_mins ?? null,
+    repeatRate: d.repeat_rate ?? null,
+  };
+}
+
 export async function saveTradesmanProfile(
   userId: string,
   trade: string,
   bio: string,
   nameToId: Record<string, string>,
+  yearsExperience?: number | null,
 ): Promise<boolean> {
   const upd = await supabase.from('profiles').update({ role: 'tradesman' }).eq('id', userId);
   if (upd.error) { console.warn('[db] role update failed:', upd.error.message); }
-  await supabase.from('tradesman_info').upsert({ user_id: userId, bio });
+  await supabase.from('tradesman_info').upsert({
+    user_id: userId,
+    bio,
+    ...(yearsExperience === undefined ? {} : { years_experience: yearsExperience }),
+  });
   const tradeId = nameToId[trade];
   if (tradeId) {
     await supabase.from('tradesman_trades').upsert({ user_id: userId, trade_id: tradeId });

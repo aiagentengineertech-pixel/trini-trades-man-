@@ -31,6 +31,7 @@ export default function EditProfileScreen() {
   const [phone, setPhone] = useState('');
   const [area, setArea] = useState('');
   const [bio, setBio] = useState('');
+  const [years, setYears] = useState('');
   const [trade, setTrade] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -51,7 +52,8 @@ export default function EditProfileScreen() {
     if (!pro) return;
     setTrade((t) => t ?? (TRADES.includes(pro.trade) ? pro.trade : null));
     setBio((b) => b || (pro.bio && pro.bio !== DEFAULT_BIO ? pro.bio : ''));
-  }, [pro?.id, pro?.trade, pro?.bio]);
+    setYears((y) => y || (pro.yearsExperience != null ? String(pro.yearsExperience) : ''));
+  }, [pro?.id, pro?.trade, pro?.bio, pro?.yearsExperience]);
 
   const choosePhoto = async () => {
     const uri = await pickImage();
@@ -72,7 +74,7 @@ export default function EditProfileScreen() {
       ...(photo && !photo.startsWith('file') && !photo.startsWith('blob') ? { photo_url: photo.split('?')[0] } : {}),
     });
     if (isTradesman) {
-      await setupTradesman(trade ?? '', bio.trim());
+      await setupTradesman(trade ?? '', bio.trim(), years.trim() ? Number(years) : null);
     }
     setBusy(false);
     setSaved(true);
@@ -123,6 +125,10 @@ export default function EditProfileScreen() {
               </View>
               <Text style={styles.tradeHint}>Pick your trade so customers can find you when they search.</Text>
             </View>
+          )}
+
+          {isTradesman && (
+            <Field label="Years of experience" value={years} onChangeText={setYears} placeholder="e.g. 8" keyboardType="numeric" />
           )}
 
           {isTradesman && (

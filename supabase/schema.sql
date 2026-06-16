@@ -383,6 +383,56 @@ create policy "payout own" on payout_accounts for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ============================================================
+-- get_pro_stats(p_pro_id): real, aggregate-only stats for a public
+-- tradesman profile. security definer so a viewer (who can't read the
+-- pro's private bids/messages under RLS) still gets the computed numbers,
+-- without exposing any row-level private data.
+-- ============================================================
+create or replace function get_pro_stats(p_pro_id uuid)
+returns json
+language sql
+security definer set search_path = public
+as $$
+  with hires_cte as (
+    select j.id as job_id, j.customer_id, j.status
+    from bids b join jobs j on j.id = b.job_id
+    where b.tradesman_id = p_pro_id and b.status = 'accepted'
+  ),
+  convs as (
+    select
+      (select min(m.sent_at) from messages m where m.conversation_id = c.id and m.sender_id <> p_pro_id) as first_in,
+      (select min(m.sent_at) from messages m where m.conversation_id = c.id and m.sender_id  = p_pro_id) as first_pro
+    from conversations c
+    where c.tradesman_id = p_pro_id
+  ),
+  resp as (
+    select
+      count(*) as total_conv,
+      count(*) filter (where first_pro is not null) as replied_conv,
+      avg(extract(epoch from (first_pro - first_in)) / 60.0)
+        filter (where first_pro is not null and first_in is not null and first_pro >= first_in) as avg_min
+    from convs
+  ),
+  cust as (
+    select customer_id, count(*) as n from hires_cte group by customer_id
+  )
+  select json_build_object(
+    'years_experience', (select years_experience from tradesman_info where user_id = p_pro_id),
+    'service_radius_km', coalesce((select service_radius_km from tradesman_info where user_id = p_pro_id), 25),
+    'member_since', (select extract(year from created_at)::int from profiles where id = p_pro_id),
+    'jobs_done', (select count(*) from hires_cte where status = 'done'),
+    'hired_count', (select count(*) from hires_cte),
+    'completion_rate', (select case when count(*) > 0 then round(100.0 * count(*) filter (where status = 'done') / count(*)) end from hires_cte),
+    'response_rate', (select case when total_conv > 0 then round(100.0 * replied_conv / total_conv) end from resp),
+    'avg_response_mins', (select round(avg_min) from resp),
+    'repeat_rate', (select case when count(*) > 0 then round(100.0 * count(*) filter (where n > 1) / count(*)) end from cust),
+    'rating_avg', (select rating_avg from profiles where id = p_pro_id),
+    'rating_count', (select rating_count from profiles where id = p_pro_id)
+  );
+$$;
+grant execute on function get_pro_stats(uuid) to anon, authenticated;
+
+-- ============================================================
 -- Storage buckets + policies (photos & ID documents)
 -- ============================================================
 insert into storage.buckets (id, name, public) values ('uploads', 'uploads', true) on conflict (id) do nothing;

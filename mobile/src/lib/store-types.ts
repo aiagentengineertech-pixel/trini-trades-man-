@@ -24,9 +24,22 @@ export interface Pro {
   color: string;
   bg: string;
   photoUrl: string | null;
+  yearsExperience: number | null;
   bio: string;
   services: string[];
   reviews: Review[];
+}
+
+export interface ProStats {
+  yearsExperience: number | null;
+  serviceRadiusKm: number | null;
+  memberSince: number | null;
+  jobsDone: number;
+  hiredCount: number;
+  completionRate: number | null;
+  responseRate: number | null;
+  avgResponseMins: number | null;
+  repeatRate: number | null;
 }
 
 export interface PortfolioItem {
