@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Ambient } from '@/components/ui';
+import { Ambient, ProAvatar } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useStore, type IconName } from '@/lib/store';
 
@@ -110,13 +110,12 @@ export default function HomeScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.prosRow}>
           {pros.slice(0, 4).map((p) => (
             <Pressable key={p.id} style={styles.proCard} onPress={() => router.push({ pathname: '/pro/[id]', params: { id: p.id } })}>
-              <View style={[styles.proImage, { backgroundColor: p.bg }]}>
-                <Ionicons name={p.icon} size={40} color={p.color} />
+              <ProAvatar photoUrl={p.photoUrl} icon={p.icon} color={p.color} bg={p.bg} iconSize={40} style={styles.proImage}>
                 <View style={styles.ratingPill}>
                   <Text style={styles.ratingText}>{p.rating.toFixed(1)}</Text>
                   <Ionicons name="star" size={11} color={Brand.star} />
                 </View>
-              </View>
+              </ProAvatar>
               <Text style={styles.proName} numberOfLines={1}>{p.name}</Text>
               <Text style={styles.proTrade}>{p.trade}</Text>
               <View style={styles.proMetaRow}>

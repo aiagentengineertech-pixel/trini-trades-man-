@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ProAvatar } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useStore } from '@/lib/store';
 
@@ -70,9 +71,7 @@ export default function ExploreScreen() {
 
         {list.map((p) => (
           <Pressable key={p.id} style={styles.card} onPress={() => router.push({ pathname: '/pro/[id]', params: { id: p.id } })}>
-            <View style={[styles.avatar, { backgroundColor: p.bg }]}>
-              <Ionicons name={p.icon} size={26} color={p.color} />
-            </View>
+            <ProAvatar photoUrl={p.photoUrl} icon={p.icon} color={p.color} bg={p.bg} iconSize={26} style={styles.avatar} />
             <View style={styles.flex}>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{p.name}</Text>

@@ -23,6 +23,7 @@ export interface Pro {
   icon: IconName;
   color: string;
   bg: string;
+  photoUrl: string | null;
   bio: string;
   services: string[];
   reviews: Review[];

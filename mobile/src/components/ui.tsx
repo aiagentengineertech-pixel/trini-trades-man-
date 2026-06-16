@@ -2,12 +2,32 @@
 // Clean white background, soft shadows, rounded "frosted" cards, red accent.
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Switch, Text, View, type ViewStyle } from 'react-native';
 
 import { Brand } from '@/constants/brand';
 
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+/** Tradesman avatar: shows their photo if set, else the trade icon on a tinted background. */
+export function ProAvatar({
+  photoUrl, icon, color, bg, iconSize = 26, style, children,
+}: {
+  photoUrl?: string | null; icon: IconName; color: string; bg: string;
+  iconSize?: number; style?: ViewStyle; children?: React.ReactNode;
+}) {
+  return (
+    <View style={[{ backgroundColor: bg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, style]}>
+      {photoUrl ? (
+        <Image source={{ uri: photoUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+      ) : (
+        <Ionicons name={icon} size={iconSize} color={color} />
+      )}
+      {children}
+    </View>
+  );
+}
 
 /** Soft, frosted "liquid glass" card with layered 3D depth. */
 export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {

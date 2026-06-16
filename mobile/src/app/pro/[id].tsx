@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Ambient, Badge, Card, Glass, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
+import { Ambient, Badge, Card, Glass, ProAvatar, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { fetchPortfolio, fetchProReviews } from '@/lib/db';
 import { useStore } from '@/lib/store';
@@ -78,9 +78,7 @@ export default function ProProfileScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         {/* ===== Header ===== */}
         <View style={styles.header}>
-          <View style={[styles.avatar, { backgroundColor: pro.bg }]}>
-            <Ionicons name={pro.icon} size={48} color={pro.color} />
-          </View>
+          <ProAvatar photoUrl={pro.photoUrl} icon={pro.icon} color={pro.color} bg={pro.bg} iconSize={48} style={styles.avatar} />
           <View style={styles.nameRow}>
             <Text style={styles.name}>{pro.name}</Text>
           </View>

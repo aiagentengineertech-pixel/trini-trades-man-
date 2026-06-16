@@ -236,7 +236,7 @@ export async function deletePortfolioItem(id: string): Promise<void> {
 export async function fetchPros(): Promise<Pro[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, area, verified, rating_avg, rating_count, tradesman_info(bio, years_experience), tradesman_trades(trades(name))')
+    .select('id, full_name, area, photo_url, verified, rating_avg, rating_count, tradesman_info(bio, years_experience), tradesman_trades(trades(name))')
     .in('role', ['tradesman', 'both']);
   if (error || !data) return [];
   return data.map((p: any) => {
@@ -254,6 +254,7 @@ export async function fetchPros(): Promise<Pro[]> {
       area: p.area || 'Trinidad',
       distance: 'Nearby',
       verified: !!p.verified,
+      photoUrl: p.photo_url ?? null,
       bio: info?.bio || 'Trusted local tradesman on Trini Tradesman.',
       services: tt.map((x: any) => x.trades?.name).filter(Boolean),
       reviews: [],
