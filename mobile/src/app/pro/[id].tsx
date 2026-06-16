@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CoverageMap } from '@/components/CoverageMap';
 import { Ambient, Card, Glass, ProAvatar, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -160,6 +161,11 @@ export default function ProProfileScreen() {
         {/* ===== Service area (coverage card) ===== */}
         <View style={styles.section}>
           <SectionTitle title="Service Area" />
+          {pro.lat != null && pro.lng != null && (
+            <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
+              <CoverageMap lat={pro.lat} lng={pro.lng} radiusKm={radiusKm} />
+            </Card>
+          )}
           <Card>
             <View style={styles.coverHead}>
               <View style={styles.coverRingOuter}>
