@@ -11,6 +11,8 @@ import { useAuth } from '@/lib/auth';
 import { fetchInvoices, fetchInvoiceSettings, fetchInvoiceWithItems, type SavedInvoice } from '@/lib/db';
 import { generateInvoicePdf } from '@/lib/invoice';
 
+const LABEL: Record<string, string> = { invoice: 'Invoice', bill: 'Bill', estimate: 'Estimate', quote: 'Quote' };
+
 export default function InvoicesScreen() {
   const { userId } = useAuth();
   const premium = usePremium();
@@ -51,20 +53,22 @@ export default function InvoicesScreen() {
         ) : (
           <View style={{ gap: 10 }}>
             {items.map((iv) => (
-              <Card key={iv.id} style={styles.row}>
-                <View style={styles.icon}><Ionicons name="document-text" size={18} color={Brand.red} /></View>
-                <View style={styles.grow}>
-                  <Text style={styles.num}>{iv.customerName}</Text>
-                  <Text style={styles.meta}>{iv.number} · {iv.createdAt}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                  <Text style={styles.total}>TT${iv.total.toLocaleString()}</Text>
-                  <Pressable style={styles.pdfBtn} onPress={() => reSend(iv.id)} disabled={busyId === iv.id}>
-                    <Ionicons name="download-outline" size={14} color={Brand.red} />
-                    <Text style={styles.pdfText}>{busyId === iv.id ? '…' : 'PDF'}</Text>
-                  </Pressable>
-                </View>
-              </Card>
+              <Pressable key={iv.id} onPress={() => router.push({ pathname: '/doc/[id]', params: { id: iv.id } })}>
+                <Card style={styles.row}>
+                  <View style={styles.icon}><Ionicons name="document-text" size={18} color={Brand.red} /></View>
+                  <View style={styles.grow}>
+                    <Text style={styles.num}>{iv.customerName}</Text>
+                    <Text style={styles.meta}>{LABEL[iv.docType]} · {iv.number} · {iv.createdAt}</Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                    <Text style={styles.total}>TT${iv.total.toLocaleString()}</Text>
+                    <Pressable style={styles.pdfBtn} onPress={() => reSend(iv.id)} disabled={busyId === iv.id}>
+                      <Ionicons name="download-outline" size={14} color={Brand.red} />
+                      <Text style={styles.pdfText}>{busyId === iv.id ? '…' : 'PDF'}</Text>
+                    </Pressable>
+                  </View>
+                </Card>
+              </Pressable>
             ))}
           </View>
         )}

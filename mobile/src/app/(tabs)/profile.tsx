@@ -342,6 +342,7 @@ function TradesmanProfile() {
           <View style={styles.section}>
             <Card style={{ paddingVertical: 4 }}>
               <ListRow icon="grid-outline" label="Business dashboard" onPress={() => router.push('/post')} />
+              <ListRow icon="people-circle-outline" label="Clients" onPress={() => router.push('/clients')} />
               <ListRow icon="people-outline" label="Team" onPress={() => router.push('/team')} />
               <ListRow icon="shield-checkmark-outline" label="Verification" onPress={() => router.push('/verification')} />
               <ListRow icon="person-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />

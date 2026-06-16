@@ -192,7 +192,7 @@ export async function updateProfile(
 
 // ---------------- Pros (real tradesmen) ----------------
 
-import type { CatalogItem, InvoiceSettings, PayoutAccount, PortfolioItem, Pro, ProStats, Review, TeamMember, TeamRole } from './store-types';
+import type { CatalogItem, Client, ClientPhoto, DocType, InvoiceSettings, PayoutAccount, PortfolioItem, Pro, ProStats, Review, TeamMember, TeamRole } from './store-types';
 
 export async function fetchPayoutAccount(userId: string): Promise<PayoutAccount | null> {
   const { data, error } = await supabase
@@ -479,6 +479,70 @@ export async function fetchMyAssignments(userId: string): Promise<Assignment[]> 
   return data.map((d: any) => ({ id: d.id, jobId: d.job_id, ownerId: d.owner_id, employeeId: d.employee_id }));
 }
 
+// ---------------- Clients (CRM) ----------------
+
+export async function fetchClients(userId: string): Promise<Client[]> {
+  const { data, error } = await supabase
+    .from('clients')
+    .select('id, name, phone, email, area, location_lat, location_lng, notes')
+    .eq('owner_id', userId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map((r: any) => ({
+    id: r.id, name: r.name, phone: r.phone ?? '', email: r.email ?? '', area: r.area ?? '',
+    lat: r.location_lat ?? null, lng: r.location_lng ?? null, notes: r.notes ?? '',
+  }));
+}
+
+export async function fetchClient(id: string): Promise<Client | null> {
+  const { data, error } = await supabase
+    .from('clients')
+    .select('id, name, phone, email, area, location_lat, location_lng, notes')
+    .eq('id', id)
+    .maybeSingle();
+  if (error || !data) return null;
+  const r: any = data;
+  return { id: r.id, name: r.name, phone: r.phone ?? '', email: r.email ?? '', area: r.area ?? '', lat: r.location_lat ?? null, lng: r.location_lng ?? null, notes: r.notes ?? '' };
+}
+
+export async function saveClient(userId: string, c: Omit<Client, 'id'> & { id?: string }): Promise<string | null> {
+  const payload = { owner_id: userId, name: c.name, phone: c.phone || null, email: c.email || null, area: c.area || null, location_lat: c.lat, location_lng: c.lng, notes: c.notes || null };
+  if (c.id) {
+    const { error } = await supabase.from('clients').update(payload).eq('id', c.id);
+    if (error) { console.warn('[db] updateClient failed:', error.message); return null; }
+    return c.id;
+  }
+  const { data, error } = await supabase.from('clients').insert(payload).select('id').single();
+  if (error || !data) { console.warn('[db] addClient failed:', error?.message); return null; }
+  return data.id;
+}
+
+export async function deleteClient(id: string): Promise<void> {
+  await supabase.from('clients').delete().eq('id', id);
+}
+
+export async function fetchClientPhotos(clientId: string): Promise<ClientPhoto[]> {
+  const { data, error } = await supabase
+    .from('client_photos')
+    .select('id, url, caption, created_at')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map((r: any) => ({ id: r.id, url: r.url, caption: r.caption ?? '', date: relativeTime(r.created_at) }));
+}
+
+export async function addClientPhoto(userId: string, clientId: string, uri: string, caption: string): Promise<boolean> {
+  const url = await uploadImage('uploads', `clients/${clientId}/${Date.now()}.jpg`, uri);
+  if (!url) return false;
+  const { error } = await supabase.from('client_photos').insert({ owner_id: userId, client_id: clientId, url, caption: caption || null });
+  if (error) { console.warn('[db] addClientPhoto failed:', error.message); return false; }
+  return true;
+}
+
+export async function deleteClientPhoto(id: string): Promise<void> {
+  await supabase.from('client_photos').delete().eq('id', id);
+}
+
 // ---------------- Invoices: branding + catalog ----------------
 
 export async function fetchInvoiceSettings(userId: string): Promise<InvoiceSettings | null> {
@@ -519,22 +583,25 @@ export async function saveInvoiceSettings(userId: string, s: InvoiceSettings): P
 
 export interface SavedInvoice {
   id: string;
+  docType: DocType;
   number: string;
   customerName: string;
   total: number;
   status: string;
+  signedAt: string | null;
+  convertedTo: string | null;
   createdAt: string;
 }
 
 export async function saveInvoice(
   userId: string,
-  inv: { number: string; customerName: string; notes?: string; subtotal: number; tax: number; total: number; clientId?: string | null; jobId?: string | null },
+  inv: { docType?: DocType; number: string; customerName: string; notes?: string; subtotal: number; tax: number; total: number; clientId?: string | null; jobId?: string | null },
   lines: { description: string; qty: number; unitPrice: number }[],
 ): Promise<string | null> {
   const { data, error } = await supabase
     .from('invoices')
     .insert({
-      owner_id: userId, number: inv.number, customer_name: inv.customerName || null,
+      owner_id: userId, doc_type: inv.docType ?? 'invoice', number: inv.number, customer_name: inv.customerName || null,
       status: 'sent', currency: 'TTD', subtotal: inv.subtotal, tax: inv.tax, total: inv.total,
       notes: inv.notes || null, client_id: inv.clientId ?? null, job_id: inv.jobId ?? null,
     })
@@ -546,23 +613,61 @@ export async function saveInvoice(
   return data.id;
 }
 
+function mapInvoiceRow(r: any): SavedInvoice {
+  return {
+    id: r.id, docType: (r.doc_type ?? 'invoice') as DocType, number: r.number,
+    customerName: r.customer_name ?? 'Customer', total: Number(r.total), status: r.status,
+    signedAt: r.signed_at ?? null, convertedTo: r.converted_to ?? null, createdAt: relativeTime(r.created_at),
+  };
+}
+
 export async function fetchInvoices(userId: string): Promise<SavedInvoice[]> {
   const { data, error } = await supabase
     .from('invoices')
-    .select('id, number, customer_name, total, status, created_at')
+    .select('id, doc_type, number, customer_name, total, status, signed_at, converted_to, created_at')
     .eq('owner_id', userId)
     .order('created_at', { ascending: false });
   if (error || !data) return [];
-  return data.map((r: any) => ({
-    id: r.id, number: r.number, customerName: r.customer_name ?? 'Customer',
-    total: Number(r.total), status: r.status, createdAt: relativeTime(r.created_at),
-  }));
+  return data.map(mapInvoiceRow);
 }
 
-export async function fetchInvoiceWithItems(id: string): Promise<{ number: string; customerName: string; taxPct: number; notes: string; lines: { description: string; qty: number; unitPrice: number }[] } | null> {
+export async function fetchClientDocuments(clientId: string): Promise<SavedInvoice[]> {
   const { data, error } = await supabase
     .from('invoices')
-    .select('number, customer_name, subtotal, tax, notes, invoice_items(description, qty, unit_price, sort)')
+    .select('id, doc_type, number, customer_name, total, status, signed_at, converted_to, created_at')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map(mapInvoiceRow);
+}
+
+export async function signOffDocument(id: string, name: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('invoices')
+    .update({ signed_name: name, signed_at: new Date().toISOString(), status: 'approved' })
+    .eq('id', id);
+  if (error) { console.warn('[db] signOff failed:', error.message); return false; }
+  return true;
+}
+
+/** Convert an approved estimate/quote into a new invoice (copies the line items). */
+export async function convertToInvoice(userId: string, estimateId: string): Promise<string | null> {
+  const src = await fetchInvoiceWithItems(estimateId);
+  if (!src) return null;
+  const subtotal = src.lines.reduce((s, l) => s + l.qty * l.unitPrice, 0);
+  const tax = Math.round(subtotal * (src.taxPct / 100) * 100) / 100;
+  const newId = await saveInvoice(userId, {
+    docType: 'invoice', number: `INV-${String(Date.now()).slice(-6)}`, customerName: src.customerName,
+    notes: src.notes, subtotal, tax, total: subtotal + tax, clientId: src.clientId,
+  }, src.lines);
+  if (newId) await supabase.from('invoices').update({ status: 'converted', converted_to: newId }).eq('id', estimateId);
+  return newId;
+}
+
+export async function fetchInvoiceWithItems(id: string): Promise<{ docType: DocType; number: string; customerName: string; clientId: string | null; taxPct: number; notes: string; signedName: string | null; signedAt: string | null; status: string; convertedTo: string | null; lines: { description: string; qty: number; unitPrice: number }[] } | null> {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('doc_type, number, customer_name, client_id, subtotal, tax, notes, signed_name, signed_at, status, converted_to, invoice_items(description, qty, unit_price, sort)')
     .eq('id', id)
     .maybeSingle();
   if (error || !data) return null;
@@ -570,10 +675,16 @@ export async function fetchInvoiceWithItems(id: string): Promise<{ number: strin
   const items = (Array.isArray(d.invoice_items) ? d.invoice_items : []).sort((a: any, b: any) => a.sort - b.sort);
   const taxPct = Number(d.subtotal) > 0 ? Math.round((Number(d.tax) / Number(d.subtotal)) * 1000) / 10 : 0;
   return {
+    docType: (d.doc_type ?? 'invoice') as DocType,
     number: d.number,
     customerName: d.customer_name ?? '',
+    clientId: d.client_id ?? null,
     taxPct,
     notes: d.notes ?? '',
+    signedName: d.signed_name ?? null,
+    signedAt: d.signed_at ?? null,
+    status: d.status,
+    convertedTo: d.converted_to ?? null,
     lines: items.map((it: any) => ({ description: it.description, qty: Number(it.qty), unitPrice: Number(it.unit_price) })),
   };
 }

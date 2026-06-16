@@ -72,6 +72,26 @@ export interface CatalogItem {
   price: number;
 }
 
+export type DocType = 'invoice' | 'bill' | 'estimate' | 'quote';
+
+export interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  area: string;
+  lat: number | null;
+  lng: number | null;
+  notes: string;
+}
+
+export interface ClientPhoto {
+  id: string;
+  url: string;
+  caption: string;
+  date: string;
+}
+
 export type TeamRole = 'owner' | 'employee';
 
 export interface TeamMember {

@@ -701,6 +701,21 @@ drop policy if exists "clients own" on clients;
 create policy "clients own" on clients for all
   using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
 
+-- per-client project photo vault (Phase 3)
+create table if not exists client_photos (
+  id         uuid primary key default uuid_generate_v4(),
+  owner_id   uuid not null references profiles(id) on delete cascade,
+  client_id  uuid not null references clients(id) on delete cascade,
+  url        text not null,
+  caption    text,
+  created_at timestamptz not null default now()
+);
+create index if not exists client_photos_idx on client_photos(client_id, created_at desc);
+alter table client_photos enable row level security;
+drop policy if exists "client photos own" on client_photos;
+create policy "client photos own" on client_photos for all
+  using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
 -- invoices + line items (persisted; the builder/PDF land in Phase 2)
 do $$ begin
   create type invoice_status as enum ('draft', 'sent', 'paid', 'void');
@@ -726,6 +741,17 @@ alter table invoices enable row level security;
 drop policy if exists "invoices own" on invoices;
 create policy "invoices own" on invoices for all
   using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
+-- one engine for every document: invoice / bill / estimate / quote (Phase 3)
+do $$ begin
+  create type doc_type as enum ('invoice', 'bill', 'estimate', 'quote');
+exception when duplicate_object then null; end $$;
+alter table invoices add column if not exists doc_type doc_type not null default 'invoice';
+-- estimate/quote sign-off + conversion (Phase 3)
+alter table invoices add column if not exists signed_name   text;
+alter table invoices add column if not exists signed_at     timestamptz;
+alter table invoices add column if not exists signature_url text;
+alter table invoices add column if not exists converted_to  uuid references invoices(id) on delete set null;
 
 create table if not exists invoice_items (
   id          uuid primary key default uuid_generate_v4(),

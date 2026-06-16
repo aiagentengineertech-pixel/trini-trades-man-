@@ -3,7 +3,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
-import type { InvoiceSettings } from './store-types';
+import type { DocType, InvoiceSettings } from './store-types';
 
 export interface InvoiceLine {
   description: string;
@@ -12,6 +12,7 @@ export interface InvoiceLine {
 }
 
 export interface InvoiceDraft {
+  docType?: DocType;
   number: string;
   date: string; // display string
   customerName: string;
@@ -19,7 +20,11 @@ export interface InvoiceDraft {
   lines: InvoiceLine[];
   taxPct: number; // 0 = no VAT
   notes?: string;
+  signedName?: string | null;
+  signedDate?: string | null;
 }
+
+const DOC_LABEL: Record<DocType, string> = { invoice: 'INVOICE', bill: 'BILL', estimate: 'ESTIMATE', quote: 'QUOTE' };
 
 const money = (n: number) => `TT$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const esc = (s: string) => (s || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
@@ -49,6 +54,10 @@ export function buildInvoiceHtml(s: InvoiceSettings, d: InvoiceDraft): string {
     .join('');
 
   const contactBits = [s.contactPhone, s.contactEmail, s.taxId ? `VAT/BIR: ${s.taxId}` : ''].filter(Boolean).map(esc).join(' &nbsp;·&nbsp; ');
+  const docLabel = DOC_LABEL[d.docType ?? 'invoice'];
+  const signOff = d.signedName
+    ? `<div style="margin-top:24px;padding:12px 14px;background:${color}0D;border-radius:8px;font-size:12px;color:#4a4f57;">✓ Approved by <strong>${esc(d.signedName)}</strong>${d.signedDate ? ` on ${esc(d.signedDate)}` : ''}</div>`
+    : '';
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -71,7 +80,7 @@ export function buildInvoiceHtml(s: InvoiceSettings, d: InvoiceDraft): string {
     <div class="bar"></div>
     <div class="head">
       <div>${logo}<div class="muted" style="margin-top:8px;">${contactBits}</div></div>
-      <div class="title"><h1>INVOICE</h1><div class="muted">${esc(d.number)}<br/>${esc(d.date)}</div></div>
+      <div class="title"><h1>${docLabel}</h1><div class="muted">${esc(d.number)}<br/>${esc(d.date)}</div></div>
     </div>
     <div class="billto"><span class="muted">BILL TO</span><br/><strong>${esc(d.customerName || 'Customer')}</strong>${d.customerInfo ? `<br/>${esc(d.customerInfo)}` : ''}</div>
     <table>
@@ -83,6 +92,7 @@ export function buildInvoiceHtml(s: InvoiceSettings, d: InvoiceDraft): string {
       ${d.taxPct > 0 ? `<div class="r"><span class="muted">VAT (${d.taxPct}%)</span><span>${money(tax)}</span></div>` : ''}
       <div class="r grand"><span>Total</span><span>${money(total)}</span></div>
     </div>
+    ${signOff}
     ${s.paymentTerms || d.notes ? `<div class="terms">${s.paymentTerms ? `<strong>Payment terms:</strong> ${esc(s.paymentTerms)}<br/>` : ''}${d.notes ? esc(d.notes) : ''}</div>` : ''}
     <div class="footer">${esc(s.footerNote || `${biz} · Generated with Trini Tradesman`)}</div>
   </body></html>`;

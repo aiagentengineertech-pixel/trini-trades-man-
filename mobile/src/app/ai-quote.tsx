@@ -1,25 +1,31 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card } from '@/components/ui';
+import { Card, Segmented } from '@/components/ui';
 import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { fetchCatalog, fetchInvoiceSettings, saveInvoice } from '@/lib/db';
 import { generateInvoicePdf, invoiceTotals, type InvoiceLine } from '@/lib/invoice';
-import type { CatalogItem, InvoiceSettings } from '@/lib/store-types';
+import type { CatalogItem, DocType, InvoiceSettings } from '@/lib/store-types';
 
 const money = (n: number) => `TT$${n.toLocaleString(undefined, { minimumFractionDigits: 0 })}`;
+const DOC_TABS = ['Invoice', 'Estimate', 'Quote', 'Bill'];
+const PREFIX: Record<DocType, string> = { invoice: 'INV', bill: 'BILL', estimate: 'EST', quote: 'QTE' };
+const toDocType = (s: string): DocType => (s.toLowerCase() as DocType);
 
 export default function InvoiceBuilderScreen() {
   const { userId } = useAuth();
   const premium = usePremium();
+  const params = useLocalSearchParams<{ type?: string; clientId?: string; clientName?: string }>();
   const [settings, setSettings] = useState<InvoiceSettings | null>(null);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
-  const [customer, setCustomer] = useState('');
+  const [docTab, setDocTab] = useState(params.type && DOC_TABS.map((t) => t.toLowerCase()).includes(params.type) ? params.type[0].toUpperCase() + params.type.slice(1) : 'Invoice');
+  const [customer, setCustomer] = useState(params.clientName ?? '');
+  const clientId = params.clientId ?? null;
   const [lines, setLines] = useState<InvoiceLine[]>([]);
   const [vat, setVat] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -32,13 +38,15 @@ export default function InvoiceBuilderScreen() {
     fetchCatalog(userId).then(setCatalog);
   }, [userId]);
 
+  const docType = toDocType(docTab);
   const draft = useMemo(() => ({
-    number: `INV-${String(Date.now()).slice(-6)}`,
+    docType,
+    number: `${PREFIX[docType]}-${String(Date.now()).slice(-6)}`,
     date: new Date().toLocaleDateString(),
     customerName: customer,
     lines,
     taxPct: vat ? 12.5 : 0,
-  }), [customer, lines, vat]);
+  }), [docType, customer, lines, vat]);
   const totals = invoiceTotals(draft);
 
   const addLine = (l: InvoiceLine) => setLines((p) => [...p, l]);
@@ -54,7 +62,7 @@ export default function InvoiceBuilderScreen() {
     try {
       await generateInvoicePdf(effective, draft);
       if (userId) {
-        const id = await saveInvoice(userId, { number: draft.number, customerName: draft.customerName, subtotal: totals.subtotal, tax: totals.tax, total: totals.total }, draft.lines);
+        const id = await saveInvoice(userId, { docType, number: draft.number, customerName: draft.customerName, subtotal: totals.subtotal, tax: totals.tax, total: totals.total, clientId }, draft.lines);
         if (id) setSavedId(id);
       }
     } finally { setGenerating(false); }
@@ -68,7 +76,7 @@ export default function InvoiceBuilderScreen() {
     <SafeAreaView style={styles.flex} edges={['top']}>
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
-        <Text style={styles.title}>New Invoice</Text>
+        <Text style={styles.title}>New {docTab}</Text>
         <View style={{ width: 26 }} />
       </View>
 
@@ -95,6 +103,9 @@ export default function InvoiceBuilderScreen() {
               <Text style={styles.brandNudgeText}>Set up your logo & business details so invoices look professional.</Text>
             </Pressable>
           )}
+
+          <Text style={styles.label}>Document type</Text>
+          <Segmented options={DOC_TABS} value={docTab} onChange={setDocTab} />
 
           <Text style={styles.label}>Bill to</Text>
           <TextInput style={styles.input} placeholder="Customer name" placeholderTextColor={Brand.muted} value={customer} onChangeText={setCustomer} />
