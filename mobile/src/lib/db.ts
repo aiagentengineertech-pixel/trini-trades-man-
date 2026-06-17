@@ -186,12 +186,22 @@ export async function fetchProfile(userId: string): Promise<MyProfile | null> {
   };
 }
 
+// Last profile-write error, so the Edit Profile screen can show why a save
+// failed instead of silently appearing to succeed.
+let _lastWriteError: string | null = null;
+export function getLastWriteError(): string | null {
+  return _lastWriteError;
+}
+export function clearWriteError(): void {
+  _lastWriteError = null;
+}
+
 export async function updateProfile(
   userId: string,
   fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; banner_url: string; role: string; location_lat: number; location_lng: number }>,
 ): Promise<boolean> {
   const { error } = await supabase.from('profiles').update(fields).eq('id', userId);
-  if (error) { console.warn('[db] updateProfile failed:', error.message); return false; }
+  if (error) { _lastWriteError = error.message; console.warn('[db] updateProfile failed:', error.message); return false; }
   return true;
 }
 
@@ -397,19 +407,21 @@ export async function saveTradesmanProfile(
 ): Promise<boolean> {
   // Never downgrade a super_admin (the operator may also use the app).
   const upd = await supabase.from('profiles').update({ role: 'tradesman' }).eq('id', userId).neq('role', 'super_admin');
-  if (upd.error) { console.warn('[db] role update failed:', upd.error.message); }
-  await supabase.from('tradesman_info').upsert({
+  if (upd.error) { _lastWriteError = upd.error.message; console.warn('[db] role update failed:', upd.error.message); }
+  const info = await supabase.from('tradesman_info').upsert({
     user_id: userId,
     bio,
     ...(yearsExperience === undefined ? {} : { years_experience: yearsExperience }),
   });
+  if (info.error) { _lastWriteError = info.error.message; console.warn('[db] tradesman_info failed:', info.error.message); }
   // Sync the tradesman's full set of trades: replace whatever they had before.
   const ids = trades.map((t) => nameToId[t]).filter(Boolean);
   await supabase.from('tradesman_trades').delete().eq('user_id', userId);
   if (ids.length) {
-    await supabase.from('tradesman_trades').insert(ids.map((trade_id) => ({ user_id: userId, trade_id })));
+    const ins = await supabase.from('tradesman_trades').insert(ids.map((trade_id) => ({ user_id: userId, trade_id })));
+    if (ins.error) { _lastWriteError = ins.error.message; console.warn('[db] tradesman_trades failed:', ins.error.message); }
   }
-  return true;
+  return !_lastWriteError;
 }
 
 // ---------------- Team ----------------

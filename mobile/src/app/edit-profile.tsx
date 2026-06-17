@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AreaPicker } from '@/components/AreaPicker';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { getLastUploadError, uploadImage } from '@/lib/db';
+import { clearWriteError, getLastUploadError, getLastWriteError, uploadImage } from '@/lib/db';
 import { pickImage } from '@/lib/images';
 import { useStore } from '@/lib/store';
 
@@ -39,6 +39,7 @@ export default function EditProfileScreen() {
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (myProfile) {
@@ -101,6 +102,8 @@ export default function EditProfileScreen() {
 
   const save = async () => {
     setBusy(true);
+    setUploadErr(null);
+    clearWriteError();
     await updateMyProfile({
       full_name: name.trim(),
       phone: phone.trim(),
@@ -113,7 +116,9 @@ export default function EditProfileScreen() {
       await setupTradesman(trades, bio.trim(), years.trim() ? Number(years) : null);
     }
     setBusy(false);
-    setSaved(true);
+    const err = getLastWriteError();
+    if (err) { setSaveErr(err); setSaved(false); }
+    else { setSaveErr(null); setSaved(true); }
   };
 
   return (
@@ -230,6 +235,13 @@ export default function EditProfileScreen() {
             <View style={styles.savedRow}>
               <Ionicons name="checkmark-circle" size={18} color={Brand.green} />
               <Text style={styles.savedText}>Profile saved</Text>
+            </View>
+          )}
+
+          {saveErr && (
+            <View style={styles.uploadErrBox}>
+              <Ionicons name="warning-outline" size={16} color={Brand.red} />
+              <Text style={styles.uploadErrText}>Couldn’t save: {saveErr}</Text>
             </View>
           )}
 
