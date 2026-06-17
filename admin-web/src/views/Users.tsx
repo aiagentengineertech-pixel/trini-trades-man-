@@ -13,6 +13,7 @@ export default function Users() {
   const [q, setQ] = useState('');
   const [data, setData] = useState<UsersResponse | null>(null);
   const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -40,7 +41,10 @@ export default function Users() {
               <td>{u.region || '—'}</td>
               <td><span className={`pill ${u.isPremium ? 'on' : 'off'}`}>{u.isPremium ? 'Premium' : 'Free'}</span></td>
               <td className="muted">{u.subscriptionExpiresAt ? new Date(u.subscriptionExpiresAt).toLocaleDateString() : '—'}</td>
-              <td><button className="linkbtn" onClick={() => setEditing(u)}>Manage</button></td>
+              <td style={{ whiteSpace: 'nowrap' }}>
+                <button className="linkbtn" onClick={() => setDetailId(u.id)}>Details</button>
+                <button className="linkbtn" style={{ marginLeft: 12 }} onClick={() => setEditing(u)}>Billing</button>
+              </td>
             </tr>
           ))}
           {data && data.users.length === 0 && <tr><td colSpan={6} className="muted">No users.</td></tr>}
@@ -53,6 +57,75 @@ export default function Users() {
       </div>
 
       {editing && <SubscriptionModal user={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
+      {detailId && <UserDetailModal id={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
+    </div>
+  );
+}
+
+interface UserDetail {
+  id: string; fullName: string | null; phone: string | null; area: string | null; region: string | null;
+  role: string; verified: boolean; isPremium: boolean; suspended: boolean; ratingAvg: number; ratingCount: number;
+  createdAt: string; counts: { jobsPosted: number; bidsMade: number; invoices: number; reviews: number };
+}
+
+function UserDetailModal({ id, onClose, onChanged }: { id: string; onClose: () => void; onChanged: () => void }) {
+  const [d, setD] = useState<UserDetail | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const load = () => api<UserDetail>(`/api/admin/users/${id}`).then(setD).catch((e) => setErr(e.message));
+  useEffect(() => { load(); }, [id]);
+
+  const patch = async (body: any, note: string) => {
+    setBusy(true); setErr(null); setMsg(null);
+    try { await api(`/api/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(body) }); setMsg(note); await load(); onChanged(); }
+    catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  };
+  const resetPw = async () => {
+    setBusy(true); setErr(null); setMsg(null);
+    try { await api(`/api/admin/users/${id}/reset-password`, { method: 'POST' }); setMsg('Password reset email sent.'); }
+    catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="backdrop" onClick={onClose}>
+      <div className="modal" style={{ width: 460 }} onClick={(e) => e.stopPropagation()}>
+        {!d ? <p className="muted">Loading…</p> : (
+          <>
+            <h3>{d.fullName || 'User'}</h3>
+            <p className="muted" style={{ marginTop: -8 }}>{d.role} · {d.area || d.region || 'no area'} · joined {new Date(d.createdAt).toLocaleDateString()}</p>
+            <div className="countgrid">
+              <div><b>{d.counts.jobsPosted}</b><span>Jobs</span></div>
+              <div><b>{d.counts.bidsMade}</b><span>Bids</span></div>
+              <div><b>{d.counts.invoices}</b><span>Invoices</span></div>
+              <div><b>{d.ratingAvg.toFixed(1)} ({d.counts.reviews})</b><span>Rating</span></div>
+            </div>
+
+            <div className="row"><span>Verified tradesman</span>
+              <button className="btn ghost" onClick={() => patch({ verified: !d.verified }, d.verified ? 'Unverified.' : 'Verified ✓')} disabled={busy}>{d.verified ? 'Verified ✓ — revoke' : 'Verify'}</button>
+            </div>
+            <div className="row"><span>Role</span>
+              <select className="field" style={{ width: 160, marginBottom: 0 }} value={d.role} onChange={(e) => patch({ role: e.target.value }, 'Role updated.')} disabled={busy}>
+                <option value="customer">customer</option>
+                <option value="tradesman">tradesman</option>
+                <option value="both">both</option>
+                <option value="super_admin">super_admin</option>
+              </select>
+            </div>
+            <div className="row"><span>Account</span>
+              <button className="btn ghost" style={d.suspended ? undefined : { borderColor: '#999', color: '#999' }} onClick={() => patch({ suspended: !d.suspended }, d.suspended ? 'Reinstated.' : 'Suspended.')} disabled={busy}>{d.suspended ? 'Suspended — reinstate' : 'Suspend / ban'}</button>
+            </div>
+            <div className="row"><span>Password</span>
+              <button className="btn ghost" onClick={resetPw} disabled={busy}>Send reset email</button>
+            </div>
+
+            {msg && <p className="ok" style={{ color: 'var(--green)' }}>{msg}</p>}
+            {err && <p className="err">{err}</p>}
+            <div style={{ textAlign: 'right', marginTop: 14 }}><button className="btn secondary" style={{ width: 'auto', padding: '10px 18px' }} onClick={onClose}>Close</button></div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

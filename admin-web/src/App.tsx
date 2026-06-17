@@ -3,12 +3,21 @@ import { useEffect, useState } from 'react';
 
 import { api } from './api';
 import { supabase } from './supabase';
+import Audit from './views/Audit';
+import Broadcast from './views/Broadcast';
 import Dashboard from './views/Dashboard';
 import Features from './views/Features';
 import Login from './views/Login';
 import Users from './views/Users';
 
-type Tab = 'dashboard' | 'users' | 'features';
+type Tab = 'dashboard' | 'users' | 'broadcast' | 'features' | 'audit';
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'users', label: 'Users' },
+  { key: 'broadcast', label: 'Broadcast' },
+  { key: 'features', label: 'Feature gates' },
+  { key: 'audit', label: 'Audit log' },
+];
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -47,15 +56,15 @@ export default function App() {
         <button className="btn ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>
       </div>
       <div className="tabs">
-        {(['dashboard', 'users', 'features'] as Tab[]).map((t) => (
-          <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-            {t === 'dashboard' ? 'Dashboard' : t === 'users' ? 'Users' : 'Feature gates'}
-          </button>
+        {TABS.map((t) => (
+          <button key={t.key} className={`tab ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>{t.label}</button>
         ))}
       </div>
       {tab === 'dashboard' && <Dashboard />}
       {tab === 'users' && <Users />}
+      {tab === 'broadcast' && <Broadcast />}
       {tab === 'features' && <Features />}
+      {tab === 'audit' && <Audit />}
     </div>
   );
 }

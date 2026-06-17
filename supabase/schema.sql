@@ -90,6 +90,24 @@ as $$
 $$;
 grant execute on function is_super_admin() to authenticated;
 
+-- Account suspension flag (set by admins; login is also blocked via auth ban).
+alter table profiles add column if not exists suspended boolean not null default false;
+
+-- Audit log of every admin action (who did what, when).
+create table if not exists admin_actions (
+  id         uuid primary key default uuid_generate_v4(),
+  admin_id   uuid references profiles(id) on delete set null,
+  action     text not null,
+  target_id  uuid,
+  detail     jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists admin_actions_idx on admin_actions(created_at desc);
+alter table admin_actions enable row level security;
+drop policy if exists "admin actions super" on admin_actions;
+create policy "admin actions super" on admin_actions for all
+  using (public.is_super_admin()) with check (public.is_super_admin());
+
 -- Global feature gates the admin can toggle at will.
 create table if not exists feature_gates (
   key        text primary key,           -- e.g. 'invoices', 'crm', 'dispatch'
