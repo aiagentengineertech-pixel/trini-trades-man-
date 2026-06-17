@@ -134,6 +134,11 @@ create table if not exists trades (
   icon text                          -- icon name/key used by the app
 );
 
+-- Custom trades added by tradesmen (freelancer-style "add your own skill").
+-- is_custom lets the admin console review/merge user-generated trades.
+alter table trades add column if not exists is_custom  boolean not null default false;
+alter table trades add column if not exists created_by uuid references profiles(id) on delete set null;
+
 -- ============================================================
 -- tradesman_info — extra profile data for the pro side
 -- ============================================================
@@ -410,6 +415,44 @@ insert into trades (name, icon) values
   ('Auto Mechanic','car-sport'),
   ('Aluminium & Glass','square')
 on conflict (name) do nothing;
+
+-- ============================================================
+-- add_trade(p_name): lets a tradesman add their own trade/skill.
+-- The trades table is read-only to clients (seeded by SQL/admin), so this
+-- security-definer function is the only way the app can create one. It
+-- de-dupes case-insensitively and reuses an existing trade when it matches,
+-- so "welding" doesn't create a second "Welding".
+-- ============================================================
+create or replace function public.add_trade(p_name text)
+returns trades
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_name text := nullif(btrim(p_name), '');
+  v_row  trades;
+begin
+  if auth.uid() is null then
+    raise exception 'must be signed in to add a trade';
+  end if;
+  if v_name is null then
+    raise exception 'trade name required';
+  end if;
+  v_name := left(v_name, 40);
+  -- reuse an existing trade if one already matches (case-insensitive)
+  select * into v_row from trades where lower(name) = lower(v_name) limit 1;
+  if found then
+    return v_row;
+  end if;
+  insert into trades (name, icon, is_custom, created_by)
+  values (v_name, 'briefcase', true, auth.uid())
+  returning * into v_row;
+  return v_row;
+end;
+$$;
+
+revoke all on function public.add_trade(text) from public;
+grant execute on function public.add_trade(text) to authenticated;
 
 -- ============================================================
 -- accept_bid(p_bid_id): a customer accepts a quote on their own job.

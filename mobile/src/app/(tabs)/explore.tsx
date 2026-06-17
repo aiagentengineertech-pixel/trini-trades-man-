@@ -8,26 +8,25 @@ import { ProAvatar } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useStore } from '@/lib/store';
 
-import { TRADES } from '@/constants/trades';
-
-const CATEGORIES = ['All', ...TRADES];
-
 export default function ExploreScreen() {
-  const { pros, distanceKm, distanceLabel } = useStore();
+  const { pros, distanceKm, distanceLabel, trades } = useStore();
+  const CATEGORIES = ['All', ...trades];
   const { trade } = useLocalSearchParams<{ trade?: string }>();
-  const [active, setActive] = useState(trade && CATEGORIES.includes(trade) ? trade : 'All');
+  const [active, setActive] = useState(trade || 'All');
   const [query, setQuery] = useState('');
 
   // Apply the trade filter when arriving from a service tap on Home.
   useEffect(() => {
-    if (trade && CATEGORIES.includes(trade)) setActive(trade);
+    if (trade) setActive(trade);
   }, [trade]);
   const q = query.trim().toLowerCase();
   const list = pros
     .filter(
-      (p) =>
-        (active === 'All' || p.trade === active) &&
-        (!q || p.name.toLowerCase().includes(q) || p.trade.toLowerCase().includes(q) || p.area.toLowerCase().includes(q)),
+      (p) => {
+        const services = p.services?.length ? p.services : [p.trade];
+        return (active === 'All' || services.includes(active)) &&
+          (!q || p.name.toLowerCase().includes(q) || services.some((s) => s.toLowerCase().includes(q)) || p.area.toLowerCase().includes(q));
+      },
     )
     .sort((a, b) => {
       const da = distanceKm(a.lat, a.lng);
@@ -88,7 +87,7 @@ export default function ExploreScreen() {
                 <Text style={styles.name}>{p.name}</Text>
                 {p.verified && <Ionicons name="shield-checkmark" size={14} color={Brand.green} />}
               </View>
-              <Text style={styles.trade}>{p.trade} · {p.area}</Text>
+              <Text style={styles.trade}>{(p.services?.length ? p.services.slice(0, 3).join(', ') : p.trade)} · {p.area}</Text>
               <View style={styles.metaRow}>
                 <Ionicons name="star" size={13} color={Brand.star} />
                 <Text style={styles.meta}>{p.reviewsCount > 0 ? p.rating.toFixed(1) : 'New'}</Text>

@@ -21,11 +21,9 @@ import { uploadImage } from '@/lib/db';
 import { pickImage } from '@/lib/images';
 import { useStore } from '@/lib/store';
 
-import { TRADES } from '@/constants/trades';
-
 export default function EditProfileScreen() {
   const { email, userId, role } = useAuth();
-  const { myProfile, updateMyProfile, setupTradesman, getPro } = useStore();
+  const { myProfile, updateMyProfile, setupTradesman, getPro, trades: allTrades, addTrade } = useStore();
   const isTradesman = role === 'tradesman';
   const pro = isTradesman && userId ? getPro(userId) : undefined;
   const [name, setName] = useState('');
@@ -34,7 +32,8 @@ export default function EditProfileScreen() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [bio, setBio] = useState('');
   const [years, setYears] = useState('');
-  const [trade, setTrade] = useState<string | null>(null);
+  const [trades, setTrades] = useState<string[]>([]);
+  const [customTrade, setCustomTrade] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -55,10 +54,25 @@ export default function EditProfileScreen() {
   const DEFAULT_BIO = 'Trusted local tradesman on Trini Tradesman.';
   useEffect(() => {
     if (!pro) return;
-    setTrade((t) => t ?? (TRADES.includes(pro.trade) ? pro.trade : null));
+    setTrades((cur) => (cur.length ? cur : (pro.services?.length ? pro.services : [])));
     setBio((b) => b || (pro.bio && pro.bio !== DEFAULT_BIO ? pro.bio : ''));
     setYears((y) => y || (pro.yearsExperience != null ? String(pro.yearsExperience) : ''));
-  }, [pro?.id, pro?.trade, pro?.bio, pro?.yearsExperience]);
+  }, [pro?.id, pro?.services?.join(','), pro?.bio, pro?.yearsExperience]);
+
+  const toggleTrade = (t: string) =>
+    setTrades((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+
+  const submitCustomTrade = async () => {
+    const name = customTrade.trim();
+    if (!name || busy) return;
+    setBusy(true);
+    const created = await addTrade(name);
+    setBusy(false);
+    if (created) {
+      setTrades((cur) => (cur.includes(created) ? cur : [...cur, created]));
+      setCustomTrade('');
+    }
+  };
 
   const choosePhoto = async () => {
     const uri = await pickImage();
@@ -91,7 +105,7 @@ export default function EditProfileScreen() {
       ...(banner && !banner.startsWith('file') && !banner.startsWith('blob') ? { banner_url: banner.split('?')[0] } : {}),
     });
     if (isTradesman) {
-      await setupTradesman(trade ?? '', bio.trim(), years.trim() ? Number(years) : null);
+      await setupTradesman(trades, bio.trim(), years.trim() ? Number(years) : null);
     }
     setBusy(false);
     setSaved(true);
@@ -151,15 +165,38 @@ export default function EditProfileScreen() {
 
           {isTradesman && (
             <View style={styles.field}>
-              <Text style={styles.label}>Your trade</Text>
+              <Text style={styles.label}>Your trades & skills</Text>
               <View style={styles.tradeGrid}>
-                {TRADES.map((t) => (
-                  <Pressable key={t} onPress={() => setTrade(t)} style={[styles.tradeChip, trade === t && styles.tradeChipActive]}>
-                    <Text style={[styles.tradeChipText, trade === t && styles.tradeChipTextActive]}>{t}</Text>
-                  </Pressable>
-                ))}
+                {allTrades.map((t) => {
+                  const on = trades.includes(t);
+                  return (
+                    <Pressable key={t} onPress={() => toggleTrade(t)} style={[styles.tradeChip, on && styles.tradeChipActive]}>
+                      {on && <Ionicons name="checkmark" size={13} color="#fff" style={{ marginRight: 4 }} />}
+                      <Text style={[styles.tradeChipText, on && styles.tradeChipTextActive]}>{t}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-              <Text style={styles.tradeHint}>Pick your trade so customers can find you when they search.</Text>
+              <View style={styles.addTradeRow}>
+                <TextInput
+                  style={styles.addTradeInput}
+                  value={customTrade}
+                  onChangeText={setCustomTrade}
+                  placeholder="Add your own trade or skill…"
+                  placeholderTextColor={Brand.muted}
+                  onSubmitEditing={submitCustomTrade}
+                  returnKeyType="done"
+                  maxLength={40}
+                />
+                <Pressable
+                  style={[styles.addTradeBtn, (!customTrade.trim() || busy) && styles.addTradeBtnDisabled]}
+                  onPress={submitCustomTrade}
+                  disabled={!customTrade.trim() || busy}
+                >
+                  <Ionicons name="add" size={22} color="#fff" />
+                </Pressable>
+              </View>
+              <Text style={styles.tradeHint}>Pick all that apply, or add your own. Customers can search and post jobs for any trade you list.</Text>
             </View>
           )}
 
@@ -222,11 +259,15 @@ const styles = StyleSheet.create({
   field: { marginTop: 16 },
   label: { fontSize: 13, fontWeight: '700', color: Brand.ink, marginBottom: 8 },
   tradeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tradeChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 11, borderWidth: 1, borderColor: Brand.line },
+  tradeChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 11, borderWidth: 1, borderColor: Brand.line },
   tradeChipActive: { backgroundColor: Brand.red, borderColor: Brand.red },
   tradeChipText: { fontSize: 13, fontWeight: '600', color: Brand.body },
   tradeChipTextActive: { color: '#fff' },
   tradeHint: { fontSize: 12, color: Brand.muted, marginTop: 8 },
+  addTradeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  addTradeInput: { flex: 1, borderWidth: 1, borderColor: Brand.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: Brand.ink },
+  addTradeBtn: { width: 46, height: 46, borderRadius: 12, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
+  addTradeBtnDisabled: { backgroundColor: Brand.muted },
   input: { borderWidth: 1, borderColor: Brand.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: Brand.ink },
   textarea: { minHeight: 90, textAlignVertical: 'top' },
   disabled: { backgroundColor: Brand.surfaceAlt, color: Brand.muted },

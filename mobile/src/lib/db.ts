@@ -356,9 +356,22 @@ export async function fetchProStats(proId: string): Promise<ProStats | null> {
   };
 }
 
+// Add a tradesman's own custom trade/skill. Returns the trade name (existing
+// or newly created) so the caller can select it, or null on failure.
+export async function addTrade(name: string): Promise<string | null> {
+  const clean = name.trim();
+  if (!clean) return null;
+  const { data, error } = await supabase.rpc('add_trade', { p_name: clean });
+  if (error || !data) {
+    console.warn('[db] addTrade failed:', error?.message);
+    return null;
+  }
+  return (data as any).name ?? clean;
+}
+
 export async function saveTradesmanProfile(
   userId: string,
-  trade: string,
+  trades: string[],
   bio: string,
   nameToId: Record<string, string>,
   yearsExperience?: number | null,
@@ -371,9 +384,11 @@ export async function saveTradesmanProfile(
     bio,
     ...(yearsExperience === undefined ? {} : { years_experience: yearsExperience }),
   });
-  const tradeId = nameToId[trade];
-  if (tradeId) {
-    await supabase.from('tradesman_trades').upsert({ user_id: userId, trade_id: tradeId });
+  // Sync the tradesman's full set of trades: replace whatever they had before.
+  const ids = trades.map((t) => nameToId[t]).filter(Boolean);
+  await supabase.from('tradesman_trades').delete().eq('user_id', userId);
+  if (ids.length) {
+    await supabase.from('tradesman_trades').insert(ids.map((trade_id) => ({ user_id: userId, trade_id })));
   }
   return true;
 }

@@ -24,8 +24,6 @@ import { pickImages } from '@/lib/images';
 import { notifyLocal } from '@/lib/notifications';
 import { useStore } from '@/lib/store';
 
-import { TRADES } from '@/constants/trades';
-
 export default function PostTab() {
   const { role } = useAuth();
   return role === 'tradesman' ? <BusinessHub /> : <CustomerPost />;
@@ -107,13 +105,11 @@ function BusinessHub() {
 }
 
 function CustomerPost() {
-  const { addJob, myProfile } = useStore();
+  const { addJob, myProfile, trades: allTrades } = useStore();
   const params = useLocalSearchParams<{ trade?: string; invitePro?: string; invitePname?: string }>();
   const invitePro = params.invitePro || null;
   const invitePname = params.invitePname || null;
-  const [trade, setTrade] = useState<string | null>(
-    params.trade && TRADES.includes(params.trade) ? params.trade : null,
-  );
+  const [trade, setTrade] = useState<string | null>(params.trade ?? null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [budgetMin, setBudgetMin] = useState('');
@@ -126,7 +122,7 @@ function CustomerPost() {
 
   // Pre-select the trade when arriving from a "Hire / Invite to quote" tap.
   useEffect(() => {
-    if (params.trade && TRADES.includes(params.trade)) setTrade(params.trade);
+    if (params.trade) setTrade(params.trade);
   }, [params.trade]);
 
   // Default the job location to the customer's saved area.
@@ -232,7 +228,7 @@ function CustomerPost() {
 
           <Text style={styles.label}>What type of work?</Text>
           <View style={styles.tradeGrid}>
-            {TRADES.map((t) => (
+            {allTrades.map((t) => (
               <Pressable key={t} onPress={() => setTrade(t)} style={[styles.tradeChip, trade === t && styles.tradeChipActive]}>
                 <Text style={[styles.tradeChipText, trade === t && styles.tradeChipTextActive]}>{t}</Text>
               </Pressable>

@@ -4,9 +4,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { useAuth } from './auth';
+import { TRADES } from '@/constants/trades';
 import { formatDistance, haversineKm } from './locations';
 import {
   acceptBidRpc,
+  addTrade as addTradeDb,
   completeJobRpc,
   fetchBids,
   fetchFeatureGates,
@@ -47,7 +49,9 @@ interface StoreState {
   notifications: Notification[];
   myProfile: MyProfile | null;
   updateMyProfile: (fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; banner_url: string; role: string; location_lat: number; location_lng: number }>) => Promise<void>;
-  setupTradesman: (trade: string, bio: string, yearsExperience?: number | null) => Promise<void>;
+  trades: string[];
+  addTrade: (name: string) => Promise<string | null>;
+  setupTradesman: (trades: string[], bio: string, yearsExperience?: number | null) => Promise<void>;
   getPro: (id: string) => Pro | undefined;
   getJob: (id: string) => Job | undefined;
   bidsForJob: (jobId: string) => Bid[];
@@ -152,9 +156,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         lng: fields.location_lng ?? prev.lng,
       } : prev));
     },
-    setupTradesman: async (trade, bio, yearsExperience) => {
+    // Trade catalog: canonical trades first (in their defined order), then any
+    // custom trades added by tradesmen, alphabetically.
+    trades: (() => {
+      const all = Object.keys(nameToId);
+      const canonical = TRADES.filter((t) => all.includes(t));
+      const extra = all.filter((t) => !TRADES.includes(t)).sort((a, b) => a.localeCompare(b));
+      return [...canonical, ...extra];
+    })(),
+    addTrade: async (name) => {
+      const created = await addTradeDb(name);
+      if (created) await load(); // refresh nameToId so the new trade is selectable
+      return created;
+    },
+    setupTradesman: async (trades, bio, yearsExperience) => {
       if (!userId) return;
-      await saveTradesmanProfile(userId, trade, bio, nameToId, yearsExperience);
+      await saveTradesmanProfile(userId, trades, bio, nameToId, yearsExperience);
       await load();
     },
     getPro: (id) => pros.find((p) => p.id === id),

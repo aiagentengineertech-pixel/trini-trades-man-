@@ -165,13 +165,10 @@ function CustomerJobCard({ job, quotes }: { job: Job; quotes: ReturnType<typeof 
 
 /* ───────────────────────── Tradesman: Jobs to bid on ───────────────────────── */
 
-import { TRADES } from '@/constants/trades';
-
-const CATEGORIES = ['All', ...TRADES];
-
 function TradesmanJobs() {
-  const { openJobs, myBidForJob, distanceKm, distanceLabel } = useStore();
+  const { openJobs, myBidForJob, distanceKm, distanceLabel, trades } = useStore();
   const { userId } = useAuth();
+  const CATEGORIES = ['All', ...trades];
   const [active, setActive] = useState('All');
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
