@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -81,20 +82,29 @@ export default function ExploreScreen() {
 
         {list.map((p) => (
           <Pressable key={p.id} style={styles.card} onPress={() => router.push({ pathname: '/pro/[id]', params: { id: p.id } })}>
-            <ProAvatar photoUrl={p.photoUrl} icon={p.icon} color={p.color} bg={p.bg} iconSize={26} style={styles.avatar} />
-            <View style={styles.flex}>
-              <View style={styles.nameRow}>
-                <Text style={styles.name}>{p.name}</Text>
-                {p.verified && <Ionicons name="shield-checkmark" size={14} color={Brand.green} />}
+            <View style={styles.cardRow}>
+              <ProAvatar photoUrl={p.photoUrl} icon={p.icon} color={p.color} bg={p.bg} iconSize={26} style={styles.avatar} />
+              <View style={styles.flex}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name}>{p.name}</Text>
+                  {p.verified && <Ionicons name="shield-checkmark" size={14} color={Brand.green} />}
+                </View>
+                <Text style={styles.trade}>{(p.services?.length ? p.services.slice(0, 3).join(', ') : p.trade)} · {p.area}</Text>
+                <View style={styles.metaRow}>
+                  <Ionicons name="star" size={13} color={Brand.star} />
+                  <Text style={styles.meta}>{p.reviewsCount > 0 ? p.rating.toFixed(1) : 'New'}</Text>
+                  {distanceLabel(p.lat, p.lng) && <Text style={styles.metaDim}>· {distanceLabel(p.lat, p.lng)}</Text>}
+                </View>
               </View>
-              <Text style={styles.trade}>{(p.services?.length ? p.services.slice(0, 3).join(', ') : p.trade)} · {p.area}</Text>
-              <View style={styles.metaRow}>
-                <Ionicons name="star" size={13} color={Brand.star} />
-                <Text style={styles.meta}>{p.reviewsCount > 0 ? p.rating.toFixed(1) : 'New'}</Text>
-                {distanceLabel(p.lat, p.lng) && <Text style={styles.metaDim}>· {distanceLabel(p.lat, p.lng)}</Text>}
-              </View>
+              <View style={styles.cta}><Text style={styles.ctaText}>View</Text></View>
             </View>
-            <View style={styles.cta}><Text style={styles.ctaText}>View</Text></View>
+            {p.thumbs.length > 0 && (
+              <View style={styles.thumbRow}>
+                {p.thumbs.map((t, i) => (
+                  <Image key={i} source={{ uri: t }} style={styles.thumb} contentFit="cover" />
+                ))}
+              </View>
+            )}
           </Pressable>
         ))}
       </ScrollView>
@@ -117,7 +127,10 @@ const styles = StyleSheet.create({
 
   count: { paddingHorizontal: 20, marginTop: 16, marginBottom: 10, fontSize: 13, color: Brand.muted, fontWeight: '600' },
 
-  card: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20, marginBottom: 12, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: Brand.line },
+  card: { flexDirection: 'column', gap: 10, marginHorizontal: 20, marginBottom: 12, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: Brand.line },
+  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  thumbRow: { flexDirection: 'row', gap: 6 },
+  thumb: { flex: 1, height: 68, borderRadius: 10, backgroundColor: Brand.surfaceAlt },
   jobCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1, borderColor: Brand.line },
   avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

@@ -273,7 +273,7 @@ export async function deletePortfolioItem(id: string): Promise<void> {
 export async function fetchPros(): Promise<Pro[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, area, photo_url, banner_url, verified, rating_avg, rating_count, location_lat, location_lng, tradesman_info(bio, years_experience), tradesman_trades(trades(name))')
+    .select('id, full_name, area, photo_url, banner_url, verified, rating_avg, rating_count, location_lat, location_lng, tradesman_info(bio, years_experience), tradesman_trades(trades(name)), portfolio(after_url, before_url, created_at)')
     .in('role', ['tradesman', 'both']);
   if (error || !data) return [];
   return data.map((p: any) => {
@@ -281,6 +281,13 @@ export async function fetchPros(): Promise<Pro[]> {
     const tt = Array.isArray(p.tradesman_trades) ? p.tradesman_trades : [];
     const trade = tt[0]?.trades?.name || 'General';
     const style = tradeStyle(trade);
+    const pf = Array.isArray(p.portfolio) ? p.portfolio : [];
+    const thumbs = pf
+      .slice()
+      .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at)))
+      .map((x: any) => x.after_url || x.before_url)
+      .filter(Boolean)
+      .slice(0, 3);
     return {
       id: p.id,
       name: p.full_name || 'Tradesman',
@@ -298,6 +305,7 @@ export async function fetchPros(): Promise<Pro[]> {
       yearsExperience: info?.years_experience ?? null,
       bio: info?.bio || 'Trusted local tradesman on Trini Tradesman.',
       services: tt.map((x: any) => x.trades?.name).filter(Boolean),
+      thumbs,
       reviews: [],
       ...style,
     } as Pro;

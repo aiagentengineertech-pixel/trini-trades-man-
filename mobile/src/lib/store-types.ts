@@ -30,6 +30,7 @@ export interface Pro {
   yearsExperience: number | null;
   bio: string;
   services: string[];
+  thumbs: string[];        // recent portfolio photos for the browse card
   reviews: Review[];
 }
 
