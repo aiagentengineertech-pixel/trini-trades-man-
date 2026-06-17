@@ -357,7 +357,8 @@ export async function saveTradesmanProfile(
   nameToId: Record<string, string>,
   yearsExperience?: number | null,
 ): Promise<boolean> {
-  const upd = await supabase.from('profiles').update({ role: 'tradesman' }).eq('id', userId);
+  // Never downgrade a super_admin (the operator may also use the app).
+  const upd = await supabase.from('profiles').update({ role: 'tradesman' }).eq('id', userId).neq('role', 'super_admin');
   if (upd.error) { console.warn('[db] role update failed:', upd.error.message); }
   await supabase.from('tradesman_info').upsert({
     user_id: userId,
