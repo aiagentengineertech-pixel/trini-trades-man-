@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AreaPicker } from '@/components/AreaPicker';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { uploadImage } from '@/lib/db';
+import { getLastUploadError, uploadImage } from '@/lib/db';
 import { pickImage } from '@/lib/images';
 import { useStore } from '@/lib/store';
 
@@ -38,6 +38,7 @@ export default function EditProfileScreen() {
   const [banner, setBanner] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (myProfile) {
@@ -75,6 +76,7 @@ export default function EditProfileScreen() {
   };
 
   const choosePhoto = async () => {
+    setUploadErr(null);
     const uri = await pickImage();
     if (!uri || !userId) return;
     setPhoto(uri); // show immediately
@@ -82,9 +84,11 @@ export default function EditProfileScreen() {
     const url = await uploadImage('uploads', `avatars/${userId}.jpg`, uri);
     setBusy(false);
     if (url) setPhoto(url + '?t=' + Date.now());
+    else setUploadErr(getLastUploadError() ?? 'Photo upload failed.');
   };
 
   const chooseBanner = async () => {
+    setUploadErr(null);
     const uri = await pickImage();
     if (!uri || !userId) return;
     setBanner(uri);
@@ -92,6 +96,7 @@ export default function EditProfileScreen() {
     const url = await uploadImage('uploads', `banners/${userId}.jpg`, uri);
     setBusy(false);
     if (url) setBanner(url + '?t=' + Date.now());
+    else setUploadErr(getLastUploadError() ?? 'Banner upload failed.');
   };
 
   const save = async () => {
@@ -152,6 +157,13 @@ export default function EditProfileScreen() {
           <Pressable onPress={choosePhoto}>
             <Text style={styles.changePhoto}>{photo ? 'Change photo' : 'Add photo'}</Text>
           </Pressable>
+
+          {uploadErr && (
+            <View style={styles.uploadErrBox}>
+              <Ionicons name="warning-outline" size={16} color={Brand.red} />
+              <Text style={styles.uploadErrText}>Couldn’t upload image: {uploadErr}</Text>
+            </View>
+          )}
 
           <Field label="Full name" value={name} onChangeText={setName} placeholder="Your name" />
           <Field label="Email" value={email ?? ''} editable={false} placeholder="—" />
@@ -261,6 +273,8 @@ const styles = StyleSheet.create({
   avatarImg: { width: 96, height: 96 },
   photoBtn: { position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
   changePhoto: { alignSelf: 'center', color: Brand.red, fontWeight: '700', fontSize: 13, marginTop: 10, marginBottom: 12 },
+  uploadErrBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#FDECEC', borderRadius: 10, padding: 10, marginBottom: 8 },
+  uploadErrText: { flex: 1, color: Brand.red, fontSize: 12.5, lineHeight: 17 },
 
   field: { marginTop: 16 },
   label: { fontSize: 13, fontWeight: '700', color: Brand.ink, marginBottom: 8 },

@@ -879,7 +879,15 @@ export async function deleteCatalogItem(id: string): Promise<void> {
 
 // ---------------- Storage ----------------
 
+// The reason the most recent uploadImage() call failed, so screens can show it
+// to the user instead of silently doing nothing.
+let _lastUploadError: string | null = null;
+export function getLastUploadError(): string | null {
+  return _lastUploadError;
+}
+
 export async function uploadImage(bucket: string, path: string, uri: string): Promise<string | null> {
+  _lastUploadError = null;
   try {
     let body: Blob | ArrayBuffer;
     let contentType = 'image/jpeg';
@@ -895,10 +903,11 @@ export async function uploadImage(bucket: string, path: string, uri: string): Pr
       body = decodeBase64(base64);
     }
     const { error } = await supabase.storage.from(bucket).upload(path, body, { upsert: true, contentType });
-    if (error) { console.warn('[db] upload failed:', error.message); return null; }
+    if (error) { _lastUploadError = error.message; console.warn('[db] upload failed:', error.message); return null; }
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     return data.publicUrl;
   } catch (e: any) {
+    _lastUploadError = e?.message ?? 'Upload failed';
     console.warn('[db] upload error:', e?.message);
     return null;
   }

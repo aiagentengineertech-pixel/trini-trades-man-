@@ -14,7 +14,9 @@ export default function TabsLayout() {
   if (!loading && !signedIn) return <Redirect href="/login" />;
 
   const isTradesman = role === 'tradesman';
-  const bottomInset = insets.bottom; // home indicator / rounded-corner safe area
+  // Clear the home indicator but cap it — the full safe-area inset (≈34) makes
+  // the bar look tall with a big empty strip below the icons.
+  const bottomInset = Math.min(insets.bottom, 12);
 
   return (
     <Tabs
