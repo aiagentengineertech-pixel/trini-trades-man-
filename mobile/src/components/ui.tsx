@@ -44,13 +44,16 @@ export function Glass({ children, style, intensity = 40 }: { children?: React.Re
 }
 
 /** Soft ambient glow backdrop — gives "liquid glass" surfaces something to refract. */
+// Soft blur turns the colour blobs into ambient glows instead of hard circles.
+const BLUR = { filter: 'blur(80px)' } as any;
+
 export function Ambient() {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <LinearGradient colors={['#FFF4F4', '#F7F8FC', '#FFFFFF']} style={StyleSheet.absoluteFill} />
-      <View style={[styles.blob, { backgroundColor: 'rgba(225,29,38,0.16)', top: -60, right: -40 }]} />
-      <View style={[styles.blob, { backgroundColor: 'rgba(47,111,237,0.12)', top: 150, left: -70 }]} />
-      <View style={[styles.blob, { backgroundColor: 'rgba(139,92,246,0.10)', bottom: -40, right: -20 }]} />
+      <View style={[styles.blob, BLUR, { backgroundColor: 'rgba(225,29,38,0.18)', top: -80, right: -60 }]} />
+      <View style={[styles.blob, BLUR, { backgroundColor: 'rgba(47,111,237,0.14)', top: 160, left: -90 }]} />
+      <View style={[styles.blob, BLUR, { backgroundColor: 'rgba(139,92,246,0.12)', bottom: -60, right: -40 }]} />
     </View>
   );
 }
@@ -168,7 +171,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 14 },
     elevation: 9,
   },
-  blob: { position: 'absolute', width: 240, height: 240, borderRadius: 120 },
+  blob: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   sectionTitle: { fontSize: 19, fontWeight: '800', color: Brand.ink, letterSpacing: -0.3 },
   sectionAction: { fontSize: 13, fontWeight: '700', color: Brand.red },
