@@ -23,7 +23,7 @@ import { useStore } from '@/lib/store';
 
 export default function EditProfileScreen() {
   const { email, userId, role } = useAuth();
-  const { myProfile, updateMyProfile, setupTradesman, getPro, trades: allTrades, addTrade } = useStore();
+  const { myProfile, updateMyProfile, setupTradesman, getPro, trades: allTrades, addTrade, featureEnabled } = useStore();
   const isTradesman = role === 'tradesman';
   const pro = isTradesman && userId ? getPro(userId) : undefined;
   const [name, setName] = useState('');
@@ -177,26 +177,32 @@ export default function EditProfileScreen() {
                   );
                 })}
               </View>
-              <View style={styles.addTradeRow}>
-                <TextInput
-                  style={styles.addTradeInput}
-                  value={customTrade}
-                  onChangeText={setCustomTrade}
-                  placeholder="Add your own trade or skill…"
-                  placeholderTextColor={Brand.muted}
-                  onSubmitEditing={submitCustomTrade}
-                  returnKeyType="done"
-                  maxLength={40}
-                />
-                <Pressable
-                  style={[styles.addTradeBtn, (!customTrade.trim() || busy) && styles.addTradeBtnDisabled]}
-                  onPress={submitCustomTrade}
-                  disabled={!customTrade.trim() || busy}
-                >
-                  <Ionicons name="add" size={22} color="#fff" />
-                </Pressable>
-              </View>
-              <Text style={styles.tradeHint}>Pick all that apply, or add your own. Customers can search and post jobs for any trade you list.</Text>
+              {featureEnabled('custom_trades') && (
+                <View style={styles.addTradeRow}>
+                  <TextInput
+                    style={styles.addTradeInput}
+                    value={customTrade}
+                    onChangeText={setCustomTrade}
+                    placeholder="Add your own trade or skill…"
+                    placeholderTextColor={Brand.muted}
+                    onSubmitEditing={submitCustomTrade}
+                    returnKeyType="done"
+                    maxLength={40}
+                  />
+                  <Pressable
+                    style={[styles.addTradeBtn, (!customTrade.trim() || busy) && styles.addTradeBtnDisabled]}
+                    onPress={submitCustomTrade}
+                    disabled={!customTrade.trim() || busy}
+                  >
+                    <Ionicons name="add" size={22} color="#fff" />
+                  </Pressable>
+                </View>
+              )}
+              <Text style={styles.tradeHint}>
+                {featureEnabled('custom_trades')
+                  ? 'Pick all that apply, or add your own. Customers can search and post jobs for any trade you list.'
+                  : 'Pick all that apply so customers can find you when they search.'}
+              </Text>
             </View>
           )}
 

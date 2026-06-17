@@ -117,13 +117,21 @@ export async function toggleFeatureGate(req: Request, res: Response) {
     return res.status(400).json({ error: 'key (string) and enabled (boolean) are required' });
   }
 
+  // Only include `note` when explicitly provided so toggling a gate never
+  // wipes its seeded description/label/category (omitted columns are preserved
+  // on conflict-update).
+  const payload: Record<string, unknown> = {
+    key,
+    enabled,
+    updated_at: new Date().toISOString(),
+    updated_by: req.adminUser?.id ?? null,
+  };
+  if (typeof note === 'string') payload.note = note;
+
   const { data, error } = await admin
     .from('feature_gates')
-    .upsert(
-      { key, enabled, note: note ?? null, updated_at: new Date().toISOString(), updated_by: req.adminUser?.id ?? null },
-      { onConflict: 'key' },
-    )
-    .select('key, enabled, note, updated_at')
+    .upsert(payload, { onConflict: 'key' })
+    .select('key, enabled, note, label, category, updated_at')
     .single();
   if (error) return res.status(500).json({ error: error.message });
 
@@ -132,7 +140,11 @@ export async function toggleFeatureGate(req: Request, res: Response) {
 
 /** GET /api/admin/features  -> list all gates (handy for the console UI) */
 export async function listFeatureGates(_req: Request, res: Response) {
-  const { data, error } = await admin.from('feature_gates').select('key, enabled, note, updated_at').order('key');
+  const { data, error } = await admin
+    .from('feature_gates')
+    .select('key, enabled, note, label, category, updated_at')
+    .order('category', { ascending: true })
+    .order('key', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
   return res.json({ gates: data ?? [] });
 }

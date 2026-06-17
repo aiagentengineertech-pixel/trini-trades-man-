@@ -118,12 +118,47 @@ create table if not exists feature_gates (
   updated_at timestamptz not null default now(),
   updated_by uuid references profiles(id) on delete set null
 );
+-- Friendly metadata so the admin console can show readable names + grouping.
+alter table feature_gates add column if not exists label    text;
+alter table feature_gates add column if not exists category text;
 alter table feature_gates enable row level security;
 drop policy if exists "gates readable" on feature_gates;
 create policy "gates readable" on feature_gates for select to authenticated using (true);
 drop policy if exists "gates admin write" on feature_gates;
 create policy "gates admin write" on feature_gates for all
   using (public.is_super_admin()) with check (public.is_super_admin());
+
+-- Seed the full catalog of feature gates (remote kill-switches, default ON).
+-- on conflict updates the label/category/note metadata but never the enabled
+-- state, so re-running this never re-enables something an admin switched off.
+insert into feature_gates (key, label, category, note) values
+  ('business_suite',    'Business suite',        'Business suite', 'Master switch for the premium tradesman business tools'),
+  ('crm',               'Clients & CRM',         'Business suite', 'Client hub / customer relationship management'),
+  ('invoices',          'Quotes & invoices',     'Business suite', 'Estimates, quotes and billing'),
+  ('expenses',          'Expenses & profit',     'Business suite', 'Expense tracking and the profit view'),
+  ('catalog',           'Price book',            'Business suite', 'Saved services & materials catalogue'),
+  ('team',              'Team accounts',         'Business suite', 'Staff members and roles'),
+  ('dispatch',          'Dispatch & scheduling', 'Business suite', 'Assign and schedule the team'),
+  ('post_jobs',         'Post a job',            'Marketplace',    'Customers creating new job requests'),
+  ('bidding',           'Quotes / bidding',      'Marketplace',    'Tradesmen submitting quotes on jobs'),
+  ('hiring',            'Hiring',                'Marketplace',    'Accepting a quote and hiring a tradesman'),
+  ('messaging',         'In-app messaging',      'Marketplace',    'Chat between customers and tradesmen'),
+  ('reviews',           'Ratings & reviews',     'Marketplace',    'Leaving and displaying reviews'),
+  ('portfolio',         'Portfolio',             'Marketplace',    'Tradesman before/after showcase'),
+  ('custom_trades',     'Add-your-own trades',   'Marketplace',    'Let tradesmen add their own trade/skill'),
+  ('ai_quote',          'AI quote assistant',    'Marketplace',    'AI-assisted quote / job description helper'),
+  ('payments',          'Card payments',         'Payments',       'Checkout and payment processing'),
+  ('payouts',           'Payouts',               'Payments',       'Tradesman withdrawals / payouts'),
+  ('wallet',            'Wallet',                'Payments',       'In-app balance and wallet'),
+  ('push_notifications','Push notifications',    'Growth & comms', 'Device push notifications'),
+  ('promotions',        'Promotions & offers',   'Growth & comms', 'Promotional banners and offers'),
+  ('referrals',         'Referral program',      'Growth & comms', 'Invite-a-friend referral rewards'),
+  ('broadcasts',        'Admin broadcasts',      'Growth & comms', 'Send broadcast messages to users'),
+  ('new_signups',       'New sign-ups',          'Access',         'Allow creating new accounts'),
+  ('tradesman_signups', 'Tradesman sign-ups',    'Access',         'Allow new accounts to become tradesmen'),
+  ('verification',      'ID verification',       'Access',         'Government-ID verification flow')
+on conflict (key) do update
+  set label = excluded.label, category = excluded.category, note = excluded.note;
 
 -- ============================================================
 -- trades — the catalog of services (Electrician, Plumber, Mason…)
