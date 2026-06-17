@@ -9,9 +9,9 @@ import { CoverageMap } from '@/components/CoverageMap';
 import { Ambient, Card, Glass, ProAvatar, Segmented, SectionTitle, StatCard, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { fetchPortfolio, fetchProReviews, fetchProStats, logProfileView } from '@/lib/db';
+import { fetchPortfolio, fetchProById, fetchProReviews, fetchProStats, logProfileView } from '@/lib/db';
 import { useStore } from '@/lib/store';
-import type { PortfolioItem, ProStats, Review } from '@/lib/store-types';
+import type { Pro, PortfolioItem, ProStats, Review } from '@/lib/store-types';
 
 const SORTS = ['Newest', 'Highest', 'Relevant'];
 
@@ -19,13 +19,16 @@ export default function ProProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getPro, startConversation, distanceKm } = useStore();
   const { userId } = useAuth();
-  const pro = getPro(id);
+  const cached = getPro(id);
   const [readMore, setReadMore] = useState(false);
   const [saved, setSaved] = useState(false);
   const [sort, setSort] = useState('Newest');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [stats, setStats] = useState<ProStats | null>(null);
+  // Fall back to a direct fetch when the pro isn't in the cached list yet
+  // (undefined = still loading, null = genuinely not found).
+  const [fetched, setFetched] = useState<Pro | null | undefined>(undefined);
 
   useEffect(() => {
     fetchProReviews(id).then(setReviews);
@@ -34,9 +37,20 @@ export default function ProProfileScreen() {
     logProfileView(id, userId);
   }, [id, userId]);
 
+  useEffect(() => {
+    if (cached) return;
+    setFetched(undefined);
+    fetchProById(id).then(setFetched);
+  }, [id, cached]);
+
+  const pro = cached ?? fetched ?? null;
+
   if (!pro) {
+    const loading = !cached && fetched === undefined;
     return (
-      <SafeAreaView style={styles.flex}><Text style={{ padding: 24 }}>Tradesman not found.</Text></SafeAreaView>
+      <SafeAreaView style={styles.flex}>
+        <Text style={{ padding: 24 }}>{loading ? 'Loading…' : 'Tradesman not found.'}</Text>
+      </SafeAreaView>
     );
   }
 

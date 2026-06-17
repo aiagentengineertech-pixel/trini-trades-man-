@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -60,7 +61,11 @@ export default function HomeScreen() {
               {unread > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unread}</Text></View>}
             </Pressable>
             <Pressable style={styles.avatar} onPress={() => router.push('/profile')}>
-              <Ionicons name="person" size={20} color={Brand.muted} />
+              {myProfile?.photoUrl ? (
+                <Image source={{ uri: myProfile.photoUrl }} style={styles.avatarImg} contentFit="cover" />
+              ) : (
+                <Ionicons name="person" size={20} color={Brand.muted} />
+              )}
             </Pressable>
           </View>
         </View>
@@ -206,7 +211,8 @@ const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   badge: { position: 'absolute', top: -6, right: -6, backgroundColor: Brand.red, minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatarImg: { width: 38, height: 38 },
 
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 20, marginTop: 18 },
   locationText: { fontSize: 13, fontWeight: '600', color: Brand.body },

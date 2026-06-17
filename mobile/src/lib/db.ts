@@ -270,46 +270,57 @@ export async function deletePortfolioItem(id: string): Promise<void> {
   await supabase.from('portfolio').delete().eq('id', id);
 }
 
+const PRO_SELECT =
+  'id, full_name, area, photo_url, banner_url, verified, rating_avg, rating_count, location_lat, location_lng, tradesman_info(bio, years_experience), tradesman_trades(trades(name)), portfolio(after_url, before_url, created_at)';
+
+function rowToPro(p: any): Pro {
+  const info = Array.isArray(p.tradesman_info) ? p.tradesman_info[0] : p.tradesman_info;
+  const tt = Array.isArray(p.tradesman_trades) ? p.tradesman_trades : [];
+  const trade = tt[0]?.trades?.name || 'General';
+  const style = tradeStyle(trade);
+  const pf = Array.isArray(p.portfolio) ? p.portfolio : [];
+  const thumbs = pf
+    .slice()
+    .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at)))
+    .map((x: any) => x.after_url || x.before_url)
+    .filter(Boolean)
+    .slice(0, 3);
+  return {
+    id: p.id,
+    name: p.full_name || 'Tradesman',
+    trade,
+    rating: Number(p.rating_avg) || 0,
+    reviewsCount: p.rating_count || 0,
+    jobsDone: p.rating_count || 0,
+    area: p.area || 'Trinidad',
+    distance: 'Nearby',
+    verified: !!p.verified,
+    lat: p.location_lat ?? null,
+    lng: p.location_lng ?? null,
+    photoUrl: p.photo_url ?? null,
+    bannerUrl: p.banner_url ?? null,
+    yearsExperience: info?.years_experience ?? null,
+    bio: info?.bio || 'Trusted local tradesman on Trini Tradesman.',
+    services: tt.map((x: any) => x.trades?.name).filter(Boolean),
+    thumbs,
+    reviews: [],
+    ...style,
+  } as Pro;
+}
+
 export async function fetchPros(): Promise<Pro[]> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, full_name, area, photo_url, banner_url, verified, rating_avg, rating_count, location_lat, location_lng, tradesman_info(bio, years_experience), tradesman_trades(trades(name)), portfolio(after_url, before_url, created_at)')
-    .in('role', ['tradesman', 'both']);
+  const { data, error } = await supabase.from('profiles').select(PRO_SELECT).in('role', ['tradesman', 'both']);
   if (error || !data) return [];
-  return data.map((p: any) => {
-    const info = Array.isArray(p.tradesman_info) ? p.tradesman_info[0] : p.tradesman_info;
-    const tt = Array.isArray(p.tradesman_trades) ? p.tradesman_trades : [];
-    const trade = tt[0]?.trades?.name || 'General';
-    const style = tradeStyle(trade);
-    const pf = Array.isArray(p.portfolio) ? p.portfolio : [];
-    const thumbs = pf
-      .slice()
-      .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at)))
-      .map((x: any) => x.after_url || x.before_url)
-      .filter(Boolean)
-      .slice(0, 3);
-    return {
-      id: p.id,
-      name: p.full_name || 'Tradesman',
-      trade,
-      rating: Number(p.rating_avg) || 0,
-      reviewsCount: p.rating_count || 0,
-      jobsDone: p.rating_count || 0,
-      area: p.area || 'Trinidad',
-      distance: 'Nearby',
-      verified: !!p.verified,
-      lat: p.location_lat ?? null,
-      lng: p.location_lng ?? null,
-      photoUrl: p.photo_url ?? null,
-      bannerUrl: p.banner_url ?? null,
-      yearsExperience: info?.years_experience ?? null,
-      bio: info?.bio || 'Trusted local tradesman on Trini Tradesman.',
-      services: tt.map((x: any) => x.trades?.name).filter(Boolean),
-      thumbs,
-      reviews: [],
-      ...style,
-    } as Pro;
-  });
+  return data.map(rowToPro);
+}
+
+// Fetch a single pro by id regardless of role/cache — used by the public
+// listing so it loads even when the pro isn't in the cached list yet (e.g. the
+// owner previewing their own profile before it's fully published).
+export async function fetchProById(id: string): Promise<Pro | null> {
+  const { data, error } = await supabase.from('profiles').select(PRO_SELECT).eq('id', id).maybeSingle();
+  if (error || !data) return null;
+  return rowToPro(data);
 }
 
 export async function fetchProReviews(proId: string): Promise<Review[]> {
