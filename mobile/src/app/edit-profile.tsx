@@ -82,9 +82,11 @@ export default function EditProfileScreen() {
     if (!uri || !userId) return;
     setPhoto(uri); // show immediately
     setBusy(true);
-    const url = await uploadImage('uploads', `avatars/${userId}.jpg`, uri);
+    // Unique filename per upload so the public URL changes and never serves a
+    // stale cached image.
+    const url = await uploadImage('uploads', `avatars/${userId}-${Date.now()}.jpg`, uri);
     setBusy(false);
-    if (url) setPhoto(url + '?t=' + Date.now());
+    if (url) setPhoto(url);
     else setUploadErr(getLastUploadError() ?? 'Photo upload failed.');
   };
 
@@ -94,9 +96,9 @@ export default function EditProfileScreen() {
     if (!uri || !userId) return;
     setBanner(uri);
     setBusy(true);
-    const url = await uploadImage('uploads', `banners/${userId}.jpg`, uri);
+    const url = await uploadImage('uploads', `banners/${userId}-${Date.now()}.jpg`, uri);
     setBusy(false);
-    if (url) setBanner(url + '?t=' + Date.now());
+    if (url) setBanner(url);
     else setUploadErr(getLastUploadError() ?? 'Banner upload failed.');
   };
 
