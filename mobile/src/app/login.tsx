@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -113,11 +113,16 @@ export default function LoginScreen() {
             )}
           </Pressable>
 
-          <Text style={styles.hint}>
-            {mode === 'signin'
-              ? 'New here? Tap “Sign Up” above to create an account.'
-              : 'By signing up you agree to our Terms & Privacy Policy.'}
-          </Text>
+          {mode === 'signin' ? (
+            <Text style={styles.hint}>New here? Tap “Sign Up” above to create an account.</Text>
+          ) : (
+            <Text style={styles.hint}>
+              By signing up you agree to our{' '}
+              <Text style={styles.link} onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })}>Terms of Service</Text>
+              {' '}and{' '}
+              <Text style={styles.link} onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })}>Privacy Policy</Text>.
+            </Text>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -210,4 +215,5 @@ const styles = StyleSheet.create({
   ghostBtnText: { color: Brand.body, fontWeight: '700', fontSize: 15 },
 
   hint: { color: Brand.muted, fontSize: 12, textAlign: 'center', marginTop: 18, lineHeight: 17 },
+  link: { color: Brand.red, fontWeight: '700' },
 });

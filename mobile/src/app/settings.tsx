@@ -70,8 +70,9 @@ export default function SettingsScreen() {
           <ListRow icon="help-buoy-outline" label="Help Centre" onPress={() => router.push('/help')} />
           <ListRow icon="chatbox-ellipses-outline" label="Contact Support" onPress={() => router.push('/help')} />
           <ListRow icon="flag-outline" label="Report an Issue" onPress={() => router.push('/help')} />
-          <ListRow icon="document-text-outline" label="Terms of Service" onPress={() => {}} />
-          <ListRow icon="shield-outline" label="Privacy Policy" onPress={() => {}} last />
+          <ListRow icon="document-text-outline" label="Terms of Service" onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })} />
+          <ListRow icon="shield-outline" label="Privacy Policy" onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })} />
+          <ListRow icon="reader-outline" label="Legal & Policies" onPress={() => router.push('/legal')} last />
         </Card>
 
         {/* Account actions */}
