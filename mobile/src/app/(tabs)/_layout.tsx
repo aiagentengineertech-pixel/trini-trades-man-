@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glass } from '@/components/ui';
@@ -14,9 +14,9 @@ export default function TabsLayout() {
   if (!loading && !signedIn) return <Redirect href="/login" />;
 
   const isTradesman = role === 'tradesman';
-  // Clear the home indicator but cap it — the full safe-area inset (≈34) makes
-  // the bar look tall with a big empty strip below the icons.
-  const bottomInset = Math.min(insets.bottom, 12);
+  // Clear the home indicator. On web fall back to a small floor in case the
+  // browser reports a 0 inset, so the icons don't sit flush against the edge.
+  const bottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === 'web' ? 10 : 0);
 
   return (
     <Tabs

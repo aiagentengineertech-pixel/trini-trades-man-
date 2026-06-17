@@ -25,8 +25,14 @@ const tags = [
   '<meta name="description" content="Find trusted local tradesmen in Trinidad & Tobago." />',
 ].map((t) => '    ' + t).join('\n');
 
+// iOS standalone PWAs don't fill the screen with height:100% (the app ends
+// above the real screen bottom, leaving a white strip under the tab bar).
+// Force the dynamic viewport height so the app fills the home-screen app window.
+const heightFix =
+  '    <style>html,body,#root{height:100vh;height:100dvh}</style>';
+
 if (!html.includes('rel="manifest"')) {
-  html = html.replace('</head>', tags + '\n  </head>');
+  html = html.replace('</head>', tags + '\n' + heightFix + '\n  </head>');
 }
 
 // App-like viewport: no pinch-zoom, cover the notch.
