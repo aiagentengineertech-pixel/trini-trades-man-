@@ -1,4 +1,8 @@
 // Supabase data access for jobs, bids & chat.
+import { decode as decodeBase64 } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
+
 import { supabase } from './supabase';
 import { tradeStyle, type Bid, type Conversation, type Job, type Message, type MyProfile } from './store-types';
 
@@ -164,7 +168,7 @@ export async function countProfileViews(proId: string): Promise<number> {
 export async function fetchProfile(userId: string): Promise<MyProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('full_name, phone, area, photo_url, role, verified, is_premium, location_lat, location_lng')
+    .select('full_name, phone, area, photo_url, banner_url, role, verified, is_premium, location_lat, location_lng')
     .eq('id', userId)
     .maybeSingle();
   if (error || !data) return null;
@@ -173,6 +177,7 @@ export async function fetchProfile(userId: string): Promise<MyProfile | null> {
     phone: data.phone ?? '',
     area: data.area ?? '',
     photoUrl: data.photo_url ?? null,
+    bannerUrl: data.banner_url ?? null,
     role: data.role ?? 'customer',
     verified: !!data.verified,
     isPremium: !!data.is_premium,
@@ -183,7 +188,7 @@ export async function fetchProfile(userId: string): Promise<MyProfile | null> {
 
 export async function updateProfile(
   userId: string,
-  fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; role: string; location_lat: number; location_lng: number }>,
+  fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; banner_url: string; role: string; location_lat: number; location_lng: number }>,
 ): Promise<boolean> {
   const { error } = await supabase.from('profiles').update(fields).eq('id', userId);
   if (error) { console.warn('[db] updateProfile failed:', error.message); return false; }
@@ -268,7 +273,7 @@ export async function deletePortfolioItem(id: string): Promise<void> {
 export async function fetchPros(): Promise<Pro[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, area, photo_url, verified, rating_avg, rating_count, location_lat, location_lng, tradesman_info(bio, years_experience), tradesman_trades(trades(name))')
+    .select('id, full_name, area, photo_url, banner_url, verified, rating_avg, rating_count, location_lat, location_lng, tradesman_info(bio, years_experience), tradesman_trades(trades(name))')
     .in('role', ['tradesman', 'both']);
   if (error || !data) return [];
   return data.map((p: any) => {
@@ -289,6 +294,7 @@ export async function fetchPros(): Promise<Pro[]> {
       lat: p.location_lat ?? null,
       lng: p.location_lng ?? null,
       photoUrl: p.photo_url ?? null,
+      bannerUrl: p.banner_url ?? null,
       yearsExperience: info?.years_experience ?? null,
       bio: info?.bio || 'Trusted local tradesman on Trini Tradesman.',
       services: tt.map((x: any) => x.trades?.name).filter(Boolean),
@@ -852,12 +858,20 @@ export async function deleteCatalogItem(id: string): Promise<void> {
 
 export async function uploadImage(bucket: string, path: string, uri: string): Promise<string | null> {
   try {
-    const resp = await fetch(uri);
-    const blob = await resp.blob();
-    const { error } = await supabase.storage.from(bucket).upload(path, blob, {
-      upsert: true,
-      contentType: blob.type || 'image/jpeg',
-    });
+    let body: Blob | ArrayBuffer;
+    let contentType = 'image/jpeg';
+    if (Platform.OS === 'web') {
+      // Browser: blob works fine.
+      const resp = await fetch(uri);
+      body = await resp.blob();
+      contentType = (body as Blob).type || contentType;
+    } else {
+      // React Native (Expo Go): fetch().blob() yields empty files — read the
+      // file as base64 and upload a real ArrayBuffer instead.
+      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      body = decodeBase64(base64);
+    }
+    const { error } = await supabase.storage.from(bucket).upload(path, body, { upsert: true, contentType });
     if (error) { console.warn('[db] upload failed:', error.message); return null; }
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     return data.publicUrl;

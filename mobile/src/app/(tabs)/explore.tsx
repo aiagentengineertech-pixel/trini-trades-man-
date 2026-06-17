@@ -8,7 +8,9 @@ import { ProAvatar } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useStore } from '@/lib/store';
 
-const CATEGORIES = ['All', 'Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 'Painting', 'Masonry'];
+import { TRADES } from '@/constants/trades';
+
+const CATEGORIES = ['All', ...TRADES];
 
 export default function ExploreScreen() {
   const { pros, distanceKm, distanceLabel } = useStore();

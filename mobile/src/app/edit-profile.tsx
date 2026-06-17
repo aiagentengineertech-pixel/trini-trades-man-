@@ -21,7 +21,7 @@ import { uploadImage } from '@/lib/db';
 import { pickImage } from '@/lib/images';
 import { useStore } from '@/lib/store';
 
-const TRADES = ['Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 'Painting', 'Masonry'];
+import { TRADES } from '@/constants/trades';
 
 export default function EditProfileScreen() {
   const { email, userId, role } = useAuth();
@@ -36,6 +36,7 @@ export default function EditProfileScreen() {
   const [years, setYears] = useState('');
   const [trade, setTrade] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [banner, setBanner] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -45,6 +46,7 @@ export default function EditProfileScreen() {
       setPhone(myProfile.phone);
       setArea(myProfile.area || 'Port of Spain');
       setPhoto(myProfile.photoUrl);
+      setBanner(myProfile.bannerUrl);
       if (myProfile.lat != null && myProfile.lng != null) setCoords({ lat: myProfile.lat, lng: myProfile.lng });
     }
   }, [myProfile]);
@@ -68,6 +70,16 @@ export default function EditProfileScreen() {
     if (url) setPhoto(url + '?t=' + Date.now());
   };
 
+  const chooseBanner = async () => {
+    const uri = await pickImage();
+    if (!uri || !userId) return;
+    setBanner(uri);
+    setBusy(true);
+    const url = await uploadImage('uploads', `banners/${userId}.jpg`, uri);
+    setBusy(false);
+    if (url) setBanner(url + '?t=' + Date.now());
+  };
+
   const save = async () => {
     setBusy(true);
     await updateMyProfile({
@@ -76,6 +88,7 @@ export default function EditProfileScreen() {
       area: area.trim(),
       ...(coords ? { location_lat: coords.lat, location_lng: coords.lng } : {}),
       ...(photo && !photo.startsWith('file') && !photo.startsWith('blob') ? { photo_url: photo.split('?')[0] } : {}),
+      ...(banner && !banner.startsWith('file') && !banner.startsWith('blob') ? { banner_url: banner.split('?')[0] } : {}),
     });
     if (isTradesman) {
       await setupTradesman(trade ?? '', bio.trim(), years.trim() ? Number(years) : null);
@@ -96,6 +109,20 @@ export default function EditProfileScreen() {
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          {isTradesman && (
+            <Pressable style={styles.bannerWrap} onPress={chooseBanner}>
+              {banner ? (
+                <Image source={{ uri: banner }} style={styles.bannerImg} contentFit="cover" />
+              ) : (
+                <View style={styles.bannerEmpty}>
+                  <Ionicons name="image-outline" size={24} color={Brand.muted} />
+                  <Text style={styles.bannerHint}>Add a branding banner (your shopfront, work van, logo)</Text>
+                </View>
+              )}
+              <View style={styles.bannerEdit}><Ionicons name="camera" size={14} color="#fff" /></View>
+            </Pressable>
+          )}
+
           <Pressable style={styles.avatarWrap} onPress={choosePhoto}>
             <View style={styles.avatar}>
               {photo ? (
@@ -179,6 +206,12 @@ const styles = StyleSheet.create({
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   title: { fontSize: 16, fontWeight: '700', color: Brand.ink },
   content: { padding: 20, paddingBottom: 40 },
+
+  bannerWrap: { height: 120, borderRadius: 16, backgroundColor: Brand.surfaceAlt, overflow: 'hidden', marginBottom: 8, alignItems: 'center', justifyContent: 'center' },
+  bannerImg: { width: '100%', height: '100%' },
+  bannerEmpty: { alignItems: 'center', gap: 6, paddingHorizontal: 24 },
+  bannerHint: { fontSize: 12, color: Brand.muted, textAlign: 'center' },
+  bannerEdit: { position: 'absolute', bottom: 8, right: 8, width: 30, height: 30, borderRadius: 15, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
 
   avatarWrap: { alignSelf: 'center', marginTop: 8 },
   avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },

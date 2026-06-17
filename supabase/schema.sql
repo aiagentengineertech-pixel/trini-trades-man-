@@ -52,6 +52,8 @@ create table if not exists profiles (
 alter table profiles add column if not exists is_premium boolean not null default false;
 alter table profiles add column if not exists subscription_tier text not null default 'free';
 alter table profiles add column if not exists premium_until timestamptz;
+-- Tradesman cover/branding banner shown on their public profile.
+alter table profiles add column if not exists banner_url text;
 
 -- is_premium(): does the current user have an active premium subscription?
 -- security definer so paywall policies can call it without extra grants.
@@ -394,7 +396,19 @@ insert into trades (name, icon) values
   ('AC Repair',   'snow'),
   ('Carpentry',   'hammer'),
   ('Painting',    'color-fill'),
-  ('Masonry',     'cube')
+  ('Masonry',     'cube'),
+  ('Landscaping', 'leaf'),
+  ('Powerwashing','water'),
+  ('Roofing',     'home'),
+  ('Tiling',      'grid'),
+  ('Welding',     'flame'),
+  ('Appliance Repair', 'hardware-chip'),
+  ('Pest Control','bug'),
+  ('Cleaning',    'sparkles'),
+  ('Handyman',    'build'),
+  ('CAD / Drafting','pencil'),
+  ('Auto Mechanic','car-sport'),
+  ('Aluminium & Glass','square')
 on conflict (name) do nothing;
 
 -- ============================================================

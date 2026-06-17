@@ -26,6 +26,7 @@ export interface Pro {
   lat: number | null;
   lng: number | null;
   photoUrl: string | null;
+  bannerUrl: string | null;
   yearsExperience: number | null;
   bio: string;
   services: string[];
@@ -132,6 +133,7 @@ export interface MyProfile {
   role: string;
   verified: boolean;
   isPremium: boolean;
+  bannerUrl: string | null;
   lat: number | null;
   lng: number | null;
 }
@@ -211,6 +213,18 @@ const TRADE_STYLE: Record<string, { icon: IconName; color: string; bg: string }>
   Carpentry: { icon: 'hammer', color: '#E8852B', bg: '#FDF1E6' },
   Painting: { icon: 'color-fill', color: '#2EA84F', bg: '#E9F8EE' },
   Masonry: { icon: 'cube', color: '#8B5CF6', bg: '#F1ECFE' },
+  Landscaping: { icon: 'leaf', color: '#2EA84F', bg: '#E9F8EE' },
+  Powerwashing: { icon: 'water', color: '#16B1C9', bg: '#E6F8FB' },
+  Roofing: { icon: 'home', color: '#E8852B', bg: '#FDF1E6' },
+  Tiling: { icon: 'grid', color: '#8B5CF6', bg: '#F1ECFE' },
+  Welding: { icon: 'flame', color: '#E11D26', bg: '#FDECEC' },
+  'Appliance Repair': { icon: 'hardware-chip', color: '#2F6FED', bg: '#EAF1FE' },
+  'Pest Control': { icon: 'bug', color: '#2EA84F', bg: '#E9F8EE' },
+  Cleaning: { icon: 'sparkles', color: '#16B1C9', bg: '#E6F8FB' },
+  Handyman: { icon: 'build', color: '#E8852B', bg: '#FDF1E6' },
+  'CAD / Drafting': { icon: 'pencil', color: '#2F6FED', bg: '#EAF1FE' },
+  'Auto Mechanic': { icon: 'car-sport', color: '#E11D26', bg: '#FDECEC' },
+  'Aluminium & Glass': { icon: 'square', color: '#7A8089', bg: '#F0F0F3' },
 };
 
 export function tradeStyle(trade: string) {

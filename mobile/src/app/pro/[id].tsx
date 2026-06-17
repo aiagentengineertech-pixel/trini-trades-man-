@@ -79,6 +79,7 @@ export default function ProProfileScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        {pro.bannerUrl && <Image source={{ uri: pro.bannerUrl }} style={styles.banner} contentFit="cover" />}
         {/* ===== Header ===== */}
         <View style={styles.header}>
           <ProAvatar photoUrl={pro.photoUrl} icon={pro.icon} color={pro.color} bg={pro.bg} iconSize={48} style={styles.avatar} />
@@ -326,6 +327,7 @@ const styles = StyleSheet.create({
   circleBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   section: { paddingHorizontal: 20, marginTop: 22 },
 
+  banner: { width: '100%', height: 140, backgroundColor: Brand.surfaceAlt, marginBottom: 8 },
   header: { alignItems: 'center', paddingTop: 8 },
   avatar: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

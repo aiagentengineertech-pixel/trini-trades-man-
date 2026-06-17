@@ -46,7 +46,7 @@ interface StoreState {
   conversations: Conversation[];
   notifications: Notification[];
   myProfile: MyProfile | null;
-  updateMyProfile: (fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; role: string; location_lat: number; location_lng: number }>) => Promise<void>;
+  updateMyProfile: (fields: Partial<{ full_name: string; phone: string; area: string; photo_url: string; banner_url: string; role: string; location_lat: number; location_lng: number }>) => Promise<void>;
   setupTradesman: (trade: string, bio: string, yearsExperience?: number | null) => Promise<void>;
   getPro: (id: string) => Pro | undefined;
   getJob: (id: string) => Job | undefined;
@@ -146,6 +146,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         phone: fields.phone ?? prev.phone,
         area: fields.area ?? prev.area,
         photoUrl: fields.photo_url ?? prev.photoUrl,
+        bannerUrl: fields.banner_url ?? prev.bannerUrl,
         role: fields.role ?? prev.role,
         lat: fields.location_lat ?? prev.lat,
         lng: fields.location_lng ?? prev.lng,

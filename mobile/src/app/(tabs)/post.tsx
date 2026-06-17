@@ -24,7 +24,7 @@ import { pickImages } from '@/lib/images';
 import { notifyLocal } from '@/lib/notifications';
 import { useStore } from '@/lib/store';
 
-const TRADES = ['Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 'Painting', 'Masonry'];
+import { TRADES } from '@/constants/trades';
 
 export default function PostTab() {
   const { role } = useAuth();

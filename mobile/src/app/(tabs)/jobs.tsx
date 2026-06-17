@@ -165,7 +165,9 @@ function CustomerJobCard({ job, quotes }: { job: Job; quotes: ReturnType<typeof 
 
 /* ───────────────────────── Tradesman: Jobs to bid on ───────────────────────── */
 
-const CATEGORIES = ['All', 'Electrician', 'Plumbing', 'AC Repair', 'Carpentry', 'Painting', 'Masonry'];
+import { TRADES } from '@/constants/trades';
+
+const CATEGORIES = ['All', ...TRADES];
 
 function TradesmanJobs() {
   const { openJobs, myBidForJob, distanceKm, distanceLabel } = useStore();
