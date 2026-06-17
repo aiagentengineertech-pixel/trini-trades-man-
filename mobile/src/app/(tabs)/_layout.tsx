@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glass } from '@/components/ui';
@@ -14,10 +14,7 @@ export default function TabsLayout() {
   if (!loading && !signedIn) return <Redirect href="/login" />;
 
   const isTradesman = role === 'tradesman';
-  // On web the home-indicator clearance is handled in CSS via
-  // env(safe-area-inset-bottom) on <body> (see scripts/inject-pwa.js), because
-  // useSafeAreaInsets often reports 0 in a standalone PWA. Native uses the inset.
-  const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
+  const bottomInset = insets.bottom; // home indicator / rounded-corner safe area
 
   return (
     <Tabs

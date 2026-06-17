@@ -25,13 +25,8 @@ const tags = [
   '<meta name="description" content="Find trusted local tradesmen in Trinidad & Tobago." />',
 ].map((t) => '    ' + t).join('\n');
 
-// Reserve the phone's home-indicator / nav-bar space at the bottom so the tab
-// bar isn't cut off when the app is launched full-screen from the home screen.
-const safeAreaStyle =
-  '    <style>body{box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom,0px)}</style>';
-
 if (!html.includes('rel="manifest"')) {
-  html = html.replace('</head>', tags + '\n' + safeAreaStyle + '\n  </head>');
+  html = html.replace('</head>', tags + '\n  </head>');
 }
 
 // App-like viewport: no pinch-zoom, cover the notch.
