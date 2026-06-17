@@ -19,6 +19,14 @@ export default function NotificationsScreen() {
     markNotificationsRead(userId); // mark read on open
   }, [userId]);
 
+  const openNotification = (n: Notification) => {
+    if ((n.type === 'bid' || n.type === 'hired') && n.jobId) {
+      router.push({ pathname: '/job/[id]', params: { id: n.jobId } });
+    } else if (n.type === 'message') {
+      router.push('/messages');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
       <View style={styles.topbar}>
@@ -36,19 +44,26 @@ export default function NotificationsScreen() {
             <Text style={styles.emptyText}>No notifications yet.</Text>
           </View>
         ) : (
-          items.map((n) => (
-            <View key={n.id} style={[styles.row, n.unread && styles.rowUnread]}>
-              <View style={[styles.icon, { backgroundColor: n.bg }]}>
-                <Ionicons name={n.icon} size={20} color={n.color} />
-              </View>
-              <View style={styles.grow}>
-                <Text style={styles.rowTitle}>{n.title}</Text>
-                <Text style={styles.rowBody}>{n.body}</Text>
-                <Text style={styles.rowTime}>{n.time}</Text>
-              </View>
-              {n.unread && <View style={styles.dot} />}
-            </View>
-          ))
+          items.map((n) => {
+            const tappable = ((n.type === 'bid' || n.type === 'hired') && n.jobId) || n.type === 'message';
+            return (
+              <Pressable
+                key={n.id}
+                style={[styles.row, n.unread && styles.rowUnread]}
+                onPress={() => openNotification(n)}
+                disabled={!tappable}>
+                <View style={[styles.icon, { backgroundColor: n.bg }]}>
+                  <Ionicons name={n.icon} size={20} color={n.color} />
+                </View>
+                <View style={styles.grow}>
+                  <Text style={styles.rowTitle}>{n.title}</Text>
+                  <Text style={styles.rowBody}>{n.body}</Text>
+                  <Text style={styles.rowTime}>{n.time}</Text>
+                </View>
+                {n.unread ? <View style={styles.dot} /> : tappable ? <Ionicons name="chevron-forward" size={16} color={Brand.muted} /> : null}
+              </Pressable>
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>

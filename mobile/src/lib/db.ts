@@ -577,21 +577,23 @@ const NOTIF_STYLE: Record<string, { icon: any; color: string; bg: string }> = {
   dispatch: { icon: 'calendar', color: '#E8852B', bg: '#FDF1E6' },
   reminder: { icon: 'cash', color: '#2EA84F', bg: '#E9F8EE' },
   bid: { icon: 'pricetag', color: '#2EA84F', bg: '#E9F8EE' },
+  hired: { icon: 'checkmark-circle', color: '#2EA84F', bg: '#E9F8EE' },
   message: { icon: 'chatbubble-ellipses', color: '#2F6FED', bg: '#EAF1FE' },
+  review: { icon: 'star', color: '#F5A623', bg: '#FEF4E2' },
   system: { icon: 'notifications', color: '#E11D26', bg: '#FDECEC' },
 };
 
 export async function fetchNotifications(userId: string): Promise<Notification[]> {
   const { data, error } = await supabase
     .from('notifications')
-    .select('id, type, title, body, read, created_at')
+    .select('id, type, title, body, job_id, read, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(50);
   if (error || !data) return [];
   return data.map((r: any) => {
     const st = NOTIF_STYLE[r.type] ?? NOTIF_STYLE.system;
-    return { id: r.id, type: r.type, title: r.title, body: r.body ?? '', time: relativeTime(r.created_at), unread: !r.read, ...st } as Notification;
+    return { id: r.id, type: r.type, jobId: r.job_id ?? null, title: r.title, body: r.body ?? '', time: relativeTime(r.created_at), unread: !r.read, ...st } as Notification;
   });
 }
 

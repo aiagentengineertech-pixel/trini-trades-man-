@@ -198,6 +198,8 @@ export interface Conversation {
 
 export interface Notification {
   id: string;
+  type: string;
+  jobId: string | null;
   icon: IconName;
   color: string;
   bg: string;

@@ -32,6 +32,8 @@ export default function JobDetailScreen() {
     if (convId) router.push({ pathname: '/chat/[id]', params: { id: convId } });
   };
 
+  const viewPro = (tradesmanId: string) => router.push({ pathname: '/pro/[id]', params: { id: tradesmanId } });
+
   const messageCustomer = async () => {
     if (!userId || !job) return;
     const convId = await startConversation(job.customerId, userId, id);
@@ -295,12 +297,16 @@ export default function JobDetailScreen() {
                   <View
                     key={b.id}
                     style={[styles.bidCard, b.status === 'accepted' && styles.bidAccepted, b.status === 'rejected' && styles.bidRejected]}>
-                    <View style={[styles.bidAvatar, { backgroundColor: b.proBg }]}>
-                      <Ionicons name={b.proIcon} size={20} color={b.proColor} />
-                    </View>
+                    <Pressable onPress={() => viewPro(b.proId)}>
+                      <View style={[styles.bidAvatar, { backgroundColor: b.proBg }]}>
+                        <Ionicons name={b.proIcon} size={20} color={b.proColor} />
+                      </View>
+                    </Pressable>
                     <View style={styles.flex}>
                       <View style={styles.bidTopRow}>
-                        <Text style={styles.bidName}>{b.proName}</Text>
+                        <Pressable onPress={() => viewPro(b.proId)}>
+                          <Text style={[styles.bidName, styles.bidNameLink]}>{b.proName}</Text>
+                        </Pressable>
                         <View style={styles.bidRating}>
                           <Ionicons name="star" size={12} color={Brand.star} />
                           <Text style={styles.bidRatingText}>{b.proRating.toFixed(1)}</Text>
@@ -309,6 +315,10 @@ export default function JobDetailScreen() {
                       <Text style={styles.bidMsg}>{b.message}</Text>
                       <View style={styles.bidBottomRow}>
                         <Text style={styles.bidAmount}>TTD ${b.amount}</Text>
+                        <Pressable style={styles.msgBtn} onPress={() => viewPro(b.proId)}>
+                          <Ionicons name="person-circle-outline" size={15} color={Brand.red} />
+                          <Text style={styles.msgBtnText}>Profile</Text>
+                        </Pressable>
                         <Pressable style={styles.msgBtn} onPress={() => messagePro(b.proId)}>
                           <Ionicons name="chatbubble-ellipses-outline" size={15} color={Brand.red} />
                           <Text style={styles.msgBtnText}>Message</Text>
@@ -376,6 +386,7 @@ const styles = StyleSheet.create({
   bidAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   bidTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bidName: { fontSize: 15, fontWeight: '700', color: Brand.ink },
+  bidNameLink: { color: Brand.red, textDecorationLine: 'underline' },
   bidRating: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   bidRatingText: { fontSize: 12, fontWeight: '700', color: Brand.ink },
   bidMsg: { fontSize: 13, color: Brand.body, marginTop: 4, lineHeight: 18 },

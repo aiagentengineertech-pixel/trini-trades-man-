@@ -941,6 +941,60 @@ $$;
 grant execute on function notify(uuid, text, text, text, uuid) to authenticated;
 
 -- ============================================================
+-- Auto-notifications: create an in-app notification for the other party when a
+-- quote is submitted, a quote is accepted, or a message is sent. Security
+-- definer so the trigger can write a notification row for a different user.
+-- ============================================================
+create or replace function notify_on_bid() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_customer uuid; v_title text;
+begin
+  select customer_id, title into v_customer, v_title from jobs where id = new.job_id;
+  if v_customer is not null and v_customer <> new.tradesman_id then
+    insert into notifications (user_id, type, title, body, job_id)
+    values (v_customer, 'bid', 'New quote received',
+            'A tradesman sent a quote on "' || coalesce(v_title, 'your job') || '".', new.job_id);
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_notify_on_bid on bids;
+create trigger trg_notify_on_bid after insert on bids
+  for each row execute function notify_on_bid();
+
+create or replace function notify_on_bid_accepted() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_title text;
+begin
+  if new.status = 'accepted' and old.status is distinct from 'accepted' then
+    select title into v_title from jobs where id = new.job_id;
+    insert into notifications (user_id, type, title, body, job_id)
+    values (new.tradesman_id, 'hired', 'Your quote was accepted',
+            'You were hired for "' || coalesce(v_title, 'a job') || '". Tap to view.', new.job_id);
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_notify_on_bid_accepted on bids;
+create trigger trg_notify_on_bid_accepted after update on bids
+  for each row execute function notify_on_bid_accepted();
+
+create or replace function notify_on_message() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_customer uuid; v_tradesman uuid; v_recipient uuid;
+begin
+  select customer_id, tradesman_id into v_customer, v_tradesman
+  from conversations where id = new.conversation_id;
+  v_recipient := case when new.sender_id = v_customer then v_tradesman else v_customer end;
+  if v_recipient is not null and v_recipient <> new.sender_id then
+    insert into notifications (user_id, type, title, body)
+    values (v_recipient, 'message', 'New message', left(new.body, 80));
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_notify_on_message on messages;
+create trigger trg_notify_on_message after insert on messages
+  for each row execute function notify_on_message();
+
+-- ============================================================
 -- expenses — receipts logged against a client project (Phase 4).
 -- ============================================================
 create table if not exists expenses (

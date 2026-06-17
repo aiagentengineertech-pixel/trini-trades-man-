@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -251,13 +251,23 @@ function CustomerProfile() {
 
 function TradesmanProfile() {
   const { userId, signOut } = useAuth();
-  const { myProfile, getPro } = useStore();
+  const { myProfile, getPro, myBids, getJob, refresh } = useStore();
   const me = userId ? getPro(userId) : undefined;
   const [portfolioCount, setPortfolioCount] = useState(0);
 
   useEffect(() => {
     if (userId) fetchPortfolio(userId).then((p) => setPortfolioCount(p.length));
   }, [userId]);
+
+  // Re-pull jobs/bids whenever this screen is focused so an accepted quote
+  // (done on the customer's device) shows up here without restarting the app.
+  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+
+  // Jobs this tradesman was hired for (their quote was accepted).
+  const activeJobs = myBids()
+    .filter((b) => b.status === 'accepted')
+    .map((b) => ({ bid: b, job: getJob(b.jobId) }))
+    .filter((x) => x.job && (x.job.status === 'hired' || x.job.status === 'done'));
 
   const name = me?.name || myProfile?.fullName?.trim() || 'Your business';
   const trade = me?.trade && me.trade !== 'General' ? me.trade : null;
@@ -315,6 +325,31 @@ function TradesmanProfile() {
             <StatCard value={`${me?.jobsDone ?? 0}`} label="Jobs" icon="checkmark-done" tint="#2EA84F" bg="#E9F8EE" />
             <StatCard value={`${portfolioCount}`} label="Portfolio" icon="images" tint="#8B5CF6" bg="#F1ECFE" />
           </View>
+
+          {activeJobs.length > 0 && (
+            <View style={styles.section}>
+              <SectionTitle title="Active Jobs" action="All" onAction={() => router.push('/jobs-manage')} />
+              <Card style={{ paddingVertical: 4 }}>
+                {activeJobs.map(({ bid, job }, i) => (
+                  <Pressable
+                    key={bid.id}
+                    style={[styles.activeRow, i < activeJobs.length - 1 && styles.activeRowBorder]}
+                    onPress={() => job && router.push({ pathname: '/job/[id]', params: { id: job.id } })}>
+                    <View style={styles.activeIcon}>
+                      <Ionicons name={job?.status === 'done' ? 'checkmark-done' : 'briefcase'} size={18} color={Brand.green} />
+                    </View>
+                    <View style={styles.flex}>
+                      <Text style={styles.activeTitle} numberOfLines={1}>{job?.title ?? 'Job'}</Text>
+                      <Text style={styles.activeSub}>
+                        {job?.status === 'done' ? 'Completed' : 'In progress'} · {job?.area}
+                      </Text>
+                    </View>
+                    <Text style={styles.activeAmount}>TT${bid.amount.toLocaleString()}</Text>
+                  </Pressable>
+                ))}
+              </Card>
+            </View>
+          )}
 
           <View style={styles.section}>
             <Card style={styles.listingCard}>
@@ -387,6 +422,12 @@ const styles = StyleSheet.create({
   setupBtn: { backgroundColor: Brand.red, borderRadius: 12, paddingHorizontal: 22, paddingVertical: 12, marginTop: 4 },
   setupBtnText: { color: '#fff', fontWeight: '800', fontSize: 14 },
 
+  activeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  activeRowBorder: { borderBottomWidth: 1, borderBottomColor: Brand.line },
+  activeIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#E9F8EE', alignItems: 'center', justifyContent: 'center' },
+  activeTitle: { fontSize: 14.5, fontWeight: '700', color: Brand.ink },
+  activeSub: { fontSize: 12, color: Brand.muted, marginTop: 2 },
+  activeAmount: { fontSize: 14, fontWeight: '800', color: Brand.green },
   listingCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   listingTitle: { fontSize: 15, fontWeight: '700', color: Brand.ink },
   listingSub: { fontSize: 12, color: Brand.muted, marginTop: 2 },

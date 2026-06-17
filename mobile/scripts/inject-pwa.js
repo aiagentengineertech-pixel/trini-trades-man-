@@ -28,8 +28,11 @@ const tags = [
 // iOS standalone PWAs don't fill the screen with height:100% (the app ends
 // above the real screen bottom, leaving a white strip under the tab bar).
 // Force the dynamic viewport height so the app fills the home-screen app window.
+// In a browser use the dynamic viewport height; in the installed (standalone)
+// app use a static 100vh so the soft keyboard can't shrink the viewport and
+// leave the tab bar stuck floating after it closes.
 const heightFix =
-  '    <style>html,body,#root{height:100vh;height:100dvh}</style>';
+  '    <style>html,body,#root{height:100vh;height:100dvh}@media all and (display-mode:standalone){html,body,#root{height:100vh}}</style>';
 
 if (!html.includes('rel="manifest"')) {
   html = html.replace('</head>', tags + '\n' + heightFix + '\n  </head>');
