@@ -2,7 +2,7 @@
 # The app lives in the `mobile/` folder; Expo exports a single-page web app to dist/.
 [build]
   base = "mobile"
-  command = "npx expo export -p web"
+  command = "npx expo export -p web && node scripts/inject-pwa.js"
   publish = "dist"
 
 [build.environment]
