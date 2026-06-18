@@ -843,10 +843,41 @@ create table if not exists clients (
   created_at   timestamptz not null default now()
 );
 create index if not exists clients_owner_idx on clients(owner_id, created_at desc);
+-- Link an auto-created client back to the customer's account (manual clients
+-- leave this null); lets us avoid adding the same customer twice.
+alter table clients add column if not exists customer_id uuid references profiles(id) on delete set null;
+create index if not exists clients_customer_idx on clients(owner_id, customer_id);
 alter table clients enable row level security;
 drop policy if exists "clients own" on clients;
 create policy "clients own" on clients for all
   using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+
+-- Auto-add the customer to the tradesman's client list when their quote is
+-- accepted (security definer; de-dupes by owner + customer).
+create or replace function add_client_on_hire() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_customer uuid; v_title text; v_name text; v_phone text; v_area text;
+        v_lat double precision; v_lng double precision;
+begin
+  if new.status = 'accepted' and old.status is distinct from 'accepted' then
+    select customer_id, title into v_customer, v_title from jobs where id = new.job_id;
+    if v_customer is null then return new; end if;
+    if exists (select 1 from clients where owner_id = new.tradesman_id and customer_id = v_customer) then
+      return new;
+    end if;
+    select full_name, phone, area, location_lat, location_lng
+      into v_name, v_phone, v_area, v_lat, v_lng
+      from profiles where id = v_customer;
+    insert into clients (owner_id, customer_id, name, phone, area, location_lat, location_lng, notes)
+    values (new.tradesman_id, v_customer, coalesce(nullif(btrim(v_name), ''), 'Customer'),
+            v_phone, v_area, v_lat, v_lng,
+            'Added automatically when hired for "' || coalesce(v_title, 'a job') || '".');
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_add_client_on_hire on bids;
+create trigger trg_add_client_on_hire after update on bids
+  for each row execute function add_client_on_hire();
 
 -- per-client project photo vault (Phase 3)
 create table if not exists client_photos (

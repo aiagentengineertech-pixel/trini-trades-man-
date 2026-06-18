@@ -1,44 +1,62 @@
 # Trini Tradesman 🔨
 
-**Fix it. Trust it.** — A local-trades marketplace for Trinidad & Tobago.
-Post a job → verified tradesmen bid → escrow-protected payment.
+**Fix it. Trust it.** — a local-trades marketplace for Trinidad & Tobago.
+Customers post a job → verified tradesmen submit quotes → the customer hires and pays
+(escrow-style, via a licensed payment processor). Plus a premium business suite for
+tradesmen and a hidden super-admin console.
+
+Currently shipping as an installable **web app (PWA)** for testing; native iOS/Android
+store builds are on the roadmap.
 
 ## Repo layout
 
 ```
 trini-tradesman/
-├── BUILD-PLAN.md        # The full plan: market, stack, roadmap, payments, decisions
 ├── README.md            # You are here
-├── mobile/              # The Expo (React Native) app — iOS + Android
-└── supabase/
-    └── schema.sql       # Database tables, security rules, and seed data
+├── netlify.toml         # Web (PWA) deploy config — builds mobile/ to mobile/dist
+├── mobile/              # The Expo app (React Native + web/PWA) — the product
+├── admin-server/        # Super-admin API (Node/Express, uses the Supabase secret key)
+├── admin-web/           # Super-admin console UI (Vite + React)
+├── supabase/
+│   └── schema.sql       # The ENTIRE database: tables, RLS, functions, triggers, seed
+└── docs/                # Project documentation (see below)
 ```
+
+## Documentation
+
+| Doc | What's in it |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the pieces fit together |
+| [docs/SETUP.md](docs/SETUP.md) | Run the app locally (Expo, env vars, Supabase) |
+| [docs/DATABASE.md](docs/DATABASE.md) | Supabase setup — **run `schema.sql`**, RLS, storage, triggers |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy the web app to Netlify |
+| [docs/ADMIN.md](docs/ADMIN.md) | The super-admin console + feature gates |
+| [docs/LAUNCH-CHECKLIST.md](docs/LAUNCH-CHECKLIST.md) | What's left to reach the app stores |
+| [docs/BUILD-PLAN.md](docs/BUILD-PLAN.md) | Original market/strategy/decisions plan |
 
 ## Tech stack
 
 | Layer | Tech |
 |---|---|
-| Mobile app (iOS + Android) | React Native + Expo (TypeScript, expo-router) |
-| Backend / DB / Auth / Storage | Supabase (Postgres) |
-| Payments | WiPay (card rail; escrow handled in-app — see BUILD-PLAN §6a) |
+| App (iOS + Android + web/PWA) | React Native + Expo (TypeScript, expo-router) |
+| Backend / DB / Auth / Storage | Supabase (Postgres + Row-Level Security) |
+| Admin console | Node/Express (`admin-server`) + Vite/React (`admin-web`) |
+| Payments (planned) | WiPay / PowerTranz — auth-and-capture, never custody funds |
 
-## Getting started
+## Quick start
 
-### 1. Set up the backend (Supabase)
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor → New query**, paste the contents of [`supabase/schema.sql`](supabase/schema.sql), and run it.
-3. From **Project Settings → API**, copy your **Project URL** and **anon public key**.
-
-### 2. Run the app
 ```powershell
+# 1. Database: in Supabase → SQL Editor, run the whole of supabase/schema.sql
+# 2. App:
 cd mobile
-# create mobile/.env with your Supabase keys (see mobile/.env.example)
-npm install        # already done by the scaffold, run again if needed
-npx expo start     # press 'a' for Android, 'i' for iOS, or scan the QR with Expo Go
+# create mobile/.env (see docs/SETUP.md) with your Supabase URL + anon key
+npm install
+npx expo start        # press a/i, or scan the QR with Expo Go
 ```
 
-Install the **Expo Go** app on your phone to see it live while developing.
+See [docs/SETUP.md](docs/SETUP.md) for the full walkthrough.
 
-## Status
+## Planning
 
-🟢 **Phase 1 — MVP** (in progress). See [BUILD-PLAN.md](BUILD-PLAN.md) for the roadmap.
+Live status and the roadmap live in the **Notion project hub** (Roadmap board).
+`docs/STATUS-archive.md` is the old static status file, kept for reference.
