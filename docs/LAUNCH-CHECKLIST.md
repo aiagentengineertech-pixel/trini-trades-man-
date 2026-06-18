@@ -16,8 +16,13 @@ in the **Notion Roadmap board**; this is the durable reference copy.
 - [ ] **Store accounts** — Apple Developer Program ($99/yr), Google Play Console ($25 once).
 
 ## P1 — important
+- [x] **Account deletion** — in-app (Settings → Delete account) + public page (`/delete-account`)
+      backed by the `delete_my_account()` RPC. Run the RPC in Supabase and deploy. *(Required by
+      both stores.)*
 - [ ] App store listing assets: screenshots per device, description, keywords, privacy labels,
-      support URL, category.
+      support URL, category. **Draft copy + data-safety answers in [STORE-LISTING.md](STORE-LISTING.md).**
+- [ ] **Google closed test** — personal Play accounts must run a 12-tester / 14-day closed test
+      before production (a registered business/org account is exempt).
 - [ ] Host the admin console (`admin-server` backend + `admin-web` static).
 - [ ] Verify the full `supabase/schema.sql` is applied in production (RLS, storage, triggers).
 - [ ] Reviews & ratings end-to-end (after job completion → rolls up to profile + search).

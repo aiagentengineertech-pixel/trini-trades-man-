@@ -597,6 +597,14 @@ export async function fetchNotifications(userId: string): Promise<Notification[]
   });
 }
 
+// Permanently delete the signed-in user's account and all their data
+// (cascades from auth.users). Required by Apple/Google deletion policies.
+export async function deleteMyAccount(): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.rpc('delete_my_account');
+  if (error) { console.warn('[db] deleteMyAccount failed:', error.message); return { ok: false, error: error.message }; }
+  return { ok: true };
+}
+
 export async function markNotificationsRead(userId: string): Promise<void> {
   await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false);
 }

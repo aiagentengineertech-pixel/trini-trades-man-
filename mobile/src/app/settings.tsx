@@ -80,7 +80,7 @@ export default function SettingsScreen() {
         <SectionTitle title="Account" />
         <Card style={styles.cardTight}>
           <ListRow icon="pause-circle-outline" label="Deactivate account" onPress={() => setConfirm({ title: 'Deactivate account?', message: 'Your profile will be hidden until you sign back in.', danger: false, action: signOut })} />
-          <ListRow icon="trash-outline" label="Delete account" danger onPress={() => setConfirm({ title: 'Delete account?', message: 'This permanently removes your account and data. This cannot be undone.', danger: true, action: signOut })} />
+          <ListRow icon="trash-outline" label="Delete account" danger onPress={() => router.push('/delete-account')} />
           <ListRow icon="log-out-outline" label="Log out" danger onPress={() => setConfirm({ title: 'Log out?', message: 'You can sign back in anytime.', danger: true, action: signOut })} last />
         </Card>
 

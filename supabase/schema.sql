@@ -879,6 +879,23 @@ drop trigger if exists trg_add_client_on_hire on bids;
 create trigger trg_add_client_on_hire after update on bids
   for each row execute function add_client_on_hire();
 
+-- ============================================================
+-- delete_my_account(): lets a signed-in user permanently delete their own
+-- account. Deleting the auth.users row cascades to profiles and (via on delete
+-- cascade) to all of their jobs, bids, messages, clients, etc. Required by the
+-- Apple/Google account-deletion policies.
+-- ============================================================
+create or replace function delete_my_account() returns void
+language plpgsql security definer set search_path = public, auth as $$
+begin
+  if auth.uid() is null then
+    raise exception 'must be signed in';
+  end if;
+  delete from auth.users where id = auth.uid();
+end; $$;
+revoke all on function delete_my_account() from public;
+grant execute on function delete_my_account() to authenticated;
+
 -- per-client project photo vault (Phase 3)
 create table if not exists client_photos (
   id         uuid primary key default uuid_generate_v4(),
