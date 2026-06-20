@@ -31,6 +31,7 @@ trini-tradesman/
 | [docs/DATABASE.md](docs/DATABASE.md) | Supabase setup — **run `schema.sql`**, RLS, storage, triggers |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy the web app to Netlify |
 | [docs/ADMIN.md](docs/ADMIN.md) | The super-admin console + feature gates |
+| [docs/PAYMENTS.md](docs/PAYMENTS.md) | PayPal (non-custodial) Edge Functions + setup; WiPay plan |
 | [docs/LAUNCH-CHECKLIST.md](docs/LAUNCH-CHECKLIST.md) | What's left to reach the app stores |
 | [docs/BUILD-PLAN.md](docs/BUILD-PLAN.md) | Original market/strategy/decisions plan |
 

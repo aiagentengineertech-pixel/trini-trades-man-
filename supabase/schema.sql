@@ -1085,3 +1085,37 @@ create policy "verif insert own" on storage.objects for insert to authenticated
 drop policy if exists "verif read own" on storage.objects;
 create policy "verif read own" on storage.objects for select to authenticated
   using (bucket_id = 'verification' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ============================================================
+-- Payments (PayPal, non-custodial marketplace; USD in T&T)
+-- Money goes directly from the customer to the tradesman (payee); the platform
+-- takes a fee via PayPal Commerce Platform. We never hold funds. Rows are
+-- written only by the Edge Functions (service-role key), so no client-write RLS.
+-- ============================================================
+alter table profiles add column if not exists paypal_merchant_id text; -- tradesman's connected PayPal
+alter table profiles add column if not exists paypal_email      text;
+
+create table if not exists payments (
+  id                       uuid primary key default uuid_generate_v4(),
+  job_id                   uuid references jobs(id) on delete set null,
+  bid_id                   uuid references bids(id) on delete set null,
+  customer_id              uuid not null references profiles(id) on delete cascade,
+  tradesman_id             uuid not null references profiles(id) on delete cascade,
+  amount                   numeric(12,2) not null,
+  platform_fee             numeric(12,2) not null default 0,
+  currency                 text not null default 'USD',
+  provider                 text not null default 'paypal',
+  status                   text not null default 'created',  -- created|approved|authorized|captured|refunded|voided|failed
+  paypal_order_id          text,
+  paypal_authorization_id  text,
+  paypal_capture_id        text,
+  created_at               timestamptz not null default now(),
+  updated_at               timestamptz not null default now()
+);
+create index if not exists payments_customer_idx  on payments(customer_id, created_at desc);
+create index if not exists payments_tradesman_idx on payments(tradesman_id, created_at desc);
+create index if not exists payments_order_idx     on payments(paypal_order_id);
+alter table payments enable row level security;
+drop policy if exists "payments read own" on payments;
+create policy "payments read own" on payments for select
+  using (auth.uid() = customer_id or auth.uid() = tradesman_id);
