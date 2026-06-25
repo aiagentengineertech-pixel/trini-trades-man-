@@ -3,6 +3,7 @@
 import { computeTotals, contacts, DOC_LABEL, esc, money, multiline, type InvoiceDraft, type InvoiceSettings } from './shared';
 
 const ART = 'https://bhlflhyojzjzoksejekc.supabase.co/storage/v1/object/public/uploads/theme-assets/woodwork';
+const V = '?v=2'; // cache-buster: art is now background-removed (transparent)
 const INK = '#4A3220';
 const BROWN = '#6E4A28';
 const ACCENT = '#8B5E34';
@@ -20,7 +21,7 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
   const ringInner = s.logoUrl
     ? `<img src="${s.logoUrl}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48%;height:48%;object-fit:contain"/>`
     : `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
-         <img src="${ART}/chisels.png" style="width:54px;opacity:.9"/>
+         <img src="${ART}/chisels.png${V}" style="width:54px;opacity:.9"/>
          <div style="font-family:Georgia,serif;font-weight:700;font-size:40px;color:${INK};line-height:.6;margin-top:-30px">${initial}</div>
        </div>`;
 
@@ -59,19 +60,19 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
   const taxLabel = d.taxPct === 12.5 ? 'VAT (12.5%)' : `TAX (${d.taxPct}%)`;
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=820"/>
 <style>
   * { box-sizing: border-box; }
   html, body { margin:0; padding:0; }
   body {
     font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif; color:${INK}; font-size:12px;
-    background:#FBF3E6 url('${ART}/woodgrain.png'); background-size:cover;
+    background:#FBF3E6 url('${ART}/woodgrain.png${V}'); background-size:cover;
     -webkit-print-color-adjust:exact; print-color-adjust:exact;
   }
   .page { max-width:780px; margin:0 auto; padding:40px 44px 30px; position:relative; }
   .serif { font-family:Georgia,'Times New Roman',serif; }
-  .doc { font-family:Georgia,'Times New Roman',serif; font-weight:800; font-size:62px; letter-spacing:1px; color:${INK}; line-height:.9; margin:0; }
-  .biz { font-family:Georgia,'Times New Roman',serif; font-weight:700; font-size:30px; color:${INK}; margin-top:2px; }
+  .doc { font-family:Georgia,'Times New Roman',serif; font-weight:800; font-size:44px; letter-spacing:1px; color:${INK}; line-height:.95; margin:0; white-space:nowrap; }
+  .biz { font-family:Georgia,'Times New Roman',serif; font-weight:700; font-size:23px; color:${INK}; margin-top:2px; line-height:1.1; }
   .tag { font-family:Georgia,serif; font-style:italic; font-size:14px; color:${BROWN}; letter-spacing:1px; margin-top:2px; }
   .crow { display:flex; align-items:flex-start; font-size:12.5px; color:${INK}; line-height:1.5; margin-top:8px; }
   .mrow { display:flex; justify-content:space-between; align-items:center; border-bottom:1px dotted ${ACCENT}66; padding:7px 0; }
@@ -86,8 +87,8 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
   .tot { display:flex; justify-content:space-between; padding:6px 12px; font-size:12.5px; }
   .tot .lbl { color:${BROWN}; font-weight:700; }
   .grand { display:flex; justify-content:space-between; align-items:baseline; border-top:2px solid ${INK}; margin-top:6px; padding:10px 12px 0; }
-  .grand .gl { font-family:Georgia,serif; font-weight:800; font-size:15px; color:${INK}; }
-  .grand .gv { font-family:Georgia,serif; font-weight:800; font-size:24px; color:${INK}; }
+  .grand .gl { font-family:Georgia,serif; font-weight:800; font-size:13px; letter-spacing:.5px; color:${INK}; white-space:nowrap; padding-right:10px; }
+  .grand .gv { font-family:Georgia,serif; font-weight:800; font-size:22px; color:${INK}; white-space:nowrap; }
   .paybox { border:1.5px solid ${ACCENT}; border-radius:10px; background:${CREAM}cc; padding:14px 16px; }
   .paybox .ph { text-align:center; font-family:Georgia,serif; font-weight:800; letter-spacing:1px; color:${INK}; font-size:13px; margin-bottom:10px; }
   table.pay td { font-size:11.5px; padding:2px 0; } td.pl { color:${INK}; font-weight:700; padding-right:14px; white-space:nowrap; } td.pv { color:${INK}; }
@@ -99,16 +100,16 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
 
   <!-- HEADER -->
   <div style="display:flex; align-items:flex-start; gap:18px">
-    <div style="position:relative; width:128px; height:128px; flex:0 0 auto">
-      <img src="${ART}/slice.png" style="width:128px;height:128px;object-fit:contain"/>
+    <div style="position:relative; width:110px; height:110px; flex:0 0 auto">
+      <img src="${ART}/slice.png${V}" style="width:110px;height:110px;object-fit:contain"/>
       ${ringInner}
     </div>
-    <div style="flex:1; min-width:0">
+    <div style="flex:1; min-width:0; overflow:hidden">
       <div class="doc">${docLabel}</div>
       <div class="biz">${biz}</div>
       ${s.tagline ? `<div class="tag">${esc(s.tagline)}</div>` : ''}
     </div>
-    <div style="flex:0 0 auto"><img src="${ART}/plane.png" style="width:210px;max-width:38vw"/></div>
+    <div style="flex:0 0 auto"><img src="${ART}/plane.png${V}" style="width:150px"/></div>
   </div>
 
   <!-- CONTACT + META -->
@@ -137,7 +138,7 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
   <div style="display:flex; gap:24px; margin-top:18px; align-items:flex-start">
     <div style="flex:1">
       ${hasPay ? `<div class="paybox">
-        <div class="ph">— <img src="${ART}/chisels.png" style="height:16px;vertical-align:-3px"/> PAYMENT DETAILS —</div>
+        <div class="ph">— <img src="${ART}/chisels.png${V}" style="height:16px;vertical-align:-3px"/> PAYMENT DETAILS —</div>
         <table class="pay">${payRows}</table>
         ${s.paymentExtra ? `<div style="font-size:11.5px;margin-top:6px;color:${INK}">${multiline(s.paymentExtra)}</div>` : ''}
         <div style="font-size:11px;color:${BROWN};margin-top:8px;font-style:italic">Please include invoice number as reference.</div>
@@ -157,7 +158,7 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
       <div class="thanks">Thank you</div>
       <div class="appreciate">${esc(s.footerNote || 'We appreciate your business')}</div>
     </div>
-    <img src="${ART}/sprig.png" style="width:150px"/>
+    <img src="${ART}/sprig.png${V}" style="width:150px"/>
   </div>
 
   <div class="footer">Crafted in Trinidad &amp; Tobago</div>
