@@ -14,8 +14,8 @@ import { pickImage } from '@/lib/images';
 import type { InvoiceSettings } from '@/lib/store-types';
 
 const COLORS = ['#E11D26', '#0E1116', '#2F6FED', '#2EA84F', '#E8852B', '#8B5CF6', '#16B1C9', '#9A6B00'];
-const TPL_COLOR: Record<string, string> = { trini: '#EF1B2D', classic: '#E11D26', corporate: '#1F4FC4', noir: '#141414', nexora: '#6B2FB3', monarch: '#1a1a1a', editorial: '#1C2740', woodwork: '#6E4A28', landscaping: '#2E7D32', events: '#6E1E55' };
-const TPL_COLOR2: Record<string, string> = { trini: '#141414', classic: '#7a8089', corporate: '#3A6FE0', noir: '#C9A24B', nexora: '#16A89B', monarch: '#ECECEC', editorial: '#E7B7B5', woodwork: '#E7C9A0', landscaping: '#A5D6A7', events: '#EAD9EE' };
+const TPL_COLOR: Record<string, string> = { trini: '#EF1B2D', classic: '#E11D26', corporate: '#1F4FC4', noir: '#141414', nexora: '#6B2FB3', monarch: '#1a1a1a', editorial: '#1C2740', woodwork: '#6E4A28', landscaping: '#2E7D32', events: '#6E1E55', floral: '#43286E' };
+const TPL_COLOR2: Record<string, string> = { trini: '#141414', classic: '#7a8089', corporate: '#3A6FE0', noir: '#C9A24B', nexora: '#16A89B', monarch: '#ECECEC', editorial: '#E7B7B5', woodwork: '#E7C9A0', landscaping: '#A5D6A7', events: '#EAD9EE', floral: '#C29A47' };
 
 export default function InvoiceSettingsScreen() {
   const { userId } = useAuth();
