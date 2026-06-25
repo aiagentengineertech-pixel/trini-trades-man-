@@ -795,7 +795,7 @@ export async function saveInvoiceSettings(userId: string, s: InvoiceSettings): P
     signature_title: s.signatureTitle || null,
     updated_at: new Date().toISOString(),
   });
-  if (error) { console.warn('[db] saveInvoiceSettings failed:', error.message); return false; }
+  if (error) { _lastWriteError = error.message; console.warn('[db] saveInvoiceSettings failed:', error.message); return false; }
   return true;
 }
 

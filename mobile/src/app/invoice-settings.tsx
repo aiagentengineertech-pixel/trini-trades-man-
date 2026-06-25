@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { fetchInvoiceSettings, saveInvoiceSettings, uploadImage } from '@/lib/db';
+import { clearWriteError, fetchInvoiceSettings, getLastWriteError, saveInvoiceSettings, uploadImage } from '@/lib/db';
 import { INVOICE_TEMPLATES } from '@/lib/invoice';
 import { pickImage } from '@/lib/images';
 import type { InvoiceSettings } from '@/lib/store-types';
@@ -29,6 +29,7 @@ export default function InvoiceSettingsScreen() {
   });
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (userId) fetchInvoiceSettings(userId).then((d) => { if (d) setS(d); });
@@ -51,10 +52,13 @@ export default function InvoiceSettingsScreen() {
   const save = async () => {
     if (!userId) return;
     setBusy(true);
+    setSaveErr(null);
+    clearWriteError();
     const clean = { ...s, logoUrl: s.logoUrl && !s.logoUrl.startsWith('file') && !s.logoUrl.startsWith('blob') ? s.logoUrl.split('?')[0] : s.logoUrl };
     const ok = await saveInvoiceSettings(userId, clean);
     setBusy(false);
-    setSaved(ok);
+    if (ok) { setSaved(true); }
+    else { setSaved(false); setSaveErr(getLastWriteError() ?? 'Could not save. Please try again.'); }
   };
 
   if (!premium) return <PremiumGateScreen title="Invoice Branding" feature="Custom invoice branding (logo, colours, payment terms)" />;
@@ -135,6 +139,12 @@ export default function InvoiceSettingsScreen() {
           <Field label="Signature title" value={s.signatureTitle ?? ''} onChangeText={(v) => set('signatureTitle', v)} placeholder="e.g. Owner / Creative Director" />
 
           {saved && <View style={styles.savedRow}><Ionicons name="checkmark-circle" size={18} color={Brand.green} /><Text style={styles.savedText}>Branding saved</Text></View>}
+          {saveErr && (
+            <View style={styles.errRow}>
+              <Ionicons name="warning-outline" size={16} color={Brand.red} />
+              <Text style={styles.errText}>Couldn’t save: {saveErr}</Text>
+            </View>
+          )}
           <Pressable style={styles.saveBtn} onPress={save} disabled={busy}>
             <Text style={styles.saveBtnText}>{busy ? 'Saving…' : 'Save branding'}</Text>
           </Pressable>
@@ -181,6 +191,8 @@ const styles = StyleSheet.create({
   swatchActive: { borderWidth: 3, borderColor: 'rgba(0,0,0,0.15)' },
 
   savedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18 },
+  errRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#FDECEC', borderRadius: 10, padding: 10, marginTop: 16 },
+  errText: { flex: 1, color: Brand.red, fontSize: 12.5, lineHeight: 17 },
   savedText: { color: Brand.green, fontWeight: '700' },
   saveBtn: { backgroundColor: Brand.red, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 20 },
   saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
