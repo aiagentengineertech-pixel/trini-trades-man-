@@ -740,7 +740,7 @@ export async function deleteExpense(id: string): Promise<void> {
 export async function fetchInvoiceSettings(userId: string): Promise<InvoiceSettings | null> {
   const { data, error } = await supabase
     .from('invoice_settings')
-    .select('business_name, logo_url, brand_color, tax_id, payment_terms, footer_note, contact_phone, contact_email')
+    .select('business_name, logo_url, brand_color, tax_id, payment_terms, footer_note, contact_phone, contact_email, template, tagline, address, website, bank_name, bank_account_name, bank_account_number, bank_routing, bank_swift, payment_extra, accept_note, signature_name, signature_title')
     .eq('user_id', userId)
     .maybeSingle();
   if (error || !data) return null;
@@ -753,6 +753,19 @@ export async function fetchInvoiceSettings(userId: string): Promise<InvoiceSetti
     footerNote: data.footer_note ?? '',
     contactPhone: data.contact_phone ?? '',
     contactEmail: data.contact_email ?? '',
+    template: (data.template ?? 'classic') as InvoiceSettings['template'],
+    tagline: data.tagline ?? '',
+    address: data.address ?? '',
+    website: data.website ?? '',
+    bankName: data.bank_name ?? '',
+    bankAccountName: data.bank_account_name ?? '',
+    bankAccountNumber: data.bank_account_number ?? '',
+    bankRouting: data.bank_routing ?? '',
+    bankSwift: data.bank_swift ?? '',
+    paymentExtra: data.payment_extra ?? '',
+    acceptNote: data.accept_note ?? '',
+    signatureName: data.signature_name ?? '',
+    signatureTitle: data.signature_title ?? '',
   };
 }
 
@@ -767,6 +780,19 @@ export async function saveInvoiceSettings(userId: string, s: InvoiceSettings): P
     footer_note: s.footerNote || null,
     contact_phone: s.contactPhone || null,
     contact_email: s.contactEmail || null,
+    template: s.template || 'classic',
+    tagline: s.tagline || null,
+    address: s.address || null,
+    website: s.website || null,
+    bank_name: s.bankName || null,
+    bank_account_name: s.bankAccountName || null,
+    bank_account_number: s.bankAccountNumber || null,
+    bank_routing: s.bankRouting || null,
+    bank_swift: s.bankSwift || null,
+    payment_extra: s.paymentExtra || null,
+    accept_note: s.acceptNote || null,
+    signature_name: s.signatureName || null,
+    signature_title: s.signatureTitle || null,
     updated_at: new Date().toISOString(),
   });
   if (error) { console.warn('[db] saveInvoiceSettings failed:', error.message); return false; }

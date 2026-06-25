@@ -9,10 +9,13 @@ import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { fetchInvoiceSettings, saveInvoiceSettings, uploadImage } from '@/lib/db';
+import { INVOICE_TEMPLATES } from '@/lib/invoice';
 import { pickImage } from '@/lib/images';
 import type { InvoiceSettings } from '@/lib/store-types';
 
 const COLORS = ['#E11D26', '#0E1116', '#2F6FED', '#2EA84F', '#E8852B', '#8B5CF6', '#16B1C9', '#9A6B00'];
+const TPL_COLOR: Record<string, string> = { trini: '#EF1B2D', classic: '#E11D26', corporate: '#1F4FC4', noir: '#141414', nexora: '#6B2FB3', monarch: '#1a1a1a', editorial: '#1C2740' };
+const TPL_COLOR2: Record<string, string> = { trini: '#141414', classic: '#7a8089', corporate: '#3A6FE0', noir: '#C9A24B', nexora: '#16A89B', monarch: '#ECECEC', editorial: '#E7B7B5' };
 
 export default function InvoiceSettingsScreen() {
   const { userId } = useAuth();
@@ -20,6 +23,9 @@ export default function InvoiceSettingsScreen() {
     businessName: '', logoUrl: null, brandColor: '#E11D26', taxId: '',
     paymentTerms: 'Payment due within 14 days. Bank transfer or WiPay accepted.',
     footerNote: '', contactPhone: '', contactEmail: '',
+    template: 'classic', tagline: '', address: '', website: '',
+    bankName: '', bankAccountName: '', bankAccountNumber: '', bankRouting: '', bankSwift: '',
+    paymentExtra: '', acceptNote: '', signatureName: '', signatureTitle: '',
   });
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -65,6 +71,24 @@ export default function InvoiceSettingsScreen() {
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
           <Text style={styles.intro}>This branding appears on every invoice and quote PDF you generate.</Text>
 
+          <Text style={styles.label}>Template</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 2 }}>
+            {INVOICE_TEMPLATES.map((t) => {
+              const active = (s.template ?? 'classic') === t.key;
+              return (
+                <Pressable key={t.key} style={[styles.tplCard, active && styles.tplCardActive]} onPress={() => set('template', t.key)}>
+                  <View style={styles.tplSwatch}>
+                    <View style={[styles.tplBar, { backgroundColor: TPL_COLOR[t.key] ?? Brand.red }]} />
+                    <View style={[styles.tplBar, { backgroundColor: TPL_COLOR2[t.key] ?? '#111', width: '40%' }]} />
+                  </View>
+                  <Text style={[styles.tplName, active && { color: Brand.red }]}>{t.name}</Text>
+                  <Text style={styles.tplBlurb} numberOfLines={2}>{t.blurb}</Text>
+                  {active && <Ionicons name="checkmark-circle" size={18} color={Brand.red} style={styles.tplCheck} />}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
           <Text style={styles.label}>Company logo</Text>
           <Pressable style={styles.logoBox} onPress={chooseLogo}>
             {s.logoUrl ? (
@@ -91,8 +115,24 @@ export default function InvoiceSettingsScreen() {
           <Field label="Tax / BIR number" value={s.taxId} onChangeText={(v) => set('taxId', v)} placeholder="VAT / BIR registration #" />
           <Field label="Contact phone" value={s.contactPhone} onChangeText={(v) => set('contactPhone', v)} placeholder="+1 (868) 000-0000" keyboardType="phone-pad" />
           <Field label="Contact email" value={s.contactEmail} onChangeText={(v) => set('contactEmail', v)} placeholder="you@business.com" autoCapitalize="none" />
+          <Field label="Tagline" value={s.tagline ?? ''} onChangeText={(v) => set('tagline', v)} placeholder="e.g. Branding & Digital Studio" />
+          <Field label="Business address" value={s.address ?? ''} onChangeText={(v) => set('address', v)} placeholder="Street, city, Trinidad & Tobago" multiline />
+          <Field label="Website" value={s.website ?? ''} onChangeText={(v) => set('website', v)} placeholder="www.yourbusiness.tt" autoCapitalize="none" />
           <Field label="Payment terms" value={s.paymentTerms} onChangeText={(v) => set('paymentTerms', v)} placeholder="e.g. Due within 14 days…" multiline />
           <Field label="Footer note" value={s.footerNote} onChangeText={(v) => set('footerNote', v)} placeholder="Thank you for your business!" />
+
+          <Text style={styles.section}>Payment details (shown on the invoice)</Text>
+          <Field label="Bank name" value={s.bankName ?? ''} onChangeText={(v) => set('bankName', v)} placeholder="e.g. Republic Bank (Trinidad & Tobago)" />
+          <Field label="Account name" value={s.bankAccountName ?? ''} onChangeText={(v) => set('bankAccountName', v)} placeholder="Account holder name" />
+          <Field label="Account number" value={s.bankAccountNumber ?? ''} onChangeText={(v) => set('bankAccountNumber', v)} placeholder="000000000000" />
+          <Field label="Routing / transit" value={s.bankRouting ?? ''} onChangeText={(v) => set('bankRouting', v)} placeholder="(optional)" />
+          <Field label="SWIFT / BIC" value={s.bankSwift ?? ''} onChangeText={(v) => set('bankSwift', v)} placeholder="(optional)" autoCapitalize="characters" />
+          <Field label="Also accepted" value={s.paymentExtra ?? ''} onChangeText={(v) => set('paymentExtra', v)} placeholder="e.g. PayNow TT (868) 000-0000, PayPal, WiPay" />
+          <Field label="We accept (badge)" value={s.acceptNote ?? ''} onChangeText={(v) => set('acceptNote', v)} placeholder="e.g. Bank transfer, WiPay, Credit Card" />
+
+          <Text style={styles.section}>Signature (for templates that show one)</Text>
+          <Field label="Signature name" value={s.signatureName ?? ''} onChangeText={(v) => set('signatureName', v)} placeholder="e.g. Alicia Mohammed" />
+          <Field label="Signature title" value={s.signatureTitle ?? ''} onChangeText={(v) => set('signatureTitle', v)} placeholder="e.g. Owner / Creative Director" />
 
           {saved && <View style={styles.savedRow}><Ionicons name="checkmark-circle" size={18} color={Brand.green} /><Text style={styles.savedText}>Branding saved</Text></View>}
           <Pressable style={styles.saveBtn} onPress={save} disabled={busy}>
@@ -120,6 +160,14 @@ const styles = StyleSheet.create({
   intro: { fontSize: 13, color: Brand.muted, lineHeight: 19 },
 
   label: { fontSize: 14, fontWeight: '700', color: Brand.ink, marginTop: 18, marginBottom: 10 },
+  section: { fontSize: 13, fontWeight: '800', color: Brand.red, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 28 },
+  tplCard: { width: 130, borderWidth: 1, borderColor: Brand.line, borderRadius: 14, padding: 12, backgroundColor: Brand.surface },
+  tplCardActive: { borderColor: Brand.red, borderWidth: 2 },
+  tplSwatch: { flexDirection: 'row', gap: 3, marginBottom: 10 },
+  tplBar: { height: 26, borderRadius: 4, flex: 1 },
+  tplName: { fontSize: 14, fontWeight: '800', color: Brand.ink },
+  tplBlurb: { fontSize: 11, color: Brand.muted, marginTop: 2, lineHeight: 15 },
+  tplCheck: { position: 'absolute', top: 8, right: 8 },
   input: { borderWidth: 1, borderColor: Brand.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: Brand.ink },
   textarea: { minHeight: 72, textAlignVertical: 'top' },
 

@@ -55,6 +55,8 @@ export interface PortfolioItem {
   date: string;
 }
 
+export type InvoiceTemplateKey = 'classic' | 'monarch' | 'corporate' | 'noir' | 'nexora' | 'editorial' | 'trini';
+
 export interface InvoiceSettings {
   businessName: string;
   logoUrl: string | null;
@@ -64,6 +66,20 @@ export interface InvoiceSettings {
   footerNote: string;
   contactPhone: string;
   contactEmail: string;
+  // Template + extended branding (all optional; templates degrade gracefully)
+  template?: InvoiceTemplateKey;
+  tagline?: string;          // e.g. "Branding & Digital Studio"
+  address?: string;          // multi-line allowed (\n)
+  website?: string;
+  bankName?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
+  bankRouting?: string;
+  bankSwift?: string;
+  paymentExtra?: string;     // e.g. "PayNow TT (868) 742-6305" / "Venmo @handle"
+  acceptNote?: string;       // e.g. "ACH, Wire, PayPal, Credit Card"
+  signatureName?: string;
+  signatureTitle?: string;
 }
 
 export interface CatalogItem {

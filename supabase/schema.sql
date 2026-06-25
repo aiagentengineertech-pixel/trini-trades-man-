@@ -801,6 +801,20 @@ create table if not exists invoice_settings (
   contact_email  text,
   updated_at     timestamptz not null default now()
 );
+-- Template choice + extended branding for the invoice/quote PDF designs.
+alter table invoice_settings add column if not exists template            text not null default 'classic';
+alter table invoice_settings add column if not exists tagline             text;
+alter table invoice_settings add column if not exists address             text;
+alter table invoice_settings add column if not exists website             text;
+alter table invoice_settings add column if not exists bank_name           text;
+alter table invoice_settings add column if not exists bank_account_name   text;
+alter table invoice_settings add column if not exists bank_account_number text;
+alter table invoice_settings add column if not exists bank_routing        text;
+alter table invoice_settings add column if not exists bank_swift          text;
+alter table invoice_settings add column if not exists payment_extra       text;
+alter table invoice_settings add column if not exists accept_note         text;
+alter table invoice_settings add column if not exists signature_name      text;
+alter table invoice_settings add column if not exists signature_title     text;
 alter table invoice_settings enable row level security;
 drop policy if exists "invoice settings own" on invoice_settings;
 create policy "invoice settings own" on invoice_settings for all
