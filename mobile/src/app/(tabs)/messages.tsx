@@ -48,7 +48,7 @@ export default function MessagesScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Brand.surface },
+  flex: { flex: 1, backgroundColor: 'transparent' },
   headerWrap: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
   h1: { fontSize: 26, fontWeight: '800', color: Brand.ink },
 

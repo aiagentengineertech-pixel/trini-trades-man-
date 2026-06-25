@@ -46,14 +46,20 @@ export function Glass({ children, style, intensity = 40 }: { children?: React.Re
 /** Soft ambient glow backdrop — gives "liquid glass" surfaces something to refract. */
 // Soft blur turns the colour blobs into ambient glows instead of hard circles.
 const BLUR = { filter: 'blur(80px)' } as any;
+const IBIS = require('../../assets/images/ibis.png');
 
-export function Ambient() {
+/**
+ * Warm "scarlet ibis" backdrop. A faint pink ibis (T&T's national bird) sits
+ * top-right behind frosted-glass content, over a warm cream wash with soft
+ * maroon glows. Pass `ibis={false}` for a clean wash without the bird.
+ */
+export function Ambient({ ibis = true }: { ibis?: boolean } = {}) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <LinearGradient colors={['#FFF4F4', '#F7F8FC', '#FFFFFF']} style={StyleSheet.absoluteFill} />
-      <View style={[styles.blob, BLUR, { backgroundColor: 'rgba(225,29,38,0.18)', top: -80, right: -60 }]} />
-      <View style={[styles.blob, BLUR, { backgroundColor: 'rgba(47,111,237,0.14)', top: 160, left: -90 }]} />
-      <View style={[styles.blob, BLUR, { backgroundColor: 'rgba(139,92,246,0.12)', bottom: -60, right: -40 }]} />
+      <LinearGradient colors={['#FFF6F4', '#FBF7F6', '#FFFFFF']} style={StyleSheet.absoluteFill} />
+      <View style={[styles.blob, BLUR, { backgroundColor: 'rgba(140,28,43,0.12)', top: -70, right: -50 }]} />
+      <View style={[styles.blob, BLUR, { backgroundColor: 'rgba(140,28,43,0.05)', bottom: -80, left: -70 }]} />
+      {ibis && <Image source={IBIS} style={styles.ibis} contentFit="contain" />}
     </View>
   );
 }
@@ -172,6 +178,7 @@ const styles = StyleSheet.create({
     elevation: 9,
   },
   blob: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
+  ibis: { position: 'absolute', top: 16, right: -38, width: 330, height: 318, opacity: 0.5 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   sectionTitle: { fontSize: 19, fontWeight: '800', color: Brand.ink, letterSpacing: -0.3 },
   sectionAction: { fontSize: 13, fontWeight: '700', color: Brand.red },

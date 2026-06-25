@@ -9,13 +9,15 @@ import { Ambient, ProAvatar } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useStore, type IconName } from '@/lib/store';
 
-const SERVICES: { name: string; icon: IconName; color: string; bg: string }[] = [
-  { name: 'Electrician', icon: 'flash', color: '#8C1C2B', bg: '#F6E7E9' },
-  { name: 'Plumbing', icon: 'water', color: '#2F6FED', bg: '#EAF1FE' },
-  { name: 'AC Repair', icon: 'snow', color: '#16B1C9', bg: '#E6F8FB' },
-  { name: 'Carpentry', icon: 'hammer', color: '#E8852B', bg: '#FDF1E6' },
-  { name: 'Painting', icon: 'color-fill', color: '#2EA84F', bg: '#E9F8EE' },
-  { name: 'Masonry', icon: 'cube', color: '#8B5CF6', bg: '#F1ECFE' },
+// Uniform maroon icons on a soft-pink tint, matching the brand look.
+const SERVICES: { name: string; icon: IconName }[] = [
+  { name: 'Electrician', icon: 'flash' },
+  { name: 'Plumbing', icon: 'water' },
+  { name: 'AC Repair', icon: 'snow' },
+  { name: 'Carpentry', icon: 'hammer' },
+  { name: 'Painting', icon: 'color-fill' },
+  { name: 'Mechanic', icon: 'construct' },
+  { name: 'Delivery', icon: 'cube' },
 ];
 
 const TRUST = [
@@ -45,14 +47,14 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.brandRow}>
-            <View style={styles.logoMark}>
-              <Ionicons name="hammer" size={20} color="#fff" />
-            </View>
-            <View>
+            <Image source={require('../../../assets/images/icon.png')} style={styles.logoMark} contentFit="cover" />
+            <View style={styles.brandTextWrap}>
               <Text style={styles.brandName}>
-                TRINI <Text style={styles.brandNameAlt}>TRADESMAN</Text>
+                TRINI SIDE <Text style={styles.brandNameAlt}>HUSTLE</Text>
               </Text>
-              <Text style={styles.brandTag}>FIX IT. TRUST IT.</Text>
+              <Text style={styles.brandTag}>
+                FIND WORK. HIRE LOCAL. <Text style={{ color: Brand.red }}>GET PAID.</Text>
+              </Text>
             </View>
           </View>
           <View style={styles.headerActions}>
@@ -107,12 +109,12 @@ export default function HomeScreen() {
         </View>
 
         {/* Popular Services */}
-        <SectionHeader title="Popular Services" onPress={() => router.push('/explore')} />
+        <SectionHeader title="Popular Side Hustles" onPress={() => router.push('/explore')} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicesRow}>
           {SERVICES.map((s) => (
             <Pressable key={s.name} style={styles.serviceCard} onPress={() => router.push({ pathname: '/explore', params: { trade: s.name } })}>
-              <View style={[styles.serviceIcon, { backgroundColor: s.bg }]}>
-                <Ionicons name={s.icon} size={26} color={s.color} />
+              <View style={[styles.serviceIcon, { backgroundColor: Brand.redSoft }]}>
+                <Ionicons name={s.icon} size={26} color={Brand.red} />
               </View>
               <Text style={styles.serviceLabel}>{s.name}</Text>
             </Pressable>
@@ -120,7 +122,7 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* Top Rated Near You */}
-        <SectionHeader title="Top Rated Near You" onPress={() => router.push('/explore')} />
+        <SectionHeader title="Top Rated Hustlers" onPress={() => router.push('/explore')} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.prosRow}>
           {nearbyPros.slice(0, 4).map((p) => (
             <Pressable key={p.id} style={styles.proCard} onPress={() => router.push({ pathname: '/pro/[id]', params: { id: p.id } })}>
@@ -204,10 +206,11 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoMark: { width: 38, height: 38, borderRadius: 10, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
-  brandName: { fontSize: 16, fontWeight: '800', color: Brand.red, letterSpacing: 0.5 },
+  logoMark: { width: 46, height: 46, borderRadius: 13 },
+  brandTextWrap: { flexShrink: 1 },
+  brandName: { fontSize: 17, fontWeight: '800', color: Brand.red, letterSpacing: 0.3, lineHeight: 20 },
   brandNameAlt: { color: Brand.ink },
-  brandTag: { fontSize: 9, fontWeight: '700', color: Brand.muted, letterSpacing: 1.5 },
+  brandTag: { fontSize: 9, fontWeight: '700', color: Brand.muted, letterSpacing: 1, marginTop: 2 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   badge: { position: 'absolute', top: -6, right: -6, backgroundColor: Brand.red, minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
