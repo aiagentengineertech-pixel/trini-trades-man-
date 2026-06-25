@@ -1,7 +1,7 @@
-// "Trini" — flagship invoice template.
-// Bold Trinidad & Tobago flag theme: RED #EF1B2D + BLACK #141414 on white,
-// with the black diagonal band edged in white. Pure (settings, draft) => HTML,
-// rendered to PDF by lib/invoice.ts via expo-print. No external resources.
+// "Island Ember" — flagship Trinidad & Tobago invoice template.
+// Red #EF1B2D + black on white, with real flag brush-stroke corners, the
+// "IE" monogram default logo and a hand-lettered "Thank You" mark.
+// Decorative art is hosted on Supabase Storage (theme-assets/trini).
 import {
   InvoiceSettings,
   InvoiceDraft,
@@ -13,15 +13,16 @@ import {
   contacts,
 } from './shared';
 
+const ART = 'https://bhlflhyojzjzoksejekc.supabase.co/storage/v1/object/public/uploads/theme-assets/trini';
+const V = '?v=1';
+
 const RED = '#EF1B2D';
 const BLACK = '#141414';
 const GREY = '#6b6b6b';
 const LINE = '#e6e6e6';
 
-const HEAVY =
-  "-apple-system,'Arial Black','Segoe UI',Helvetica,sans-serif";
-const BODY =
-  "-apple-system,'Segoe UI',Helvetica,Arial,sans-serif";
+const HEAVY = "-apple-system,'Arial Black','Segoe UI',Helvetica,sans-serif";
+const BODY = "-apple-system,'Segoe UI',Helvetica,Arial,sans-serif";
 const CURSIVE = "'Snell Roundhand','Brush Script MT',cursive";
 
 // Tiny inline SVG icons (no external resources). Each tinted RED.
@@ -45,19 +46,10 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
   const t = computeTotals(d);
   const docLabel = DOC_LABEL[d.docType ?? 'invoice'];
 
-  // ---- Brand / logo block ----
-  const initials =
-    (esc(s.businessName) || '')
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase() || 'T';
-
+  // ---- Brand / logo block (default = IE monogram art) ----
   const brandMark = s.logoUrl
-    ? `<img src="${esc(s.logoUrl)}" alt="" style="max-height:64px;max-width:180px;object-fit:contain;display:block"/>`
-    : `<div style="width:64px;height:64px;border-radius:10px;background:${BLACK};color:#fff;font-family:${HEAVY};font-size:26px;font-weight:900;display:flex;align-items:center;justify-content:center;border:3px solid ${RED};box-sizing:border-box">${initials}</div>`;
+    ? `<img src="${esc(s.logoUrl)}" alt="" style="max-height:66px;max-width:180px;object-fit:contain;display:block"/>`
+    : `<img src="${ART}/logo-ie.png${V}" alt="" style="height:66px;width:auto;object-fit:contain;display:block"/>`;
 
   // ---- Contact lines (each with a small red icon) ----
   const contactList = contacts(s);
@@ -148,13 +140,8 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
     : '';
 
   // ---- Totals ----
-  const taxLabel =
-    d.taxPct === 12.5 ? 'VAT (12.5%)' : `TAX (${d.taxPct}%)`;
-  const totalRow = (
-    label: string,
-    value: string,
-    opts?: { strong?: boolean }
-  ) =>
+  const taxLabel = d.taxPct === 12.5 ? 'VAT (12.5%)' : `TAX (${d.taxPct}%)`;
+  const totalRow = (label: string, value: string, opts?: { strong?: boolean }) =>
     `<tr>
        <td style="padding:5px 14px 5px 0;font-size:${
          opts?.strong ? '11px' : '10.5px'
@@ -215,11 +202,7 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
   ].join('');
 
   const hasBank =
-    s.bankName ||
-    s.bankAccountName ||
-    s.bankAccountNumber ||
-    s.bankRouting ||
-    s.bankSwift;
+    s.bankName || s.bankAccountName || s.bankAccountNumber || s.bankRouting || s.bankSwift;
 
   const alsoAccepted = s.paymentExtra
     ? `<div style="display:flex;align-items:flex-start;font-size:10px;color:${BLACK};margin-top:8px;line-height:1.4">${icon(
@@ -248,21 +231,6 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
       )}</div>`
     : '';
 
-  // ---- Decorative flag corners (rotated solid divs, no images) ----
-  // TOP-RIGHT: red + black diagonal band edged white. BOTTOM-LEFT: smaller echo.
-  const cornerTR = `
-    <div style="position:absolute;top:-90px;right:-90px;width:300px;height:300px;pointer-events:none">
-      <div style="position:absolute;inset:0;background:${RED};transform:rotate(45deg);transform-origin:center"></div>
-      <div style="position:absolute;top:60px;left:0;width:300px;height:64px;background:#fff;transform:rotate(45deg);transform-origin:center"></div>
-      <div style="position:absolute;top:60px;left:0;width:300px;height:48px;background:${BLACK};transform:rotate(45deg);transform-origin:center"></div>
-    </div>`;
-  const cornerBL = `
-    <div style="position:absolute;bottom:-70px;left:-70px;width:210px;height:210px;pointer-events:none">
-      <div style="position:absolute;inset:0;background:${RED};transform:rotate(45deg);transform-origin:center"></div>
-      <div style="position:absolute;top:40px;left:0;width:210px;height:46px;background:#fff;transform:rotate(45deg);transform-origin:center"></div>
-      <div style="position:absolute;top:40px;left:0;width:210px;height:34px;background:${BLACK};transform:rotate(45deg);transform-origin:center"></div>
-    </div>`;
-
   const tagline = s.tagline
     ? `<div style="font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${RED};margin-top:2px">${esc(
         s.tagline
@@ -273,7 +241,7 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=800"/>
 <title>${esc(docLabel)} ${esc(d.number)}</title>
 <style>
   * { box-sizing: border-box; }
@@ -291,12 +259,14 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
     position: relative;
     overflow: hidden;
     width: 100%;
-    max-width: 760px;
+    max-width: 800px;
     margin: 0 auto;
     background: #fff;
-    padding: 40px 44px 44px;
+    padding: 42px 46px 46px;
     min-height: 1040px;
   }
+  .flag-tr { position:absolute; top:0; right:0; width:340px; z-index:0; pointer-events:none; }
+  .flag-bl { position:absolute; bottom:0; left:0; width:300px; z-index:0; pointer-events:none; }
   .content { position: relative; z-index: 2; }
   h1.doc {
     font-family: ${HEAVY};
@@ -332,8 +302,8 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
 </head>
 <body>
   <div class="page">
-    ${cornerTR}
-    ${cornerBL}
+    <img class="flag-tr" src="${ART}/flag-tr.png${V}" alt=""/>
+    <img class="flag-bl" src="${ART}/flag-bl.png${V}" alt=""/>
     <div class="content">
 
       <!-- HEADER -->
@@ -360,7 +330,7 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
   )}</div>
           ${billInfo}
         </div>
-        <div style="flex:0 0 auto;min-width:240px;border:1px solid ${LINE};border-top:3px solid ${RED};border-radius:4px;padding:12px 16px">
+        <div style="flex:0 0 auto;min-width:240px;border:1px solid ${LINE};border-top:3px solid ${RED};border-radius:4px;padding:12px 16px;background:rgba(255,255,255,.86)">
           <div class="label" style="margin-bottom:8px">Invoice Details</div>
           <table style="width:100%">${detailsRows}</table>
         </div>
@@ -398,11 +368,10 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
       </div>
 
       <!-- SIGNATURE + THANK YOU -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px">
         <div style="flex:1 1 0;min-width:0">${signature}</div>
         <div style="flex:0 0 auto;text-align:right">
-          <div style="font-family:${CURSIVE};font-size:38px;color:${RED};line-height:1">Thank You!</div>
-          <div style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:${BLACK};margin-top:2px">For Your Business</div>
+          <img src="${ART}/thankyou.png${V}" alt="Thank you for your business" style="width:230px;max-width:48vw;height:auto;display:block;margin-left:auto"/>
         </div>
       </div>
 
