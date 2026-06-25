@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
@@ -36,6 +36,7 @@ export default function InvoiceSettingsScreen() {
   const [saveErr, setSaveErr] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [previewAspect, setPreviewAspect] = useState(0.74);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (userId) fetchInvoiceSettings(userId).then((d) => { if (d) setS(d); });
@@ -161,11 +162,14 @@ export default function InvoiceSettingsScreen() {
       </KeyboardAvoidingView>
 
       <Modal visible={!!previewKey} animationType="slide" onRequestClose={() => setPreviewKey(null)}>
-        <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
-          <View style={styles.topbar}>
-            <Pressable onPress={() => setPreviewKey(null)} hitSlop={10}><Ionicons name="close" size={26} color={Brand.ink} /></Pressable>
-            <Text style={styles.title}>{INVOICE_TEMPLATES.find((t) => t.key === previewKey)?.name ?? 'Preview'}</Text>
-            <View style={{ width: 26 }} />
+        <View style={styles.previewRoot}>
+          <View style={[styles.previewHeader, { paddingTop: Math.max(insets.top, 12) }]}>
+            <Pressable onPress={() => setPreviewKey(null)} hitSlop={12} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back">
+              <Ionicons name="chevron-back" size={24} color={Brand.ink} />
+              <Text style={styles.backText}>Back</Text>
+            </Pressable>
+            <Text style={styles.previewTitle} numberOfLines={1}>{INVOICE_TEMPLATES.find((t) => t.key === previewKey)?.name ?? 'Preview'}</Text>
+            <View style={{ width: 66 }} />
           </View>
           <ScrollView style={styles.flex} contentContainerStyle={styles.previewScroll} maximumZoomScale={3} minimumZoomScale={1}>
             {previewKey && (
@@ -177,7 +181,7 @@ export default function InvoiceSettingsScreen() {
               />
             )}
           </ScrollView>
-          <View style={styles.previewBar}>
+          <View style={[styles.previewBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
             <Pressable
               style={[styles.useBtn, (s.template ?? 'classic') === previewKey && styles.useBtnDone]}
               onPress={() => { if (previewKey) set('template', previewKey); setPreviewKey(null); }}
@@ -186,7 +190,7 @@ export default function InvoiceSettingsScreen() {
               <Text style={styles.useBtnText}>{(s.template ?? 'classic') === previewKey ? 'Selected — keep this template' : 'Use this template'}</Text>
             </Pressable>
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -221,6 +225,11 @@ const styles = StyleSheet.create({
   gBadge: { position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: 11, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
 
   // Full-screen preview
+  previewRoot: { flex: 1, backgroundColor: '#fff' },
+  previewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, paddingBottom: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Brand.line },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 1, paddingVertical: 6, paddingRight: 10, width: 66 },
+  backText: { fontSize: 16, color: Brand.ink, fontWeight: '600' },
+  previewTitle: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: Brand.ink },
   previewScroll: { padding: 16, paddingBottom: 24, alignItems: 'center' },
   previewImg: { width: '100%', borderRadius: 8, borderWidth: 1, borderColor: Brand.line },
   previewBar: { padding: 16, borderTopWidth: 1, borderTopColor: Brand.line, backgroundColor: '#fff' },
