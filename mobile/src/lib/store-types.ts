@@ -55,7 +55,7 @@ export interface PortfolioItem {
   date: string;
 }
 
-export type InvoiceTemplateKey = 'classic' | 'monarch' | 'corporate' | 'noir' | 'nexora' | 'editorial' | 'trini' | 'woodwork';
+export type InvoiceTemplateKey = 'classic' | 'monarch' | 'corporate' | 'noir' | 'nexora' | 'editorial' | 'trini' | 'woodwork' | 'landscaping';
 
 export interface InvoiceSettings {
   businessName: string;

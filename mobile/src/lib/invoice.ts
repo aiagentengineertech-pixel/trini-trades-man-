@@ -9,6 +9,7 @@ import { computeTotals, type InvoiceDraft, type InvoiceLine } from './invoice-te
 import { render as classic } from './invoice-templates/classic';
 import { render as corporate } from './invoice-templates/corporate';
 import { render as editorial } from './invoice-templates/editorial';
+import { render as landscaping } from './invoice-templates/landscaping';
 import { render as monarch } from './invoice-templates/monarch';
 import { render as nexora } from './invoice-templates/nexora';
 import { render as noir } from './invoice-templates/noir';
@@ -29,6 +30,7 @@ export interface TemplateMeta {
 
 export const INVOICE_TEMPLATES: TemplateMeta[] = [
   { key: 'woodwork', name: 'Woodwork', blurb: 'Rustic illustrated — carpenters', render: woodwork },
+  { key: 'landscaping', name: 'Landscaping', blurb: 'Green botanical — outdoors', render: landscaping },
   { key: 'trini', name: 'Trinidad', blurb: 'Red & black flag — local & bold', render: trini },
   { key: 'classic', name: 'Classic', blurb: 'Clean branded, uses your colour', render: classic },
   { key: 'corporate', name: 'Corporate', blurb: 'Blue, professional', render: corporate },
