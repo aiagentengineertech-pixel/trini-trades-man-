@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
@@ -14,8 +14,12 @@ import { pickImage } from '@/lib/images';
 import type { InvoiceSettings } from '@/lib/store-types';
 
 const COLORS = ['#E11D26', '#0E1116', '#2F6FED', '#2EA84F', '#E8852B', '#8B5CF6', '#16B1C9', '#9A6B00'];
-const TPL_COLOR: Record<string, string> = { trini: '#EF1B2D', marshall: '#C8102E', 'luna-blush': '#1C2740', 'luna-sage': '#1C2740', 'luna-lilac': '#1C2740', 'luna-slate': '#1C2740', classic: '#E11D26', corporate: '#1F4FC4', noir: '#141414', nexora: '#6B2FB3', monarch: '#1a1a1a', editorial: '#1C2740', woodwork: '#6E4A28', landscaping: '#2E7D32', events: '#6E1E55', floral: '#43286E' };
-const TPL_COLOR2: Record<string, string> = { trini: '#141414', marshall: '#1E232B', 'luna-blush': '#E7B7B5', 'luna-sage': '#A9B79A', 'luna-lilac': '#B9A2DA', 'luna-slate': '#8197BC', classic: '#7a8089', corporate: '#3A6FE0', noir: '#C9A24B', nexora: '#16A89B', monarch: '#ECECEC', editorial: '#E7B7B5', woodwork: '#E7C9A0', landscaping: '#A5D6A7', events: '#EAD9EE', floral: '#C29A47' };
+
+// Real rendered template previews (hosted on Supabase Storage). Bump V to bust
+// the CDN cache after re-rendering a template's artwork.
+const PREVIEW_BASE = 'https://bhlflhyojzjzoksejekc.supabase.co/storage/v1/object/public/uploads/theme-assets/previews';
+const PREVIEW_V = '2';
+const previewUrl = (key: string) => `${PREVIEW_BASE}/${key}.png?v=${PREVIEW_V}`;
 
 export default function InvoiceSettingsScreen() {
   const { userId } = useAuth();
@@ -30,6 +34,8 @@ export default function InvoiceSettingsScreen() {
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveErr, setSaveErr] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
+  const [previewAspect, setPreviewAspect] = useState(0.74);
 
   useEffect(() => {
     if (userId) fetchInvoiceSettings(userId).then((d) => { if (d) setS(d); });
@@ -79,22 +85,22 @@ export default function InvoiceSettingsScreen() {
           <Text style={styles.intro}>This branding appears on every invoice and quote PDF you generate.</Text>
 
           <Text style={styles.label}>Template</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 2 }}>
+          <Text style={styles.hint}>Tap a design to preview the full invoice, then choose it.</Text>
+          <View style={styles.grid}>
             {INVOICE_TEMPLATES.map((t) => {
               const active = (s.template ?? 'classic') === t.key;
               return (
-                <Pressable key={t.key} style={[styles.tplCard, active && styles.tplCardActive]} onPress={() => set('template', t.key)}>
-                  <View style={styles.tplSwatch}>
-                    <View style={[styles.tplBar, { backgroundColor: TPL_COLOR[t.key] ?? Brand.red }]} />
-                    <View style={[styles.tplBar, { backgroundColor: TPL_COLOR2[t.key] ?? '#111', width: '40%' }]} />
+                <Pressable key={t.key} style={[styles.gCard, active && styles.gCardActive]} onPress={() => setPreviewKey(t.key)}>
+                  <Image source={{ uri: previewUrl(t.key) }} style={styles.gImg} contentFit="cover" contentPosition="top" transition={120} />
+                  <View style={styles.gMeta}>
+                    <Text style={[styles.gName, active && { color: Brand.red }]} numberOfLines={1}>{t.name}</Text>
+                    {active && <Ionicons name="checkmark-circle" size={16} color={Brand.red} />}
                   </View>
-                  <Text style={[styles.tplName, active && { color: Brand.red }]}>{t.name}</Text>
-                  <Text style={styles.tplBlurb} numberOfLines={2}>{t.blurb}</Text>
-                  {active && <Ionicons name="checkmark-circle" size={18} color={Brand.red} style={styles.tplCheck} />}
+                  {active && <View style={styles.gBadge}><Ionicons name="checkmark" size={13} color="#fff" /></View>}
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </View>
 
           <Text style={styles.label}>Company logo</Text>
           <Pressable style={styles.logoBox} onPress={chooseLogo}>
@@ -153,6 +159,35 @@ export default function InvoiceSettingsScreen() {
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={!!previewKey} animationType="slide" onRequestClose={() => setPreviewKey(null)}>
+        <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
+          <View style={styles.topbar}>
+            <Pressable onPress={() => setPreviewKey(null)} hitSlop={10}><Ionicons name="close" size={26} color={Brand.ink} /></Pressable>
+            <Text style={styles.title}>{INVOICE_TEMPLATES.find((t) => t.key === previewKey)?.name ?? 'Preview'}</Text>
+            <View style={{ width: 26 }} />
+          </View>
+          <ScrollView style={styles.flex} contentContainerStyle={styles.previewScroll} maximumZoomScale={3} minimumZoomScale={1}>
+            {previewKey && (
+              <Image
+                source={{ uri: previewUrl(previewKey) }}
+                style={[styles.previewImg, { aspectRatio: previewAspect }]}
+                contentFit="contain"
+                onLoad={(e) => { const ds = e.source; if (ds?.width && ds?.height) setPreviewAspect(ds.width / ds.height); }}
+              />
+            )}
+          </ScrollView>
+          <View style={styles.previewBar}>
+            <Pressable
+              style={[styles.useBtn, (s.template ?? 'classic') === previewKey && styles.useBtnDone]}
+              onPress={() => { if (previewKey) set('template', previewKey); setPreviewKey(null); }}
+            >
+              <Ionicons name={(s.template ?? 'classic') === previewKey ? 'checkmark-circle' : 'checkmark'} size={18} color="#fff" />
+              <Text style={styles.useBtnText}>{(s.template ?? 'classic') === previewKey ? 'Selected — keep this template' : 'Use this template'}</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -173,14 +208,25 @@ const styles = StyleSheet.create({
   intro: { fontSize: 13, color: Brand.muted, lineHeight: 19 },
 
   label: { fontSize: 14, fontWeight: '700', color: Brand.ink, marginTop: 18, marginBottom: 10 },
+  hint: { fontSize: 12.5, color: Brand.muted, marginTop: -4, marginBottom: 12, lineHeight: 17 },
   section: { fontSize: 13, fontWeight: '800', color: Brand.red, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 28 },
-  tplCard: { width: 130, borderWidth: 1, borderColor: Brand.line, borderRadius: 14, padding: 12, backgroundColor: Brand.surface },
-  tplCardActive: { borderColor: Brand.red, borderWidth: 2 },
-  tplSwatch: { flexDirection: 'row', gap: 3, marginBottom: 10 },
-  tplBar: { height: 26, borderRadius: 4, flex: 1 },
-  tplName: { fontSize: 14, fontWeight: '800', color: Brand.ink },
-  tplBlurb: { fontSize: 11, color: Brand.muted, marginTop: 2, lineHeight: 15 },
-  tplCheck: { position: 'absolute', top: 8, right: 8 },
+
+  // Template gallery (2-up image grid)
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  gCard: { width: '48.5%', borderWidth: 1, borderColor: Brand.line, borderRadius: 14, overflow: 'hidden', backgroundColor: '#fff', marginBottom: 14 },
+  gCardActive: { borderColor: Brand.red, borderWidth: 2 },
+  gImg: { width: '100%', height: 168, backgroundColor: '#F4F4F6' },
+  gMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6, paddingHorizontal: 11, paddingVertical: 9 },
+  gName: { fontSize: 13, fontWeight: '800', color: Brand.ink, flexShrink: 1 },
+  gBadge: { position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: 11, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
+
+  // Full-screen preview
+  previewScroll: { padding: 16, paddingBottom: 24, alignItems: 'center' },
+  previewImg: { width: '100%', borderRadius: 8, borderWidth: 1, borderColor: Brand.line },
+  previewBar: { padding: 16, borderTopWidth: 1, borderTopColor: Brand.line, backgroundColor: '#fff' },
+  useBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.red, borderRadius: 14, paddingVertical: 16 },
+  useBtnDone: { backgroundColor: Brand.green },
+  useBtnText: { color: '#fff', fontWeight: '800', fontSize: 15.5 },
   input: { borderWidth: 1, borderColor: Brand.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: Brand.ink },
   textarea: { minHeight: 72, textAlignVertical: 'top' },
 
