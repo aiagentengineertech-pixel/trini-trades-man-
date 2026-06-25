@@ -60,7 +60,7 @@ export default function SettingsScreen() {
           <ToggleRow icon="pricetag-outline" label="Promotions" value={notif.promos} onValueChange={set('promos')} />
           <ToggleRow icon="warning-outline" label="Emergency alerts" value={notif.emergency} onValueChange={set('emergency')} />
           <ToggleRow icon="cash-outline" label="Payment updates" value={notif.payments} onValueChange={set('payments')} />
-          <ListRow icon="send-outline" label="Send a test notification" onPress={() => notifyLocal('Trini Tradesman', 'Notifications are working 🔔')} last />
+          <ListRow icon="send-outline" label="Send a test notification" onPress={() => notifyLocal('Trini Side Hustle', 'Notifications are working 🔔')} last />
         </Card>
 
         {/* Support */}
@@ -84,7 +84,7 @@ export default function SettingsScreen() {
           <ListRow icon="log-out-outline" label="Log out" danger onPress={() => setConfirm({ title: 'Log out?', message: 'You can sign back in anytime.', danger: true, action: signOut })} last />
         </Card>
 
-        <Text style={styles.version}>Trini Tradesman v1.0.0</Text>
+        <Text style={styles.version}>Trini Side Hustle v1.0.0</Text>
       </ScrollView>
 
       {/* Confirmation popup */}

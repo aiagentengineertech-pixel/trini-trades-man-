@@ -45,7 +45,7 @@ export default function DocDetailScreen() {
   const converted = !!doc.convertedTo;
 
   const downloadPdf = async () => {
-    const eff = settings ?? { businessName: '', logoUrl: null, brandColor: '#E11D26', taxId: '', paymentTerms: '', footerNote: '', contactPhone: '', contactEmail: '' };
+    const eff = settings ?? { businessName: '', logoUrl: null, brandColor: '#8C1C2B', taxId: '', paymentTerms: '', footerNote: '', contactPhone: '', contactEmail: '' };
     setBusy(true);
     try {
       await generateInvoicePdf(eff, {
@@ -76,7 +76,7 @@ export default function DocDetailScreen() {
   const markPaid = async () => { setBusy(true); await markInvoicePaid(id); setBusy(false); load(); };
 
   const sendReminder = () => {
-    const biz = settings?.businessName || 'Trini Tradesman';
+    const biz = settings?.businessName || 'Trini Side Hustle';
     const subject = `Payment reminder — ${doc!.number}`;
     const body = `Hi ${doc!.customerName || 'there'},\n\nThis is a friendly reminder that ${doc!.number} for ${money(totals.total)} is now due.\n\nYou can pay by bank transfer or WiPay. Please let me know once settled, and thank you for your business.\n\n${biz}`;
     Linking.openURL(`mailto:${client?.email ?? ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`).catch(() => {});

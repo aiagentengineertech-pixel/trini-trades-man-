@@ -29,7 +29,7 @@ export default function UpgradeScreen() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <View style={styles.hero}>
           <View style={styles.crown}><Ionicons name="star" size={26} color="#fff" /></View>
-          <Text style={styles.heroTitle}>Trini Tradesman Premium</Text>
+          <Text style={styles.heroTitle}>Trini Side Hustle Premium</Text>
           <Text style={styles.heroSub}>Run your whole trade business from your phone — team, invoices, clients and profit.</Text>
         </View>
 

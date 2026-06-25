@@ -56,7 +56,7 @@ export default function InvoiceBuilderScreen() {
 
   const generate = async () => {
     const effective: InvoiceSettings = settings ?? {
-      businessName: '', logoUrl: null, brandColor: '#E11D26', taxId: '',
+      businessName: '', logoUrl: null, brandColor: '#8C1C2B', taxId: '',
       paymentTerms: '', footerNote: '', contactPhone: '', contactEmail: '',
     };
     setGenerating(true);

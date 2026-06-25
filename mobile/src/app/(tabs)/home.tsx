@@ -10,7 +10,7 @@ import { Brand } from '@/constants/brand';
 import { useStore, type IconName } from '@/lib/store';
 
 const SERVICES: { name: string; icon: IconName; color: string; bg: string }[] = [
-  { name: 'Electrician', icon: 'flash', color: '#E11D26', bg: '#FDECEC' },
+  { name: 'Electrician', icon: 'flash', color: '#8C1C2B', bg: '#F6E7E9' },
   { name: 'Plumbing', icon: 'water', color: '#2F6FED', bg: '#EAF1FE' },
   { name: 'AC Repair', icon: 'snow', color: '#16B1C9', bg: '#E6F8FB' },
   { name: 'Carpentry', icon: 'hammer', color: '#E8852B', bg: '#FDF1E6' },

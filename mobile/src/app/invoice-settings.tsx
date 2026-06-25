@@ -13,7 +13,7 @@ import { INVOICE_TEMPLATES } from '@/lib/invoice';
 import { pickImage } from '@/lib/images';
 import type { InvoiceSettings } from '@/lib/store-types';
 
-const COLORS = ['#E11D26', '#0E1116', '#2F6FED', '#2EA84F', '#E8852B', '#8B5CF6', '#16B1C9', '#9A6B00'];
+const COLORS = ['#8C1C2B', '#0E1116', '#2F6FED', '#2EA84F', '#E8852B', '#8B5CF6', '#16B1C9', '#9A6B00'];
 
 // Real rendered template previews (hosted on Supabase Storage). Bump V to bust
 // the CDN cache after re-rendering a template's artwork.
@@ -24,7 +24,7 @@ const previewUrl = (key: string) => `${PREVIEW_BASE}/${key}.png?v=${PREVIEW_V}`;
 export default function InvoiceSettingsScreen() {
   const { userId } = useAuth();
   const [s, setS] = useState<InvoiceSettings>({
-    businessName: '', logoUrl: null, brandColor: '#E11D26', taxId: '',
+    businessName: '', logoUrl: null, brandColor: '#8C1C2B', taxId: '',
     paymentTerms: 'Payment due within 14 days. Bank transfer or WiPay accepted.',
     footerNote: '', contactPhone: '', contactEmail: '',
     template: 'classic', tagline: '', address: '', website: '',
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   swatchActive: { borderWidth: 3, borderColor: 'rgba(0,0,0,0.15)' },
 
   savedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18 },
-  errRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#FDECEC', borderRadius: 10, padding: 10, marginTop: 16 },
+  errRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#F6E7E9', borderRadius: 10, padding: 10, marginTop: 16 },
   errText: { flex: 1, color: Brand.red, fontSize: 12.5, lineHeight: 17 },
   savedText: { color: Brand.green, fontWeight: '700' },
   saveBtn: { backgroundColor: Brand.red, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 20 },

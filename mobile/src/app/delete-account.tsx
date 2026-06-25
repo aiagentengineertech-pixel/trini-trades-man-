@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   title: { fontSize: 16, fontWeight: '700', color: Brand.ink },
 
-  iconWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#FDECEC', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  iconWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F6E7E9', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   h1: { fontSize: 20, fontWeight: '800', color: Brand.ink },
   p: { fontSize: 14.5, color: Brand.body, lineHeight: 22, marginTop: 10 },
   subh: { fontSize: 13, fontWeight: '800', color: Brand.ink, marginTop: 22, marginBottom: 6 },
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   bulletText: { flex: 1, fontSize: 14, color: Brand.body },
   note: { fontSize: 12.5, color: Brand.muted, lineHeight: 18, marginTop: 18 },
 
-  errBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#FDECEC', borderRadius: 10, padding: 10, marginTop: 16 },
+  errBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#F6E7E9', borderRadius: 10, padding: 10, marginTop: 16 },
   errText: { flex: 1, color: Brand.red, fontSize: 12.5, lineHeight: 17 },
 
   btn: { borderRadius: 14, paddingVertical: 15, alignItems: 'center' },

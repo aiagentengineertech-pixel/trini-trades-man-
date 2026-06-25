@@ -124,7 +124,7 @@ export default function PayoutAccountScreen() {
             <Text style={styles.howTitle}>How payouts work</Text>
             <Text style={styles.howText}>
               When a customer confirms a job is done, the escrow is released to your Wallet. You
-              withdraw to this account — payouts are processed by Trini Tradesman (less the platform
+              withdraw to this account — payouts are processed by Trini Side Hustle (less the platform
               commission).
             </Text>
           </Card>

@@ -1,4 +1,4 @@
-// Shared iOS-style UI kit for Trini Tradesman.
+// Shared iOS-style UI kit for Trini Side Hustle.
 // Clean white background, soft shadows, rounded "frosted" cards, red accent.
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -95,7 +95,7 @@ export function ListRow({
   return (
     <Pressable style={[styles.row, !last && styles.rowDivider]} onPress={onPress}>
       {icon && (
-        <View style={[styles.rowIcon, { backgroundColor: danger ? '#FDECEC' : Brand.surfaceAlt }]}>
+        <View style={[styles.rowIcon, { backgroundColor: danger ? '#F6E7E9' : Brand.surfaceAlt }]}>
           <Ionicons name={icon} size={18} color={danger ? Brand.red : (tint ?? Brand.body)} />
         </View>
       )}

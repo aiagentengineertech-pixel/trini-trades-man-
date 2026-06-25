@@ -46,7 +46,7 @@ export function PremiumGateScreen({ title, feature }: { title: string; feature: 
       <View style={styles.body}>
         <View style={styles.icon}><Ionicons name="lock-closed" size={28} color={Brand.red} /></View>
         <Text style={styles.h}>A Premium feature</Text>
-        <Text style={styles.sub}>{feature} is part of the Trini Tradesman Premium plan.</Text>
+        <Text style={styles.sub}>{feature} is part of the Trini Side Hustle Premium plan.</Text>
         <Pressable style={styles.btn} onPress={() => router.push('/upgrade')}>
           <Ionicons name="star" size={16} color="#fff" />
           <Text style={styles.btnText}>See Premium</Text>

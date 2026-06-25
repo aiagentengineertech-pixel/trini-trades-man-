@@ -149,7 +149,7 @@ export default function TeamScreen() {
             <Card style={styles.lockCard}>
               <View style={styles.lockIcon}><Ionicons name="lock-closed" size={22} color={Brand.red} /></View>
               <Text style={styles.lockTitle}>Add employees with Premium</Text>
-              <Text style={styles.lockText}>Invite staff to respond to your clients and get assigned to jobs on behalf of your business. Part of the Trini Tradesman Premium plan.</Text>
+              <Text style={styles.lockText}>Invite staff to respond to your clients and get assigned to jobs on behalf of your business. Part of the Trini Side Hustle Premium plan.</Text>
               <Pressable style={styles.lockBtn} onPress={() => router.push('/upgrade')}>
                 <Ionicons name="star" size={16} color="#fff" />
                 <Text style={styles.lockBtnText}>Upgrade to Premium</Text>

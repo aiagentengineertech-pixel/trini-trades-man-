@@ -23,7 +23,7 @@ export default function EarningsScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         <Card style={styles.hero}>
-          <Text style={styles.heroLabel}>Total earned through Trini Tradesman</Text>
+          <Text style={styles.heroLabel}>Total earned through Trini Side Hustle</Text>
           <Text style={styles.heroValue}>TT${s.totalEarned.toLocaleString()}</Text>
           <View style={styles.heroTrend}>
             <Ionicons name="checkmark-done" size={14} color="#fff" />

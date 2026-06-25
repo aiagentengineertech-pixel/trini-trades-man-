@@ -50,7 +50,7 @@ export default function AnalyticsScreen() {
         </View>
         <View style={[styles.statsRow, { marginTop: 10 }]}>
           <StatCard value={`${s.won}`} label="Jobs Won" icon="trophy" tint="#2EA84F" bg="#E9F8EE" />
-          <StatCard value={`${s.lost}`} label="Not Selected" icon="close-circle" tint="#E11D26" bg="#FDECEC" />
+          <StatCard value={`${s.lost}`} label="Not Selected" icon="close-circle" tint="#8C1C2B" bg="#F6E7E9" />
         </View>
 
         <View style={{ marginTop: 24 }}>

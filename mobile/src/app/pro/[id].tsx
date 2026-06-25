@@ -138,7 +138,7 @@ export default function ProProfileScreen() {
           <Card style={styles.availCard}>
             <Ionicons name="time-outline" size={18} color={Brand.body} />
             <Text style={styles.availText}>
-              {respMins != null ? `Usually responds in ~${respMins} min` : 'New to Trini Tradesman'}
+              {respMins != null ? `Usually responds in ~${respMins} min` : 'New to Trini Side Hustle'}
             </Text>
           </Card>
         </View>
@@ -262,7 +262,7 @@ export default function ProProfileScreen() {
             <View style={[styles.trustRow, styles.divider]}>
               <Ionicons name={pro.verified ? 'shield-checkmark' : 'time-outline'} size={18} color={pro.verified ? Brand.green : Brand.muted} />
               <Text style={styles.trustItemText}>
-                {pro.verified ? 'Identity & trade verified by Trini Tradesman' : 'Verification pending'}
+                {pro.verified ? 'Identity & trade verified by Trini Side Hustle' : 'Verification pending'}
               </Text>
             </View>
             {stats?.memberSince != null && (
@@ -279,7 +279,7 @@ export default function ProProfileScreen() {
             )}
             <View style={styles.trustRow}>
               <Ionicons name="checkmark-done" size={18} color={Brand.body} />
-              <Text style={styles.trustItemText}>{stats?.hiredCount ?? 0} job{(stats?.hiredCount ?? 0) === 1 ? '' : 's'} hired via Trini Tradesman</Text>
+              <Text style={styles.trustItemText}>{stats?.hiredCount ?? 0} job{(stats?.hiredCount ?? 0) === 1 ? '' : 's'} hired via Trini Side Hustle</Text>
             </View>
           </Card>
         </View>

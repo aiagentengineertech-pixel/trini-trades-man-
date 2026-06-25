@@ -1,13 +1,13 @@
 {
-  "name": "Trini Tradesman",
-  "short_name": "Trini Tradesman",
-  "description": "Find trusted local tradesmen in Trinidad & Tobago. Post a job, compare quotes, hire with confidence.",
+  "name": "Trini Side Hustle",
+  "short_name": "Trini Side Hustle",
+  "description": "Trini Side Hustle — post jobs, find jobs, and manage jobs across Trinidad & Tobago.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#E11D26",
+  "theme_color": "#8C1C2B",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

@@ -1,5 +1,5 @@
 // ============================================================================
-// Legal & policy content for Trini Tradesman.
+// Legal & policy content for Trini Side Hustle.
 //
 // IMPORTANT: These documents are tailored starting templates, NOT legal advice.
 // Have a qualified Trinidad & Tobago attorney review and adapt them before you
@@ -8,9 +8,9 @@
 // ============================================================================
 
 export const LEGAL_INFO = {
-  appName: 'Trini Tradesman',
+  appName: 'Trini Side Hustle',
   // TODO: replace with your registered business / legal entity name.
-  company: 'Trini Tradesman',
+  company: 'Trini Side Hustle',
   // TODO: replace with your real support / privacy contact address.
   email: 'support@trinitradesman.com',
   website: 'www.trinitradesman.com',
@@ -216,7 +216,7 @@ You can clear or block cookies in your browser settings. Blocking essential cook
 Questions about this policy: ${I.email}.`;
 
 export const LEGAL_DOCS: LegalDoc[] = [
-  { key: 'terms', title: 'Terms of Service', summary: 'The rules for using Trini Tradesman', updated: I.effectiveDate, body: TERMS },
+  { key: 'terms', title: 'Terms of Service', summary: 'The rules for using Trini Side Hustle', updated: I.effectiveDate, body: TERMS },
   { key: 'privacy', title: 'Privacy Policy', summary: 'What data we collect and how we use it', updated: I.effectiveDate, body: PRIVACY },
   { key: 'acceptable-use', title: 'Acceptable Use Policy', summary: "What's allowed and what isn't", updated: I.effectiveDate, body: ACCEPTABLE_USE },
   { key: 'refunds', title: 'Refund & Cancellation Policy', summary: 'How payments, holds and refunds work', updated: I.effectiveDate, body: REFUNDS },

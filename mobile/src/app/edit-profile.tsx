@@ -53,7 +53,7 @@ export default function EditProfileScreen() {
   }, [myProfile]);
 
   // Preload a tradesman's current trade + bio so re-saving doesn't wipe them.
-  const DEFAULT_BIO = 'Trusted local tradesman on Trini Tradesman.';
+  const DEFAULT_BIO = 'Trusted local tradesman on Trini Side Hustle.';
   useEffect(() => {
     if (!pro) return;
     setTrades((cur) => (cur.length ? cur : (pro.services?.length ? pro.services : [])));
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   avatarImg: { width: 96, height: 96 },
   photoBtn: { position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
   changePhoto: { alignSelf: 'center', color: Brand.red, fontWeight: '700', fontSize: 13, marginTop: 10, marginBottom: 12 },
-  uploadErrBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#FDECEC', borderRadius: 10, padding: 10, marginBottom: 8 },
+  uploadErrBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#F6E7E9', borderRadius: 10, padding: 10, marginBottom: 8 },
   uploadErrText: { flex: 1, color: Brand.red, fontSize: 12.5, lineHeight: 17 },
 
   field: { marginTop: 16 },

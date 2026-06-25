@@ -1,4 +1,4 @@
-// Supabase client for Trini Tradesman.
+// Supabase client for Trini Side Hustle.
 // react-native-url-polyfill must be imported before the client is created —
 // Supabase relies on the WHATWG URL API which React Native lacks by default.
 import 'react-native-url-polyfill/auto';

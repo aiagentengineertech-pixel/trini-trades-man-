@@ -1,8 +1,8 @@
-// Trini Tradesman brand palette — derived from the app design.
+// Trini Side Hustle brand palette — maroon red.
 export const Brand = {
-  red: '#E11D26',        // primary
-  redDark: '#B5151C',
-  redSoft: '#FDECEC',    // tints / banners
+  red: '#8C1C2B',        // primary (maroon red)
+  redDark: '#6E1320',
+  redSoft: '#F6E7E9',    // tints / banners
   ink: '#0E1116',        // near-black headings
   body: '#3A3F47',       // body text
   muted: '#7A8089',      // secondary text

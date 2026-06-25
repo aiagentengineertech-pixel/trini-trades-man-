@@ -57,9 +57,9 @@ export default function LoginScreen() {
             </View>
           </View>
           <Text style={styles.brand}>
-            TRINI <Text style={{ color: Brand.ink }}>TRADESMAN</Text>
+            TRINI SIDE <Text style={{ color: Brand.ink }}>HUSTLE</Text>
           </Text>
-          <Text style={styles.tag}>FIX IT. TRUST IT.</Text>
+          <Text style={styles.tag}>POST JOBS · FIND JOBS · MANAGE JOBS</Text>
 
           <Text style={styles.title}>
             {mode === 'signin' ? 'Welcome back' : 'Create your account'}

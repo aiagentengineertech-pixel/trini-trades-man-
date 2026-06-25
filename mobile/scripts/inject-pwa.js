@@ -15,14 +15,14 @@ let html = fs.readFileSync(file, 'utf8');
 
 const tags = [
   '<link rel="manifest" href="/manifest.json" />',
-  '<meta name="theme-color" content="#E11D26" />',
+  '<meta name="theme-color" content="#8C1C2B" />',
   '<link rel="apple-touch-icon" href="/apple-touch-icon.png" />',
   '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />',
   '<meta name="mobile-web-app-capable" content="yes" />',
   '<meta name="apple-mobile-web-app-capable" content="yes" />',
   '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
-  '<meta name="apple-mobile-web-app-title" content="Trini Tradesman" />',
-  '<meta name="description" content="Find trusted local tradesmen in Trinidad & Tobago." />',
+  '<meta name="apple-mobile-web-app-title" content="Trini Side Hustle" />',
+  '<meta name="description" content="Trini Side Hustle — post jobs, find jobs, manage jobs in Trinidad & Tobago." />',
 ].map((t) => '    ' + t).join('\n');
 
 // iOS standalone PWAs don't fill the screen with height:100% (the app ends

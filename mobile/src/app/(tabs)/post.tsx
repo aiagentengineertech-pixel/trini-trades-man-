@@ -31,7 +31,7 @@ export default function PostTab() {
 
 const HUB: { icon: IconName; label: string; desc: string; route: Href; tint: string; bg: string; gate?: string }[] = [
   { icon: 'cash-outline', label: 'Earnings', desc: 'Revenue & payouts', route: '/earnings', tint: '#2EA84F', bg: '#E9F8EE' },
-  { icon: 'wallet-outline', label: 'Wallet', desc: 'Balance & withdraw', route: '/wallet', tint: '#E11D26', bg: '#FDECEC' },
+  { icon: 'wallet-outline', label: 'Wallet', desc: 'Balance & withdraw', route: '/wallet', tint: '#8C1C2B', bg: '#F6E7E9' },
   { icon: 'people-circle-outline', label: 'Clients', desc: 'Your client hub', route: '/clients', tint: '#16B1C9', bg: '#E6F8FB', gate: 'crm' },
   { icon: 'document-text-outline', label: 'Quotes & Invoices', desc: 'Estimates & billing', route: '/quotes', tint: '#2F6FED', bg: '#EAF1FE', gate: 'invoices' },
   { icon: 'briefcase-outline', label: 'Jobs', desc: 'Active & completed', route: '/jobs-manage', tint: '#E8852B', bg: '#FDF1E6' },
@@ -57,7 +57,7 @@ function BusinessHub() {
         <Pressable onPress={() => router.push('/earnings')}>
           <Card style={styles.snapshot}>
             <View style={styles.snapHeader}>
-              <Text style={styles.snapLabel}>Earned through Trini Tradesman</Text>
+              <Text style={styles.snapLabel}>Earned through Trini Side Hustle</Text>
               <View style={styles.snapTrend}>
                 <Ionicons name="checkmark-done" size={14} color="#fff" />
                 <Text style={styles.snapTrendText}>{s.completedJobs} done</Text>

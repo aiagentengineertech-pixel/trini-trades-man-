@@ -310,7 +310,7 @@ function rowToPro(p: any): Pro {
     photoUrl: p.photo_url ?? null,
     bannerUrl: p.banner_url ?? null,
     yearsExperience: info?.years_experience ?? null,
-    bio: info?.bio || 'Trusted local tradesman on Trini Tradesman.',
+    bio: info?.bio || 'Trusted local tradesman on Trini Side Hustle.',
     services: tt.map((x: any) => x.trades?.name).filter(Boolean),
     thumbs,
     reviews: [],

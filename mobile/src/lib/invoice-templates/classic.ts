@@ -63,6 +63,6 @@ export function render(s: InvoiceSettings, d: InvoiceDraft): string {
     </div>
     ${signOff}
     ${s.paymentTerms || d.notes ? `<div class="terms">${s.paymentTerms ? `<strong>Payment terms:</strong> ${esc(s.paymentTerms)}<br/>` : ''}${d.notes ? multiline(d.notes) : ''}</div>` : ''}
-    <div class="footer">${esc(s.footerNote || `${biz} · Generated with Trini Tradesman`)}</div>
+    <div class="footer">${esc(s.footerNote || `${biz} · Generated with Trini Side Hustle`)}</div>
   </body></html>`;
 }

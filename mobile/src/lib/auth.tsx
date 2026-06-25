@@ -1,4 +1,4 @@
-// Auth context for Trini Tradesman — backed by Supabase. Login is required.
+// Auth context for Trini Side Hustle — backed by Supabase. Login is required.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session } from '@supabase/supabase-js';
 import {
