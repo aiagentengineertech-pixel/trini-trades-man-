@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -51,15 +52,11 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* Logo */}
-          <View style={styles.logoRow}>
-            <View style={styles.logoMark}>
-              <Ionicons name="hammer" size={26} color="#fff" />
-            </View>
-          </View>
-          <Text style={styles.brand}>
-            TRINI SIDE <Text style={{ color: Brand.ink }}>HUSTLE</Text>
-          </Text>
-          <Text style={styles.tag}>POST JOBS · FIND JOBS · MANAGE JOBS</Text>
+          <Image
+            source={require('../../assets/images/logo-lockup.png')}
+            style={styles.logo}
+            contentFit="contain"
+          />
 
           <Text style={styles.title}>
             {mode === 'signin' ? 'Welcome back' : 'Create your account'}
@@ -149,17 +146,7 @@ function Field({
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: Brand.surface },
   content: { padding: 24, paddingTop: 12, flexGrow: 1, justifyContent: 'center' },
-  logoRow: { alignItems: 'center', marginBottom: 14 },
-  logoMark: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    backgroundColor: Brand.red,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brand: { textAlign: 'center', fontSize: 22, fontWeight: '800', color: Brand.red, letterSpacing: 1 },
-  tag: { textAlign: 'center', fontSize: 10, fontWeight: '700', color: Brand.muted, letterSpacing: 2, marginTop: 2 },
+  logo: { width: 270, height: 270 / 2.744, alignSelf: 'center', marginBottom: 6 },
   title: { fontSize: 22, fontWeight: '800', color: Brand.ink, textAlign: 'center', marginTop: 28, marginBottom: 18 },
 
   toggle: {
