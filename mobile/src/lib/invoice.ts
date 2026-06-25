@@ -13,6 +13,7 @@ import { render as monarch } from './invoice-templates/monarch';
 import { render as nexora } from './invoice-templates/nexora';
 import { render as noir } from './invoice-templates/noir';
 import { render as trini } from './invoice-templates/trini';
+import { render as woodwork } from './invoice-templates/woodwork';
 
 export type { InvoiceDraft, InvoiceLine } from './invoice-templates/shared';
 
@@ -27,6 +28,7 @@ export interface TemplateMeta {
 }
 
 export const INVOICE_TEMPLATES: TemplateMeta[] = [
+  { key: 'woodwork', name: 'Woodwork', blurb: 'Rustic illustrated — carpenters', render: woodwork },
   { key: 'trini', name: 'Trinidad', blurb: 'Red & black flag — local & bold', render: trini },
   { key: 'classic', name: 'Classic', blurb: 'Clean branded, uses your colour', render: classic },
   { key: 'corporate', name: 'Corporate', blurb: 'Blue, professional', render: corporate },
