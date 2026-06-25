@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
-import { clearWriteError, fetchInvoiceSettings, getLastWriteError, saveInvoiceSettings, uploadImage } from '@/lib/db';
+import { clearWriteError, fetchInvoiceSettings, getLastUploadError, getLastWriteError, saveInvoiceSettings, uploadImage } from '@/lib/db';
 import { INVOICE_TEMPLATES } from '@/lib/invoice';
 import { pickImage } from '@/lib/images';
 import type { InvoiceSettings } from '@/lib/store-types';
@@ -38,13 +38,16 @@ export default function InvoiceSettingsScreen() {
   const set = (k: keyof InvoiceSettings, v: string | null) => { setS((p) => ({ ...p, [k]: v })); setSaved(false); };
 
   const chooseLogo = async () => {
+    setSaveErr(null);
     const uri = await pickImage();
     if (!uri || !userId) return;
     set('logoUrl', uri);
     setBusy(true);
-    const url = await uploadImage('uploads', `logos/${userId}.png`, uri);
+    // Unique filename so a new logo gets a fresh URL (no stale CDN cache).
+    const url = await uploadImage('uploads', `logos/${userId}-${Date.now()}.png`, uri);
     setBusy(false);
-    if (url) set('logoUrl', url + '?t=' + Date.now());
+    if (url) set('logoUrl', url);
+    else setSaveErr(getLastUploadError() ?? 'Logo upload failed.');
   };
 
   const premium = usePremium();
