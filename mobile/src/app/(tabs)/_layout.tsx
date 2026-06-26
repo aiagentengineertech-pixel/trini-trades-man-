@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Ambient, Glass } from '@/components/ui';
+import { Glass } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 
@@ -19,12 +19,9 @@ export default function TabsLayout() {
   const bottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === 'web' ? 10 : 0);
 
   return (
-    <View style={{ flex: 1 }}>
-      <Ambient />
-      <Tabs
+    <Tabs
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: 'transparent' },
         tabBarActiveTintColor: Brand.red,
         tabBarInactiveTintColor: '#9AA0A6',
         tabBarStyle: {
@@ -93,7 +90,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
       />
-      </Tabs>
-    </View>
+    </Tabs>
   );
 }

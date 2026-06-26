@@ -299,7 +299,7 @@ function CustomerPost() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: 'transparent' },
+  flex: { flex: 1, backgroundColor: Brand.surface },
   center: { alignItems: 'center', justifyContent: 'center', padding: 32 },
   content: { padding: 20, paddingBottom: 100 },
   h1: { fontSize: 26, fontWeight: '800', color: Brand.ink },

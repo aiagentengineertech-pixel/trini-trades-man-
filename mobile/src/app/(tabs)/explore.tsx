@@ -113,7 +113,7 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: 'transparent' },
+  flex: { flex: 1, backgroundColor: Brand.surface },
   headerWrap: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
   h1: { fontSize: 26, fontWeight: '800', color: Brand.ink, marginBottom: 14 },
   searchField: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Brand.surfaceAlt, borderRadius: 12, paddingHorizontal: 14 },
