@@ -48,7 +48,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.brandRow}>
-            <Image source={require('../../../assets/images/logo-trini.png')} style={styles.headerLogo} contentFit="contain" />
+            <Image source={require('../../../assets/images/logo-trini.png')} style={styles.headerLogo} contentFit="contain" contentPosition="left" />
           </View>
           <View style={styles.headerActions}>
             <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
@@ -198,8 +198,8 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 100 },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerLogo: { width: 178, height: 46 },
+  brandRow: { flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: 12 },
+  headerLogo: { width: '100%', height: 48 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   badge: { position: 'absolute', top: -6, right: -6, backgroundColor: Brand.red, minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
