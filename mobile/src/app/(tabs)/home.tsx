@@ -47,15 +47,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.brandRow}>
-            <Image source={require('../../../assets/images/icon.png')} style={styles.logoMark} contentFit="cover" />
-            <View style={styles.brandTextWrap}>
-              <Text style={styles.brandName}>
-                TRINI SIDE <Text style={styles.brandNameAlt}>HUSTLE</Text>
-              </Text>
-              <Text style={styles.brandTag}>
-                FIND WORK. HIRE LOCAL. <Text style={{ color: Brand.red }}>GET PAID.</Text>
-              </Text>
-            </View>
+            <Image source={require('../../../assets/images/logo-trini.png')} style={styles.headerLogo} contentFit="contain" />
           </View>
           <View style={styles.headerActions}>
             <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
@@ -206,11 +198,7 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoMark: { width: 46, height: 46, borderRadius: 13 },
-  brandTextWrap: { flexShrink: 1 },
-  brandName: { fontSize: 17, fontWeight: '800', color: Brand.red, letterSpacing: 0.3, lineHeight: 20 },
-  brandNameAlt: { color: Brand.ink },
-  brandTag: { fontSize: 9, fontWeight: '700', color: Brand.muted, letterSpacing: 1, marginTop: 2 },
+  headerLogo: { width: 132, height: 54 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   badge: { position: 'absolute', top: -6, right: -6, backgroundColor: Brand.red, minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
