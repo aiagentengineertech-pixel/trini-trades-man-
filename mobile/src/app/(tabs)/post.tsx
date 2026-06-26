@@ -17,7 +17,7 @@ import { Image } from 'expo-image';
 import type { Href } from 'expo-router';
 
 import { AreaPicker } from '@/components/AreaPicker';
-import { Card, SectionTitle, type IconName } from '@/components/ui';
+import { Ambient, Card, SectionTitle, type IconName } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { pickImages } from '@/lib/images';
@@ -49,6 +49,7 @@ function BusinessHub() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         <Text style={styles.hubTitle}>Dashboard</Text>
         <Text style={styles.subtitle}>Manage your work, earnings and growth.</Text>
@@ -185,6 +186,7 @@ function CustomerPost() {
   if (postedId) {
     return (
       <SafeAreaView style={[styles.flex, styles.center]} edges={['top']}>
+      <Ambient />
         <View style={styles.successIcon}>
           <Ionicons name="checkmark" size={44} color="#fff" />
         </View>
@@ -212,6 +214,7 @@ function CustomerPost() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.h1}>{invitePname ? 'Invite to Quote' : 'Post a Job'}</Text>

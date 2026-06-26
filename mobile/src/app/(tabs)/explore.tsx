@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ProAvatar } from '@/components/ui';
+import { Ambient, ProAvatar } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useStore } from '@/lib/store';
 
@@ -40,6 +40,7 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.headerWrap}>
         <Text style={styles.h1}>Find a Pro</Text>
         <View style={styles.searchField}>

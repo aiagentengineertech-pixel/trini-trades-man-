@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card } from '@/components/ui';
+import { Ambient, Card } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { useStore } from '@/lib/store';
@@ -50,6 +50,7 @@ function CustomerJobs() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.headerWrap}>
         <Text style={styles.h1}>My Jobs</Text>
         <Text style={styles.sub}>Track your posted jobs, quotes and payments.</Text>
@@ -192,6 +193,7 @@ function TradesmanJobs() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.headerWrap}>
         <Text style={styles.h1}>Jobs to Bid On</Text>
         <Text style={styles.sub}>Browse open jobs posted near you and send a quote.</Text>
