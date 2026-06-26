@@ -260,12 +260,12 @@ const styles = StyleSheet.create({
   headerWrap: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
   h1: { fontSize: 26, fontWeight: '800', color: Brand.ink },
   sub: { fontSize: 13, color: Brand.muted, marginTop: 4, marginBottom: 14 },
-  searchField: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Brand.surfaceAlt, borderRadius: 12, paddingHorizontal: 14 },
+  searchField: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', borderRadius: 12, paddingHorizontal: 14 },
   searchInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: Brand.ink },
 
   // Customer snapshot
   statsRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, marginBottom: 14 },
-  statCard: { flex: 1, backgroundColor: Brand.surface, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 10, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', shadowColor: '#0E1116', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+  statCard: { flex: 1, backgroundColor: 'rgba(255,255,255,0.62)', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 10, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', shadowColor: '#0B1220', shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   statValue: { fontSize: 22, fontWeight: '800', color: Brand.ink, letterSpacing: -0.5 },
   statLabel: { fontSize: 11.5, color: Brand.muted, marginTop: 4, fontWeight: '600' },
 
@@ -273,11 +273,11 @@ const styles = StyleSheet.create({
   actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: 13 },
   actionPrimary: { backgroundColor: Brand.red },
   actionPrimaryText: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  actionGhost: { backgroundColor: Brand.surfaceAlt },
+  actionGhost: { backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)' },
   actionGhostText: { color: Brand.ink, fontWeight: '700', fontSize: 14 },
 
   chips: { paddingHorizontal: 20, gap: 8, paddingVertical: 12 },
-  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: Brand.surfaceAlt },
+  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)' },
   chipActive: { backgroundColor: Brand.red },
   chipText: { fontSize: 13, fontWeight: '600', color: Brand.body },
   chipTextActive: { color: '#fff' },
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   count: { paddingHorizontal: 20, marginTop: 16, marginBottom: 10, fontSize: 13, color: Brand.muted, fontWeight: '600' },
 
   // Customer job card
-  card: { borderRadius: 16, borderWidth: 1, borderColor: Brand.line, padding: 14 },
+  card: { borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', padding: 14, backgroundColor: 'rgba(255,255,255,0.62)', shadowColor: '#0B1220', shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
   footerStrong: { fontSize: 13, fontWeight: '700', color: Brand.ink },
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 11, fontWeight: '700' },
 
   // Tradesman bid card
-  proCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1, borderColor: Brand.line },
+  proCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', backgroundColor: 'rgba(255,255,255,0.62)', shadowColor: '#0B1220', shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   icon: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 15, fontWeight: '700', color: Brand.ink },
   meta: { fontSize: 12, color: Brand.muted, marginTop: 2 },
