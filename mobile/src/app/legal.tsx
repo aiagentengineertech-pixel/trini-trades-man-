@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ambient } from '@/components/ui';
 
 import { Brand } from '@/constants/brand';
 import { LEGAL_DOCS, LEGAL_INFO } from '@/constants/legal';
@@ -9,6 +10,7 @@ import { LEGAL_DOCS, LEGAL_INFO } from '@/constants/legal';
 export default function LegalHubScreen() {
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color={Brand.ink} />

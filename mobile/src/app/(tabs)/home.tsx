@@ -28,6 +28,7 @@ const TRUST = [
 
 export default function HomeScreen() {
   const { pros, openJobs, distanceKm, distanceLabel, notifications, myProfile } = useStore();
+  const isTradesman = myProfile?.role === 'tradesman';
   const jobs = openJobs();
   const unread = notifications.filter((n) => n.unread).length;
   const nearbyPros = [...pros].sort((a, b) => {
@@ -72,16 +73,16 @@ export default function HomeScreen() {
         </Pressable>
 
         {/* Hero */}
-        <Text style={styles.hero}>Get it <Text style={{ color: Brand.red }}>Done.</Text></Text>
+        <Text style={styles.hero}>Post it {'&'} <Text style={{ color: Brand.red }}>See Nah.</Text></Text>
         <Text style={styles.heroSub}>Quality work. Fair prices. Peace of mind.</Text>
 
         {/* Search */}
         <View style={styles.searchWrap}>
           <View style={styles.searchInputWrap}>
             <Ionicons name="search" size={20} color={Brand.muted} />
-            <TextInput placeholder="What service do you need?" placeholderTextColor={Brand.muted} style={styles.searchInput} />
+            <TextInput placeholder={isTradesman ? 'Search jobs…' : 'What service do you need?'} placeholderTextColor={Brand.muted} style={styles.searchInput} />
           </View>
-          <Pressable style={styles.searchBtn} onPress={() => router.push('/explore')}>
+          <Pressable style={styles.searchBtn} onPress={() => router.push(isTradesman ? '/jobs' : '/explore')}>
             <Ionicons name="search" size={18} color="#fff" />
             <Text style={styles.searchBtnText}>Search</Text>
           </Pressable>
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerLogo: { width: 132, height: 54 },
+  headerLogo: { width: 178, height: 46 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   badge: { position: 'absolute', top: -6, right: -6, backgroundColor: Brand.red, minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
@@ -249,7 +250,7 @@ const styles = StyleSheet.create({
   hireBtn: { backgroundColor: Brand.red, marginHorizontal: 12, marginTop: 12, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   hireBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20, marginTop: 28, padding: 16, borderRadius: 18, backgroundColor: Brand.redSoft },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20, marginTop: 28, padding: 16, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', shadowColor: '#0B1220', shadowOpacity: 0.10, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
   bannerIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
   bannerTitle: { fontSize: 15, fontWeight: '800', color: Brand.ink },
   bannerSub: { fontSize: 12, color: Brand.body, marginTop: 2 },

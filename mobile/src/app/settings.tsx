@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Badge, Card, ListRow, SectionTitle, Segmented, ToggleRow } from '@/components/ui';
+import { Ambient, Badge, Card, ListRow, SectionTitle, Segmented, ToggleRow } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { ensureNotificationPermission, notifyLocal } from '@/lib/notifications';
@@ -20,6 +20,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color={Brand.ink} />

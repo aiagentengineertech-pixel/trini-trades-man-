@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CoverageMap } from '@/components/CoverageMap';
 import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
-import { Card, SectionTitle } from '@/components/ui';
+import { Ambient, Card, SectionTitle } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import {
@@ -59,11 +59,13 @@ export default function ClientDetailScreen() {
   if (!premium) return <PremiumGateScreen title="Client" feature="The Client Hub (CRM)" />;
   if (!crmOn) return <FeatureGateScreen title="Client" feature="The Client Hub" />;
   if (!client) {
-    return <SafeAreaView style={styles.flex}><Text style={{ padding: 24 }}>Client not found.</Text></SafeAreaView>;
+    return <SafeAreaView style={styles.flex}>
+      <Ambient /><Text style={{ padding: 24 }}>Client not found.</Text></SafeAreaView>;
   }
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
         <Text style={styles.title} numberOfLines={1}>{client.name}</Text>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card, Segmented } from '@/components/ui';
+import { Ambient, Card, Segmented } from '@/components/ui';
 import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -76,6 +76,7 @@ export default function InvoiceBuilderScreen() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
         <Text style={styles.title}>New {docTab}</Text>
@@ -195,6 +196,7 @@ function CatalogPicker({ catalog, onPick, onClose, onManage }: { catalog: Catalo
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <SafeAreaView style={styles.sheet} edges={['bottom']}>
+      <Ambient />
           <View style={styles.handle} />
           <View style={styles.sheetHead}>
             <Text style={styles.sheetTitle}>Add from price book</Text>

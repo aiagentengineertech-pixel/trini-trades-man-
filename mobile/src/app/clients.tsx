@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AreaPicker } from '@/components/AreaPicker';
 import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
-import { Card } from '@/components/ui';
+import { Ambient, Card } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { fetchClients, saveClient } from '@/lib/db';
@@ -31,6 +31,7 @@ export default function ClientsScreen() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
         <Text style={styles.title}>Clients</Text>
@@ -94,6 +95,7 @@ function ClientEditor({ userId, onClose, onSaved }: { userId: string; onClose: (
       <View style={styles.backdrop}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <SafeAreaView style={styles.sheet} edges={['bottom']}>
+      <Ambient />
             <View style={styles.handle} />
             <View style={styles.sheetHead}>
               <Text style={styles.sheetTitle}>New client</Text>

@@ -49,6 +49,7 @@ export default function ProProfileScreen() {
     const loading = !cached && fetched === undefined;
     return (
       <SafeAreaView style={styles.flex}>
+      <Ambient />
         <Text style={{ padding: 24 }}>{loading ? 'Loading…' : 'Tradesman not found.'}</Text>
       </SafeAreaView>
     );
@@ -77,6 +78,7 @@ export default function ProProfileScreen() {
     <View style={styles.root}>
       <Ambient />
       <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       {/* Top bar */}
       <View style={styles.topbar}>
         <Pressable style={styles.circleBtn} onPress={() => router.back()} hitSlop={8}>
@@ -341,7 +343,7 @@ const styles = StyleSheet.create({
   circleBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   section: { paddingHorizontal: 20, marginTop: 22 },
 
-  banner: { width: '100%', height: 140, backgroundColor: Brand.surfaceAlt, marginBottom: 8 },
+  banner: { width: '100%', height: 140, backgroundColor: 'transparent', marginBottom: 8 },
   header: { alignItems: 'center', paddingTop: 8 },
   avatar: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

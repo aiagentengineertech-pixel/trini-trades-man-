@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ambient } from '@/components/ui';
 
 import { AreaPicker } from '@/components/AreaPicker';
 import { Brand } from '@/constants/brand';
@@ -125,6 +126,7 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color={Brand.ink} />
@@ -276,7 +278,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '700', color: Brand.ink },
   content: { padding: 20, paddingBottom: 40 },
 
-  bannerWrap: { height: 120, borderRadius: 16, backgroundColor: Brand.surfaceAlt, overflow: 'hidden', marginBottom: 8, alignItems: 'center', justifyContent: 'center' },
+  bannerWrap: { height: 120, borderRadius: 16, backgroundColor: 'transparent', borderWidth: 1, borderColor: Brand.line, borderStyle: 'dashed', overflow: 'hidden', marginBottom: 8, alignItems: 'center', justifyContent: 'center' },
   bannerImg: { width: '100%', height: '100%' },
   bannerEmpty: { alignItems: 'center', gap: 6, paddingHorizontal: 24 },
   bannerHint: { fontSize: 12, color: Brand.muted, textAlign: 'center' },

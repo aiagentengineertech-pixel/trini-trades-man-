@@ -5,7 +5,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FeatureGateScreen, PremiumGateScreen, useFeature, usePremium } from '@/components/PremiumGate';
-import { Card } from '@/components/ui';
+import { Ambient, Card } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
 import { convertToInvoice, fetchClient, fetchInvoiceSettings, fetchInvoiceWithItems, markInvoicePaid, notifyUser, signOffDocument } from '@/lib/db';
@@ -37,7 +37,8 @@ export default function DocDetailScreen() {
 
   if (!premium) return <PremiumGateScreen title="Document" feature="Documents & estimates" />;
   if (!invoicesOn) return <FeatureGateScreen title="Document" feature="Invoicing" />;
-  if (!doc) return <SafeAreaView style={styles.flex}><Text style={{ padding: 24 }}>Document not found.</Text></SafeAreaView>;
+  if (!doc) return <SafeAreaView style={styles.flex}>
+      <Ambient /><Text style={{ padding: 24 }}>Document not found.</Text></SafeAreaView>;
 
   const totals = invoiceTotals({ number: doc.number, date: '', customerName: doc.customerName, lines: doc.lines, taxPct: doc.taxPct });
   const isEstimate = doc.docType === 'estimate' || doc.docType === 'quote';
@@ -89,6 +90,7 @@ export default function DocDetailScreen() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
         <Text style={styles.title}>{LABEL[doc.docType]}</Text>

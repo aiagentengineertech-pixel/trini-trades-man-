@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ambient } from '@/components/ui';
 
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
@@ -50,6 +51,7 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={10}>

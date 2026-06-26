@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ambient } from '@/components/ui';
 
 import { PremiumGateScreen, usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
@@ -75,6 +76,7 @@ export default function InvoiceSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
         <Text style={styles.title}>Invoice Branding</Text>

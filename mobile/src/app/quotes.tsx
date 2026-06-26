@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card, Segmented } from '@/components/ui';
+import { Ambient, Card, Segmented } from '@/components/ui';
 import { usePremium } from '@/components/PremiumGate';
 import { Brand } from '@/constants/brand';
 import { useStore } from '@/lib/store';
@@ -26,6 +26,7 @@ export default function QuotesScreen() {
 
   return (
     <SafeAreaView style={styles.flex} edges={['top']}>
+      <Ambient />
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10}><Ionicons name="chevron-back" size={26} color={Brand.ink} /></Pressable>
         <Text style={styles.title}>Quotes</Text>
