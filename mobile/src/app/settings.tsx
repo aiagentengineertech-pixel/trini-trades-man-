@@ -1,19 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Ambient, Badge, Card, ListRow, SectionTitle, Segmented, ToggleRow } from '@/components/ui';
+import { Ambient, Badge, Card, ListRow, Progress, SectionTitle, Segmented, ToggleRow } from '@/components/ui';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/lib/auth';
+import { fetchStorageUsed, STORAGE_LIMIT_BYTES } from '@/lib/db';
 import { ensureNotificationPermission, notifyLocal } from '@/lib/notifications';
+
+const fmtBytes = (n: number) =>
+  n >= 1073741824 ? `${(n / 1073741824).toFixed(2)} GB` : n >= 1048576 ? `${Math.round(n / 1048576)} MB` : `${Math.max(0, Math.round(n / 1024))} KB`;
 
 export default function SettingsScreen() {
   const { role, setRole, signOut } = useAuth();
   const [notif, setNotif] = useState({ push: true, messages: true, jobs: true, promos: false, emergency: true, payments: true });
   const [twoFa, setTwoFa] = useState(false);
   const [confirm, setConfirm] = useState<null | { title: string; message: string; danger: boolean; action: () => void }>(null);
+  const [storageUsed, setStorageUsed] = useState<number | null>(null);
+
+  useEffect(() => { fetchStorageUsed().then(setStorageUsed); }, []);
 
   const set = (k: keyof typeof notif) => (v: boolean) => setNotif((p) => ({ ...p, [k]: v }));
   const togglePush = (v: boolean) => { set('push')(v); if (v) ensureNotificationPermission(); };
@@ -62,6 +69,18 @@ export default function SettingsScreen() {
           <ToggleRow icon="warning-outline" label="Emergency alerts" value={notif.emergency} onValueChange={set('emergency')} />
           <ToggleRow icon="cash-outline" label="Payment updates" value={notif.payments} onValueChange={set('payments')} />
           <ListRow icon="send-outline" label="Send a test notification" onPress={() => notifyLocal('Trini Side Hustle', 'Notifications are working 🔔')} last />
+        </Card>
+
+        {/* Storage */}
+        <View style={styles.gap} />
+        <SectionTitle title="Storage" />
+        <Card style={{ padding: 16 }}>
+          <View style={styles.storageRow}>
+            <Text style={styles.storageLabel}>Photos &amp; receipts</Text>
+            <Text style={styles.storageVal}>{storageUsed == null ? '—' : `${fmtBytes(storageUsed)} of 1 GB`}</Text>
+          </View>
+          <Progress percent={storageUsed == null ? 0 : (storageUsed / STORAGE_LIMIT_BYTES) * 100} />
+          <Text style={styles.storageNote}>Your free plan includes 1 GB for logos, banners, portfolio and expense receipts. Need more space? It's available on trinisidehustle.com.</Text>
         </Card>
 
         {/* Support */}
@@ -118,6 +137,10 @@ const styles = StyleSheet.create({
   gap: { height: 22 },
   cardTight: { paddingVertical: 4 },
   version: { textAlign: 'center', color: Brand.muted, fontSize: 12, marginTop: 28 },
+  storageRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  storageLabel: { fontSize: 14, fontWeight: '600', color: Brand.ink },
+  storageVal: { fontSize: 13, fontWeight: '700', color: Brand.body },
+  storageNote: { fontSize: 12, color: Brand.muted, marginTop: 10, lineHeight: 17 },
 
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 32 },
   dialog: { backgroundColor: '#fff', borderRadius: 20, padding: 22, width: '100%', maxWidth: 340 },

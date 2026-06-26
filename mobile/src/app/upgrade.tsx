@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ambient, Card, type IconName } from '@/components/ui';
@@ -51,13 +51,24 @@ export default function UpgradeScreen() {
             <Ionicons name="checkmark-circle" size={20} color={Brand.green} />
             <Text style={styles.activeText}>You're on Premium. All features unlocked.</Text>
           </View>
-        ) : (
+        ) : Platform.OS === 'web' ? (
+          // Web is where Premium is sold (no Apple involvement).
           <>
             <Pressable style={styles.cta} disabled>
               <Text style={styles.ctaText}>Subscribe — TT$99 / month</Text>
             </Pressable>
-            <Text style={styles.note}>Secure in-app billing via WiPay is coming soon. Pricing shown is indicative.</Text>
+            <Text style={styles.note}>Secure web billing is coming soon. Pricing shown is indicative.</Text>
           </>
+        ) : (
+          // Native (App Store): informational only — no purchase button or link,
+          // to comply with Apple's external-purchase (anti-steering) rules.
+          <View style={styles.webNote}>
+            <Ionicons name="globe-outline" size={20} color={Brand.red} />
+            <Text style={styles.webNoteText}>
+              Premium is part of a paid plan available on our website, trinisidehustle.com.
+              Once you subscribe there, it unlocks here automatically.
+            </Text>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -86,4 +97,6 @@ const styles = StyleSheet.create({
 
   activeCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F1FBF5', borderRadius: 14, padding: 16, marginTop: 24 },
   activeText: { flex: 1, fontSize: 14, color: Brand.body, fontWeight: '700' },
+  webNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: Brand.redSoft, borderRadius: 14, padding: 16, marginTop: 24 },
+  webNoteText: { flex: 1, fontSize: 13.5, color: Brand.body, lineHeight: 19 },
 });

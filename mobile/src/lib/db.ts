@@ -945,6 +945,22 @@ export function getLastUploadError(): string | null {
   return _lastUploadError;
 }
 
+// Free-tier storage cap. The native app is the "light" tier; more storage is a
+// web-sold upgrade, so we hard-cap total uploaded bytes per user.
+export const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024; // 1 GB
+
+/** Total bytes this user has uploaded. Returns null if unknown (fail open). */
+export async function fetchStorageUsed(): Promise<number | null> {
+  try {
+    const { data, error } = await supabase.rpc('get_storage_used');
+    if (error) return null;
+    const n = typeof data === 'number' ? data : Number(data);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function uploadImage(bucket: string, path: string, uri: string): Promise<string | null> {
   _lastUploadError = null;
   try {
@@ -960,6 +976,13 @@ export async function uploadImage(bucket: string, path: string, uri: string): Pr
       // file as base64 and upload a real ArrayBuffer instead.
       const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
       body = decodeBase64(base64);
+    }
+    // Enforce the free-tier storage cap (fail open if usage is unknown).
+    const size = (body as any).byteLength ?? (body as any).size ?? 0;
+    const used = await fetchStorageUsed();
+    if (used != null && used + size > STORAGE_LIMIT_BYTES) {
+      _lastUploadError = 'Storage full — your free 1 GB is used up. Remove some photos/receipts, or get more space on trinisidehustle.com.';
+      return null;
     }
     const { error } = await supabase.storage.from(bucket).upload(path, body, { upsert: true, contentType });
     if (error) { _lastUploadError = error.message; console.warn('[db] upload failed:', error.message); return null; }

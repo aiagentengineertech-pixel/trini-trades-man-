@@ -910,6 +910,20 @@ end; $$;
 revoke all on function delete_my_account() from public;
 grant execute on function delete_my_account() to authenticated;
 
+-- ============================================================
+-- Storage usage — total bytes this user has uploaded (free-tier cap).
+-- Sums file sizes from storage.objects owned by the caller. SECURITY DEFINER
+-- so it can read the storage schema; only returns the caller's own total.
+-- ============================================================
+create or replace function get_storage_used() returns bigint
+language sql security definer set search_path = public, storage, auth as $$
+  select coalesce(sum((metadata->>'size')::bigint), 0)::bigint
+  from storage.objects
+  where owner = auth.uid();
+$$;
+revoke all on function get_storage_used() from public;
+grant execute on function get_storage_used() to authenticated;
+
 -- per-client project photo vault (Phase 3)
 create table if not exists client_photos (
   id         uuid primary key default uuid_generate_v4(),
