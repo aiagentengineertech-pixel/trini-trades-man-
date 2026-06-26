@@ -8,9 +8,12 @@
     "scheme": "trinitradesman",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.trinisidehustle.app",
+      "buildNumber": "1",
+      "supportsTablet": false
     },
     "android": {
+      "package": "com.trinisidehustle.app",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -34,6 +37,18 @@
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 150
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Trini Side Hustle uses your photos so you can set your profile picture, business logo, banner and portfolio images."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Trini Side Hustle uses your location to show jobs and tradesmen near you and how far away they are."
         }
       ]
     ],
