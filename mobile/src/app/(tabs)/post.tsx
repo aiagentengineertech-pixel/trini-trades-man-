@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   photoBtnText: { color: Brand.body, fontWeight: '600', fontSize: 14 },
   thumbWrap: { position: 'relative' },
   thumb: { width: 84, height: 84, borderRadius: 12, backgroundColor: Brand.surfaceAlt },
-  thumbX: { position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: 11, backgroundColor: Brand.ink, alignItems: 'center', justifyContent: 'center' },
+  thumbX: { position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: 11, backgroundColor: Brand.red, alignItems: 'center', justifyContent: 'center' },
 
   error: { color: Brand.red, fontWeight: '600', marginTop: 16 },
 

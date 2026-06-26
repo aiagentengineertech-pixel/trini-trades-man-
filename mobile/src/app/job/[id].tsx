@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   schedChipText: { fontSize: 13, fontWeight: '600', color: Brand.body },
   schedChipTextOn: { color: '#fff' },
   schedNote: { borderWidth: 1, borderColor: Brand.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: Brand.ink, marginTop: 4 },
-  dispatchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 12, paddingVertical: 14, marginTop: 12 },
+  dispatchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.red, borderRadius: 12, paddingVertical: 14, marginTop: 12 },
   dispatchText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 
   completeCard: { backgroundColor: '#F1FBF5', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#CDEBD8' },

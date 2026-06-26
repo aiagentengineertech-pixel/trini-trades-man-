@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   prosRow: { paddingHorizontal: 20, gap: 14 },
   proCard: { width: 190, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', backgroundColor: 'rgba(255,255,255,0.78)', overflow: 'hidden', paddingBottom: 12, shadowColor: '#0B1220', shadowOpacity: 0.10, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
   proImage: { height: 110, alignItems: 'center', justifyContent: 'center' },
-  ratingPill: { position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: 'rgba(14,17,22,0.85)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10 },
+  ratingPill: { position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: 'rgba(140,28,43,0.92)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10 },
   ratingText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   proName: { fontSize: 15, fontWeight: '700', color: Brand.ink, paddingHorizontal: 12, marginTop: 10 },
   proTrade: { fontSize: 12, color: Brand.muted, paddingHorizontal: 12, marginTop: 2 },

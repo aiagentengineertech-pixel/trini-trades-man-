@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   num: { fontSize: 18, fontWeight: '800', color: Brand.ink, marginTop: 2 },
   badge: { backgroundColor: Brand.surfaceAlt, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9 },
   badgeOk: { backgroundColor: Brand.green },
-  badgeConv: { backgroundColor: Brand.ink },
+  badgeConv: { backgroundColor: Brand.red },
   badgeText: { fontSize: 11, fontWeight: '800', color: Brand.body },
   billTo: { fontSize: 13, color: Brand.muted, marginTop: 12 },
 
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   totalVal: { fontSize: 18, fontWeight: '800', color: Brand.red },
   signed: { fontSize: 12, color: Brand.green, fontWeight: '700', marginTop: 12 },
 
-  pdfBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 14, paddingVertical: 15, marginTop: 16 },
+  pdfBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.red, borderRadius: 14, paddingVertical: 15, marginTop: 16 },
   pdfText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 
   payCard: { padding: 16, marginTop: 16 },

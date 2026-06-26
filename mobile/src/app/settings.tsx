@@ -126,6 +126,6 @@ const styles = StyleSheet.create({
   dialogBtns: { flexDirection: 'row', gap: 12, marginTop: 22 },
   cancelBtn: { flex: 1, paddingVertical: 13, borderRadius: 12, backgroundColor: Brand.surfaceAlt, alignItems: 'center' },
   cancelText: { fontWeight: '700', color: Brand.body, fontSize: 15 },
-  confirmBtn: { flex: 1, paddingVertical: 13, borderRadius: 12, backgroundColor: Brand.ink, alignItems: 'center' },
+  confirmBtn: { flex: 1, paddingVertical: 13, borderRadius: 12, backgroundColor: Brand.red, alignItems: 'center' },
   confirmText: { fontWeight: '700', color: '#fff', fontSize: 15 },
 });

@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '700', color: Brand.ink },
   grow: { flex: 1 },
 
-  totalCard: { backgroundColor: Brand.ink, borderColor: Brand.ink, alignItems: 'center', paddingVertical: 22 },
+  totalCard: { backgroundColor: Brand.red, borderColor: Brand.red, alignItems: 'center', paddingVertical: 22 },
   totalLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
   totalVal: { color: '#fff', fontSize: 34, fontWeight: '800', marginTop: 6, letterSpacing: -0.5 },
   totalSub: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 },

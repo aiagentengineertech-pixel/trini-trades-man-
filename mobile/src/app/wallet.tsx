@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   title: { fontSize: 16, fontWeight: '700', color: Brand.ink },
 
-  balCard: { backgroundColor: Brand.ink, borderColor: Brand.ink, alignItems: 'center', paddingVertical: 24 },
+  balCard: { backgroundColor: Brand.red, borderColor: Brand.red, alignItems: 'center', paddingVertical: 24 },
   balLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
   balValue: { color: '#fff', fontSize: 42, fontWeight: '800', marginTop: 6, letterSpacing: -1 },
   withdrawBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fff', paddingHorizontal: 24, paddingVertical: 13, borderRadius: 14, marginTop: 18 },

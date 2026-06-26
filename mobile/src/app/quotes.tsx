@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '700', color: Brand.ink },
 
   actions: { flexDirection: 'row', gap: 10 },
-  aiBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 14, paddingVertical: 14 },
+  aiBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.red, borderRadius: 14, paddingVertical: 14 },
   aiText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   proPill: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8, marginLeft: 8 },
   proPillText: { color: '#fff', fontSize: 10, fontWeight: '800' },

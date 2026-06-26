@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   baHalf: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   baImg: { width: '100%', height: '100%' },
   baEmpty: { backgroundColor: Brand.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-  baTag: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(14,17,22,0.7)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  baTag: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(140,28,43,0.82)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   baTagText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   portInfo: { padding: 14 },
   portTitle: { fontSize: 15, fontWeight: '700', color: Brand.ink },

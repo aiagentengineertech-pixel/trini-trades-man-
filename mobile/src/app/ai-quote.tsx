@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   grandLabel: { fontSize: 17, fontWeight: '800', color: Brand.ink },
   grandVal: { fontSize: 20, fontWeight: '800', color: Brand.red },
 
-  genBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.ink, borderRadius: 14, paddingVertical: 16, marginTop: 20 },
+  genBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Brand.red, borderRadius: 14, paddingVertical: 16, marginTop: 20 },
   genBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   savedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14 },
   savedText: { color: Brand.green, fontWeight: '700', fontSize: 13 },
